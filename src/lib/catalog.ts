@@ -1,0 +1,56 @@
+import type { ToolDefinition, ToolId } from './types';
+
+export const tools: ToolDefinition[] = [
+  { id: 'mortgage', title: 'Mortgage Calculator', short: 'Mortgage', description: 'Calculate your mortgage payment, total interest, and repayment schedule.', category: 'Finance & money', accent: 'blue',
+    defaults: { price: '450000', down: '90000', downMode: 'amount', rate: '6.5', years: '30', frequency: '12', startMonth: '1', startYear: '2025', method: 'repayment', balloonPct: '50', convention: 'monthly', includeCosts: 'true', propertyTax: '1.1', insurance: '1200', hoa: '0', pmi: '0.5', extra: '0', closing: '3000' },
+    formula: 'M = P r / (1 - (1 + r)^(-n))', compareFields: [{ key: 'rate', label: 'Annual interest rate (%)' }, { key: 'extra', label: 'Extra payment per period' }, { key: 'years', label: 'Loan term (years)' }, { key: 'price', label: 'Home price' }] },
+  { id: 'tax', title: 'Income Tax Calculator', short: 'Income tax', description: 'Estimate income tax and take-home pay using national and regional tax rules.', category: 'Finance & money', accent: 'purple',
+    defaults: {
+      income: '85000', otherIncome: '0', pretax: '0', method: 'progressive', year: '2025', taxPeriod: 'annual', monthsCount: '12', county: '', filing: 'single',
+      deductionMode: 'standard', deduction: '15750', flatRate: '22', regionalRate: '5', includeRegional: 'true', includeCountyLocal: 'false', localRate: '0',
+      credits: '0', ctc: '0', contributions: '0', payroll: 'false', marriage: 'false', medicare: 'false', social: '0', age65: 'false', dependents: '0', withholding: '0',
+      customCap1: '10000', customRate1: '5', customCap2: '40000', customRate2: '10', customCap3: '100000', customRate3: '20', customCap4: '300000', customRate4: '30', customRate5: '40',
+      stateIncome: 'true', provinceIncome: 'true', regionIncome: 'true', localIncome: 'false', localIncomeRate: '0',
+      stateSales: 'false', stateSalesRate: '7.25', vatSpending: 'false', vatSpendingRate: '20', taxableSpendShare: '40',
+      propertyTax: 'false', propertyTaxRate: '1.15', assessedValue: '0', customLevy: 'false', customLevyRate: '0',
+      fica: 'false', ficaRate: '7.65', ficaCap: '176100', cppEi: 'false', cppEiRate: '5.95', cppEiCap: '71300',
+    },
+    formula: 'Tax = sum(taxable income in each band x band rate)', compareFields: [{ key: 'income', label: 'Annual income' }, { key: 'pretax', label: 'Pre-tax deductions' }, { key: 'localRate', label: 'Local income tax (%)' }] },
+  { id: 'car', title: 'Car Loan Calculator', short: 'Car loan', description: 'Calculate vehicle payments, financing costs, and interest with a trade-in or down payment.', category: 'Finance & money', accent: 'pink',
+    defaults: { price: '32000', down: '5000', trade: '2000', rebate: '0', rate: '6.9', months: '60', method: 'repayment', salesTax: '7.25', fees: '400', tradeTaxCredit: 'false', financeFees: 'true', extra: '0', balloon: '5000' },
+    formula: 'Loan = price + tax + financed fees - down payment - trade-in', compareFields: [{ key: 'rate', label: 'Annual interest rate (%)' }, { key: 'months', label: 'Loan term (months)' }, { key: 'down', label: 'Down payment' }] },
+  { id: 'compound', title: 'Compound Interest Calculator', short: 'Compound interest', description: 'Project investment growth with regular contributions, fees, and inflation.', category: 'Finance & money', accent: 'purple',
+    defaults: { principal: '10000', contribution: '200', rate: '7', years: '10', frequency: '12', method: 'compound', timing: 'end', contribFreq: 'monthly', inflation: '2.5', annualFee: '0' },
+    formula: 'FV = P(1 + i)^n + C((1 + i)^n - 1) / i', compareFields: [{ key: 'rate', label: 'Annual return (%)' }, { key: 'contribution', label: 'Monthly contribution' }, { key: 'years', label: 'Investment period (years)' }] },
+  { id: 'transaction', title: 'Transaction Fee Calculator', short: 'Transaction fees', description: 'Calculate net proceeds or the amount to charge after taxes and processing fees.', category: 'Finance & money', accent: 'pink',
+    defaults: { amount: '1000', count: '1', method: 'net', rate: '2.9', fixed: '0.3', platform: '0', crossBorder: '0', spread: '0', payout: '0', vat: '0', taxMode: 'exclusive' },
+    formula: 'Net = (gross - tax - processing - platform - fixed fee)(1 - FX spread) - payout', compareFields: [{ key: 'rate', label: 'Processing rate (%)' }, { key: 'amount', label: 'Amount per transaction' }, { key: 'count', label: 'Number of transactions' }] },
+  { id: 'currency', title: 'Currency Converter', short: 'Currency', description: 'Convert currencies using dated reference rates or your own exchange rate.', category: 'Finance & money', accent: 'blue',
+    defaults: { amount: '1000', from: 'USD', to: 'EUR', source: 'latest', customRate: '0.92', spread: '0', fee: '0', date: '2025-12-31' },
+    formula: 'Converted = (amount - fixed fee) x reference rate x (1 - spread)', compareFields: [{ key: 'amount', label: 'Source amount' }, { key: 'spread', label: 'Exchange spread (%)' }, { key: 'fee', label: 'Fixed fee (source currency)' }] },
+  { id: 'probability', title: 'Probability Calculator', short: 'Probability', description: 'Calculate event probabilities, binomial outcomes, combinations, and permutations.', category: 'Math & everyday', accent: 'purple',
+    defaults: { method: 'independent', pa: '25', pb: '40', event: 'and', joint: '10', given: '25', n: '10', k: '3', p: '50', binomialEvent: 'exactly', sims: '100000', seed: '20250101' },
+    formula: 'Independent events: P(A and B) = P(A) x P(B)', compareFields: [{ key: 'pa', label: 'P(A) (%)' }, { key: 'p', label: 'Success probability (%)' }, { key: 'n', label: 'Number of trials / objects' }] },
+  { id: 'scientific', title: 'Scientific Calculator', short: 'Scientific', description: 'Evaluate mathematical expressions or solve quadratic equations with adjustable variables.', category: 'Math & everyday', accent: 'blue',
+    defaults: { method: 'expression', expression: 'sqrt(x^2 + y^2)', x: '3', y: '4', angle: 'radians', a: '1', b: '-5', c: '6' },
+    formula: 'Use +, -, *, /, ^, parentheses, and scientific functions.', compareFields: [{ key: 'x', label: 'Variable x' }, { key: 'y', label: 'Variable y' }, { key: 'a', label: 'Quadratic coefficient a' }] },
+  { id: 'units', title: 'Unit Converter', short: 'Units', description: 'Convert length, weight, temperature, area, volume, speed, time, and digital storage.', category: 'Math & everyday', accent: 'pink',
+    defaults: { category: 'length', amount: '100', from: 'cm', to: 'in' },
+    formula: 'Target value = source value x source factor / target factor', compareFields: [{ key: 'amount', label: 'Source value' }] },
+  { id: 'bmi', title: 'BMI Calculator', short: 'BMI', description: 'Calculate adult body mass index using metric or imperial measurements.', category: 'Math & everyday', accent: 'purple',
+    defaults: { units: 'metric', height: '175', weight: '75' },
+    formula: 'BMI = weight (kg) / height (m)^2', compareFields: [{ key: 'weight', label: 'Weight' }, { key: 'height', label: 'Height' }] },
+];
+
+export const toolById = Object.fromEntries(tools.map(tool => [tool.id, tool])) as Record<ToolId, ToolDefinition>;
+export const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'NZD', 'SGD', 'HKD', 'TWD', 'SEK', 'NOK', 'DKK', 'MXN', 'BRL', 'ZAR', 'KRW', 'CLP', 'PLN', 'THB', 'IDR', 'PHP', 'AED', 'ARS', 'CZK', 'RON', 'HUF', 'COP', 'PEN', 'MYR', 'VND', 'EGP', 'SAR', 'ILS', 'TRY', 'UAH', 'BGN', 'ISK', 'QAR', 'KWD', 'PKR', 'BDT', 'KES', 'NGN', 'MAD', 'JOD', 'RSD', 'UYU', 'LKR', 'NPR', 'GHS', 'TZS', 'UGX', 'XOF', 'TND', 'LBP', 'OMR', 'BHD', 'GEL', 'AMD', 'AZN', 'KZT', 'UZS', 'MNT', 'KHR', 'MMK', 'LAK', 'BOB', 'PYG', 'MOP', 'GIP', 'BMD', 'KYD', 'AWG', 'ANG', 'XPF', 'ALL', 'MKD', 'CRC', 'PAB', 'DOP', 'GTQ', 'JMD', 'TTD', 'FJD', 'MVR', 'BTN', 'MDL', 'BAM', 'NAD', 'BWP', 'MUR', 'RWF'];
+export const unitGroups: Record<string, { label: string; units: Record<string, { name: string; factor: number }> }> = {
+  length: { label: 'Length', units: { m: { name: 'Meters', factor: 1 }, cm: { name: 'Centimeters', factor: .01 }, mm: { name: 'Millimeters', factor: .001 }, km: { name: 'Kilometers', factor: 1000 }, in: { name: 'Inches', factor: .0254 }, ft: { name: 'Feet', factor: .3048 }, yd: { name: 'Yards', factor: .9144 }, mi: { name: 'Miles', factor: 1609.344 } } },
+  mass: { label: 'Mass', units: { kg: { name: 'Kilograms', factor: 1 }, g: { name: 'Grams', factor: .001 }, mg: { name: 'Milligrams', factor: .000001 }, lb: { name: 'Pounds', factor: .45359237 }, oz: { name: 'Ounces', factor: .028349523125 }, tonne: { name: 'Metric tonnes', factor: 1000 } } },
+  temperature: { label: 'Temperature', units: { C: { name: 'Celsius', factor: 1 }, F: { name: 'Fahrenheit', factor: 1 }, K: { name: 'Kelvin', factor: 1 } } },
+  area: { label: 'Area', units: { 'm2': { name: 'Square meters', factor: 1 }, 'ft2': { name: 'Square feet', factor: .09290304 }, 'km2': { name: 'Square kilometers', factor: 1000000 }, acre: { name: 'Acres', factor: 4046.8564224 }, ha: { name: 'Hectares', factor: 10000 } } },
+  volume: { label: 'Volume', units: { L: { name: 'Liters', factor: 1 }, mL: { name: 'Milliliters', factor: .001 }, galUS: { name: 'US gallons', factor: 3.785411784 }, galUK: { name: 'Imperial gallons', factor: 4.54609 }, cupUS: { name: 'US cups', factor: .2365882365 }, flozUS: { name: 'US fluid ounces', factor: .0295735295625 } } },
+  speed: { label: 'Speed', units: { 'km/h': { name: 'Kilometers / hour', factor: 1 }, mph: { name: 'Miles / hour', factor: 1.609344 }, 'm/s': { name: 'Meters / second', factor: 3.6 }, knot: { name: 'Knots', factor: 1.852 } } },
+  time: { label: 'Time', units: { s: { name: 'Seconds', factor: 1 }, min: { name: 'Minutes', factor: 60 }, hr: { name: 'Hours', factor: 3600 }, day: { name: 'Days', factor: 86400 }, week: { name: 'Weeks', factor: 604800 } } },
+  data: { label: 'Digital storage', units: { B: { name: 'Bytes', factor: 1 }, kB: { name: 'Kilobytes (decimal)', factor: 1000 }, MB: { name: 'Megabytes (decimal)', factor: 1e6 }, GB: { name: 'Gigabytes (decimal)', factor: 1e9 }, KiB: { name: 'Kibibytes (binary)', factor: 1024 }, MiB: { name: 'Mebibytes (binary)', factor: 1048576 }, GiB: { name: 'Gibibytes (binary)', factor: 1073741824 } } },
+};
