@@ -8,6 +8,24 @@ export interface DeviceEnvironment {
   keyboard: boolean;
 }
 
+/**
+ * Safari 13 and several embedded WebViews expose `MediaQueryList.addListener`
+ * but not `addEventListener`. Binding through this helper keeps the pointer
+ * query working there instead of throwing during the first effect.
+ */
+function bindQuery(query: MediaQueryList, handler: () => void) {
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', handler);
+    return () => query.removeEventListener('change', handler);
+  }
+  const legacy = query as MediaQueryList & { addListener?: (cb: () => void) => void; removeListener?: (cb: () => void) => void };
+  if (typeof legacy.addListener === 'function') {
+    legacy.addListener(handler);
+    return () => { if (legacy.removeListener) legacy.removeListener(handler); };
+  }
+  return () => {};
+}
+
 export function useDeviceEnvironment(): DeviceEnvironment {
   const [device, setDevice] = useState<DeviceEnvironment>({ platform: 'other', touch: false, width: 0, height: 0, keyboard: false });
   useEffect(() => {
@@ -38,7 +56,10 @@ export function useDeviceEnvironment(): DeviceEnvironment {
       }
       setDevice(previous => previous.platform === platform && previous.touch === coarse.matches && previous.width === width && previous.height === height && previous.keyboard === keyboard ? previous : { platform, touch: coarse.matches, width, height, keyboard });
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const schedule = () => {
+      if (frame) return;
+      frame = typeof requestAnimationFrame === 'function' ? requestAnimationFrame(update) : (setTimeout(update, 16) as unknown as number);
+    };
     update();
     window.addEventListener('resize', schedule);
     window.addEventListener('orientationchange', schedule);
@@ -46,7 +67,7 @@ export function useDeviceEnvironment(): DeviceEnvironment {
     document.addEventListener('focusout', schedule);
     viewport?.addEventListener('resize', schedule);
     viewport?.addEventListener('scroll', schedule);
-    coarse.addEventListener('change', schedule);
+    const unbindQuery = bindQuery(coarse, schedule);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', schedule);
@@ -55,7 +76,7 @@ export function useDeviceEnvironment(): DeviceEnvironment {
       document.removeEventListener('focusout', schedule);
       viewport?.removeEventListener('resize', schedule);
       viewport?.removeEventListener('scroll', schedule);
-      coarse.removeEventListener('change', schedule);
+      unbindQuery();
     };
   }, []);
   return device;

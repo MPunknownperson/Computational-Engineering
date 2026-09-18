@@ -1,12 +1,48 @@
-import { ArrowRight, BookOpen, CircuitBoard, Globe2, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
+import { useCallback } from 'react';
+import { Activity, ArrowRight, BookOpen, ChartLine, CircuitBoard, Clapperboard, Globe2, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 import { tools, toolById } from '../../lib/catalog';
 import { countries } from '../../lib/regions';
 import { guides } from '../../lib/content';
 import { ToolGlyph } from '../ToolGlyph';
 import { AnimatedNumber, AuroraBackdrop, Reveal, useStagger } from '../motion';
+import { MascotScene } from '../mascot/Scene';
+import { fetchAssets, fetchFx, formatMoney } from '../../lib/live';
+import { useLiveData } from '../../hooks/useLiveData';
+import { brand } from '../../lib/legal';
 import type { ToolId } from '../../lib/types';
 
 const compact = (value: number) => new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+
+/** Three live tiles on the home page, so the front door is never stale. */
+function LiveStrip({ onNavigate }: { onNavigate: (hash: string) => void }) {
+  const fx = useLiveData('home-fx', useCallback((signal: AbortSignal) => fetchFx('EUR', ['USD', 'GBP'], signal), []), { interval: 120000 });
+  const assets = useLiveData('home-assets', useCallback((signal: AbortSignal) => fetchAssets('usd', signal), []), { interval: 120000 });
+  const bitcoin = assets.data ? assets.data[0] : null;
+
+  return <section className="home-section">
+    <header className="home-section-head">
+      <h2><Activity size={18} />Live right now</h2>
+      <button className="text-button" onClick={() => onNavigate('markets')}>Open live markets<ArrowRight size={15} /></button>
+    </header>
+    <div className="home-live">
+      <div className="home-live-card">
+        <span>EUR → USD</span>
+        <strong>{fx.data ? fx.data.rates.USD.toFixed(4) : fx.error ? '—' : '···'}</strong>
+        <small>{fx.data ? `ECB reference, ${fx.data.date}` : fx.error ? 'Feed unavailable' : 'Contacting the ECB feed'}</small>
+      </div>
+      <div className="home-live-card">
+        <span>EUR → GBP</span>
+        <strong>{fx.data ? fx.data.rates.GBP.toFixed(4) : fx.error ? '—' : '···'}</strong>
+        <small>{fx.data ? 'Updated every two minutes' : 'Waiting for data'}</small>
+      </div>
+      <div className="home-live-card">
+        <span>Bitcoin</span>
+        <strong>{bitcoin ? formatMoney(bitcoin.price, 'USD', 0) : assets.error ? '—' : '···'}</strong>
+        <small className={bitcoin && bitcoin.change24h >= 0 ? 'up' : 'down'}>{bitcoin ? `${bitcoin.change24h.toFixed(2)}% · 24h` : 'Spot price, CoinGecko'}</small>
+      </div>
+    </div>
+  </section>;
+}
 
 export default function HomePage({ onNavigate }: { onNavigate: (hash: string) => void }) {
   const countryCount = Object.keys(countries).length;
@@ -19,14 +55,16 @@ export default function HomePage({ onNavigate }: { onNavigate: (hash: string) =>
       <AuroraBackdrop />
       <div className="hero-inner">
         <p className="hero-eyebrow"><Sparkles size={14} />No account. No tracking. No paywall.</p>
-        <h1>Calculators that show their working.</h1>
+        <h1>Live numbers, drawn out in full.</h1>
         <p className="hero-lede">
           Mortgages, income tax, investments, fees and conversions, with dated regional references
-          for {countryCount} countries and territories. Every result comes with its formula, its
-          assumptions and its sources.
+          for {countryCount} countries and territories — now wired to live exchange rates, market
+          prices and official indicators. Every result comes with its formula, its assumptions and
+          its sources, and {brand.mascot} walks you through them.
         </p>
         <div className="hero-actions">
           <button className="primary-button" onClick={() => onNavigate('mortgage')}>Open a calculator<ArrowRight size={17} /></button>
+          <button className="secondary-button" onClick={() => onNavigate('markets')}><Activity size={16} />See live markets</button>
           <button className="secondary-button" onClick={() => onNavigate('coverage')}><Globe2 size={16} />Browse coverage</button>
         </div>
         <dl className="hero-stats">
@@ -36,6 +74,12 @@ export default function HomePage({ onNavigate }: { onNavigate: (hash: string) =>
         </dl>
       </div>
     </section>
+
+    <section className="home-section home-scene-section">
+      <MascotScene mood="wave" />
+    </section>
+
+    <LiveStrip onNavigate={onNavigate} />
 
     <section className="home-section">
       <header className="home-section-head">
@@ -100,6 +144,29 @@ export default function HomePage({ onNavigate }: { onNavigate: (hash: string) =>
           how you actually work.
         </p>
         <button className="text-button" onClick={() => onNavigate('units')}>Open the unit converter<ArrowRight size={15} /></button>
+      </Reveal>
+    </section>
+
+    <section className="home-section home-split">
+      <Reveal as="article" className="pitch-card">
+        <span className="pitch-icon"><ChartLine size={20} /></span>
+        <h3>Data that arrives while you read</h3>
+        <p>
+          Exchange rates come from the European Central Bank, spot prices from a public market API
+          and macro indicators from the World Bank. Requests are made by your browser, cached in
+          memory, retried with backoff and aborted the moment you navigate away.
+        </p>
+        <button className="text-button" onClick={() => onNavigate('status')}>Check feed status<ArrowRight size={15} /></button>
+      </Reveal>
+      <Reveal as="article" className="pitch-card" delay={70}>
+        <span className="pitch-icon"><Clapperboard size={20} /></span>
+        <h3>Drawn, not decorated</h3>
+        <p>
+          {brand.mascot} and Pip are cel-style characters built from SVG paths with named joints.
+          They blink, wave, think and celebrate through keyframed poses — and they stop entirely if
+          your system asks for reduced motion.
+        </p>
+        <button className="text-button" onClick={() => onNavigate('animation')}>Visit the animation studio<ArrowRight size={15} /></button>
       </Reveal>
     </section>
 

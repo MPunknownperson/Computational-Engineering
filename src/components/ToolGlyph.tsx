@@ -20,29 +20,42 @@ export function ToolGlyph({ tool, size = 42, className = '' }: { tool: ToolId; s
 }
 
 /**
- * Arithvale mark: a capital "A" whose crossbar is an equals sign, set on a
- * blue-to-violet tile. The "A" is the initial; the "=" is the result that every
- * calculation on the site works towards; the dot echoes the wordmark's period.
+ * Quantiva mark: a "Q" drawn as an orbit ring around a counting bead, with the
+ * mascot's two eyes inside the tile. The ring turns and the left eye winks, so
+ * the logo is a miniature of the same character rig used across the site.
  */
 export function BrandGlyph({ size = 36 }: { size?: number }) {
-  const id = useId().replace(/:/g, '');
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
   const gradientId = `brand-fill-${id}`;
-  return <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" fill="none" className="brand-glyph">
-    <defs>
-      <linearGradient id={gradientId} x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-        <stop offset="0" stopColor="#3457e6" />
-        <stop offset="1" stopColor="#7048d2" />
-      </linearGradient>
-    </defs>
-    <rect x="2" y="2" width="36" height="36" rx="10" fill={`url(#${gradientId})`} />
-    <path d="M11.5 30.5 20 10.5l8.5 20" stroke="#ffffff" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M15.7 22.6h8.6" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" />
-    <path d="M14.1 26.7h11.8" stroke="#f2c3e0" strokeWidth="2.4" strokeLinecap="round" />
-    <circle cx="31.5" cy="9.5" r="2.6" fill="#f2c3e0" />
-  </svg>;
+  const ringId = `brand-ring-${id}`;
+  return <span className="brand-mark" style={{ lineHeight: 0 }}>
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" fill="none" className="brand-glyph">
+      <defs>
+        <linearGradient id={gradientId} x1="4" y1="2" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#4f7bff" />
+          <stop offset="0.55" stopColor="#6b5cf0" />
+          <stop offset="1" stopColor="#8b46d6" />
+        </linearGradient>
+        <linearGradient id={ringId} x1="6" y1="6" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#ffd8ef" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="36" height="36" rx="11" fill={`url(#${gradientId})`} />
+      <g className="brand-mark-orbit">
+        <ellipse cx="20" cy="20" rx="13" ry="9" transform="rotate(-32 20 20)" stroke={`url(#${ringId})`} strokeWidth="2.2" fill="none" opacity="0.95" />
+        <circle cx="30.4" cy="12.6" r="2.5" fill="#ffd166" />
+      </g>
+      <g fill="#ffffff">
+        <ellipse className="brand-mark-eye" cx="16" cy="19" rx="2.1" ry="2.7" />
+        <ellipse cx="24" cy="19" rx="2.1" ry="2.7" />
+      </g>
+      <path d="M16.8 25.4q3.2 3 6.4 0" stroke="#ffffff" strokeWidth="1.9" strokeLinecap="round" fill="none" />
+    </svg>
+  </span>;
 }
 
-/** The logotype used beside the mark: "arith" + "vale" + accent period. */
+/** The logotype used beside the mark: "quant" + "iva" + accent period. */
 export function BrandWordmark() {
   return <span className="brand-wordmark">{brand.wordmark.head}<span className="brand-blue">{brand.wordmark.tail}</span><span className="brand-period">.</span></span>;
 }

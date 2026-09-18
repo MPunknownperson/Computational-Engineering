@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
-import { ArrowRight, Bookmark, BookOpen, Check, ChevronRight, CircuitBoard, Globe2, History, Home, Info, Landmark, ListOrdered, Mail, Menu, Scale, Settings2, ShieldCheck, X } from 'lucide-react';
-import { brand, legal } from './lib/legal';
+import { Activity, ArrowRight, Bookmark, BookOpen, ChartLine, Check, ChevronRight, CircuitBoard, Clapperboard, Globe2, History, Home, Info, Landmark, ListOrdered, Mail, Menu, Radio, Scale, Settings2, ShieldCheck, X } from 'lucide-react';
+import { brand } from './lib/legal';
 import { useCalculators } from './hooks/useCalculators';
 import { tools, toolById } from './lib/catalog';
 import type { Snapshot, ToolId, Values } from './lib/types';
@@ -18,7 +18,9 @@ import RegionalExplorer from './components/RegionalExplorer';
 import CalculatorPage, { calculatorTabs } from './components/CalculatorPage';
 import type { CalculatorTab } from './components/CalculatorPage';
 import { useDeviceEnvironment } from './hooks/useDeviceEnvironment';
-import { PanelLoader } from './components/motion';
+import SiteFooter from './components/SiteFooter';
+import ErrorBoundary from './components/ErrorBoundary';
+import { MascotLoader } from './components/mascot/Scene';
 import { stopAllAnimations } from './lib/engine/animation';
 
 // Secondary pages are split out so the calculator remains the fastest path.
@@ -34,6 +36,10 @@ const PrivacyPage = lazy(() => import('./components/pages/LegalPages').then(m =>
 const DisclaimerPage = lazy(() => import('./components/pages/LegalPages').then(m => ({ default: m.DisclaimerPage })));
 const AccessibilityPage = lazy(() => import('./components/pages/LegalPages').then(m => ({ default: m.AccessibilityPage })));
 const ContactPage = lazy(() => import('./components/pages/LegalPages').then(m => ({ default: m.ContactPage })));
+const MarketsPage = lazy(() => import('./components/pages/LivePages').then(m => ({ default: m.MarketsPage })));
+const EconomyPage = lazy(() => import('./components/pages/LivePages').then(m => ({ default: m.EconomyPage })));
+const StatusPage = lazy(() => import('./components/pages/LivePages').then(m => ({ default: m.StatusPage })));
+const AnimationPage = lazy(() => import('./components/pages/AnimationPage'));
 
 type Modal = 'save' | 'export' | 'settings' | 'reference' | 'explorer' | 'navigation' | null;
 
@@ -41,18 +47,13 @@ type Modal = 'save' | 'export' | 'settings' | 'reference' | 'explorer' | 'naviga
 const primaryLinks: { hash: string; label: string; priority: 'primary' | 'secondary' | 'tertiary' }[] = [
   { hash: 'home', label: 'Home', priority: 'primary' },
   { hash: 'calculators', label: 'Calculators', priority: 'primary' },
+  { hash: 'markets', label: 'Markets', priority: 'primary' },
+  { hash: 'economy', label: 'Economy', priority: 'secondary' },
   { hash: 'converters', label: 'Converters', priority: 'tertiary' },
   { hash: 'guides', label: 'Guides', priority: 'secondary' },
   { hash: 'coverage', label: 'Coverage', priority: 'secondary' },
-  { hash: 'methodology', label: 'Methodology', priority: 'tertiary' },
+  { hash: 'animation', label: 'Studio', priority: 'tertiary' },
   { hash: 'about', label: 'About', priority: 'primary' },
-];
-
-const legalLinks: { hash: string; label: string }[] = [
-  { hash: 'terms', label: 'Terms and Conditions' },
-  { hash: 'privacy', label: 'Privacy Policy' },
-  { hash: 'disclaimer', label: 'Disclaimer' },
-  { hash: 'accessibility', label: 'Accessibility' },
 ];
 
 export default function App() {
@@ -68,14 +69,21 @@ export default function App() {
   const resultReady = store.result && !store.dirty;
 
   // Route changes own the active tool, the document metadata and scroll position.
+  const setActive = store.setActive;
   useEffect(() => {
-    if (route.tool && route.tool !== store.active) store.setActive(route.tool);
+    if (route.tool) setActive(route.tool);
     if (route.name === 'directory') setGroup((route.category as ToolGroup) || 'All');
     setTab('calculator');
     setModal(null);
     stopAllAnimations();
-    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
-  }, [route.hash, route.name, route.tool, route.category, store.setActive, store.active]);
+    // `requestAnimationFrame` is not guaranteed in every embedded webview.
+    const scroll = () => { try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch { window.scrollTo(0, 0); } };
+    if (typeof window.requestAnimationFrame === 'function') {
+      const frame = window.requestAnimationFrame(scroll);
+      return () => window.cancelAnimationFrame(frame);
+    }
+    scroll();
+  }, [route.hash, route.name, route.tool, route.category, setActive]);
 
   useEffect(() => {
     document.title = routeTitle(route, current.title);
@@ -92,12 +100,17 @@ export default function App() {
         document.querySelector<HTMLFormElement>('.calculation-form')?.requestSubmit();
       }
       if (event.target instanceof HTMLElement && event.target.getAttribute('role') === 'tab' && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-        const list = Array.from(event.target.closest('[role="tablist"]')!.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+        const tablist = event.target.closest('[role="tablist"]');
+        if (!tablist) return;
+        const list = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
         const index = list.indexOf(event.target as HTMLButtonElement);
+        if (!list.length) return;
         const next = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length;
         event.preventDefault();
-        list[next].focus();
-        list[next].click();
+        const target = list[next];
+        if (!target) return;
+        target.focus();
+        target.click();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -134,7 +147,6 @@ export default function App() {
 
   const crumbs = useMemo(() => breadcrumbs(route, current.short, toolGroup(store.active)), [route, current.short, store.active]);
   const activeTop = route.name === 'directory' ? (group === 'Converters' ? 'converters' : 'calculators') : route.name === 'calculator' ? 'calculators' : route.name;
-  const year = new Date().getFullYear();
 
   return <div className="site">
     <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); mainRef.current?.focus(); mainRef.current?.scrollIntoView(); }}>Skip to content</a>
@@ -168,7 +180,8 @@ export default function App() {
         </span>)}
       </nav>}
 
-      <Suspense fallback={<div className="page-suspense"><PanelLoader title="Loading page" detail="Fetching this section of the site." /></div>}>
+      <ErrorBoundary onReset={() => go('')}>
+      <Suspense fallback={<div className="page-suspense"><MascotLoader title="Loading page" detail="Nova is fetching this section of the site." /></div>}>
         {route.name === 'home' ? <HomePage onNavigate={navigate} />
           : route.name === 'calculator' ? <CalculatorPage
             store={store}
@@ -186,6 +199,10 @@ export default function App() {
             <ToolDirectory group={group} onGroup={category => navigate(category === 'All' ? 'calculators' : `calculators/${category}`)} onOpen={navigate} />
           </div>
           : route.name === 'coverage' ? <CoveragePage onSelect={(country, region) => { store.changeLocation(country, region); navigate('tax'); store.notify(`${getRegion(country, region).name} selected. Review the reference year before calculating.`); }} />
+          : route.name === 'markets' ? <MarketsPage onNavigate={navigate} />
+          : route.name === 'economy' ? <EconomyPage onNavigate={navigate} />
+          : route.name === 'status' ? <StatusPage />
+          : route.name === 'animation' ? <AnimationPage onNavigate={navigate} />
           : route.name === 'guides' ? <GuidesPage onNavigate={navigate} />
           : route.name === 'guide' ? <GuidePage slug={route.slug || ''} onNavigate={navigate} />
           : route.name === 'methodology' ? <MethodologyPage onNavigate={navigate} />
@@ -201,53 +218,9 @@ export default function App() {
           </div>
           : <NotFoundPage onNavigate={navigate} />}
       </Suspense>
+      </ErrorBoundary>
 
-      <footer className="site-footer">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <a className="site-brand footer-brand-link" {...linkProps('')} aria-label={`${brand.name} home`}><BrandGlyph size={34} /><BrandWordmark /></a>
-            <p>{brand.tagline} Free calculators and converters with dated regional references for 190+ countries and territories. No account, no tracking, no advertising.</p>
-          </div>
-          <nav aria-label="Tools">
-            <h2>Tools</h2>
-            {tools.slice(0, 5).map(tool => <a key={tool.id} {...linkProps(tool.id)}>{tool.short}</a>)}
-            <a {...linkProps('calculators')}>All calculators</a>
-          </nav>
-          <nav aria-label="Explore">
-            <h2>Explore</h2>
-            <a {...linkProps('')}>Home</a>
-            <a {...linkProps('guides')}>Guides</a>
-            <a {...linkProps('coverage')}>Coverage</a>
-            <a {...linkProps('methodology')}>Methodology</a>
-            <a {...linkProps('history')}>History</a>
-            <a {...linkProps('saved')}>Saved</a>
-          </nav>
-          <nav aria-label="Company">
-            <h2>Company</h2>
-            <a {...linkProps('about')}>About</a>
-            <a {...linkProps('contact')}>Contact</a>
-            <a {...linkProps('accessibility')}>Accessibility</a>
-            <button onClick={() => setModal('reference')}>Formulas &amp; sources</button>
-            <button onClick={() => setModal('settings')}>Preferences</button>
-          </nav>
-          <nav aria-label="Legal">
-            <h2>Legal</h2>
-            {legalLinks.map(link => <a key={link.hash} {...linkProps(link.hash)}>{link.label}</a>)}
-          </nav>
-        </div>
-        <div className="footer-bottom">
-          <p className="footer-legal">Planning estimates only. Not tax, legal, lending, investment or medical advice. Reference packs are dated and may not reflect the latest amendments. Exchange rates are ECB reference rates, not transaction rates. See the <a {...linkProps('disclaimer')}>Disclaimer</a> and <a {...linkProps('terms')}>Terms and Conditions</a>.</p>
-          <div className="footer-meta">
-            <span>&copy; {year} {legal.operatorName}. All rights reserved.{legal.operatorName !== brand.name ? ` ${brand.name} is a trade name of ${legal.operatorName}.` : ''}</span>
-            <nav aria-label="Legal shortcuts" className="footer-meta-links">
-              <a {...linkProps('terms')}>Terms</a>
-              <a {...linkProps('privacy')}>Privacy</a>
-              <a {...linkProps('disclaimer')}>Disclaimer</a>
-              <a {...linkProps('contact')}>Contact</a>
-            </nav>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter linkProps={linkProps} onReference={() => setModal('reference')} onSettings={() => setModal('settings')} />
     </main>
 
     {store.notice && <div className="toast" role="status"><Check size={17} /><p>{store.notice}</p><button className="icon-button" onClick={store.dismissNotice} aria-label="Dismiss notification"><X size={17} /></button></div>}
@@ -273,6 +246,10 @@ export default function App() {
       <nav className="mobile-navigation" aria-label="Mobile navigation">
         <button onClick={() => navigate('')}><Home size={20} /><span>Home</span><ChevronRight size={17} /></button>
         <button onClick={() => navigate('calculators')}><ListOrdered size={20} /><span>All calculators &amp; converters</span><ChevronRight size={17} /></button>
+        <button onClick={() => navigate('markets')}><Activity size={20} /><span>Live markets</span><ChevronRight size={17} /></button>
+        <button onClick={() => navigate('economy')}><ChartLine size={20} /><span>Economy tracker</span><ChevronRight size={17} /></button>
+        <button onClick={() => navigate('status')}><Radio size={20} /><span>Live feed status</span><ChevronRight size={17} /></button>
+        <button onClick={() => navigate('animation')}><Clapperboard size={20} /><span>Animation studio</span><ChevronRight size={17} /></button>
         <button onClick={() => navigate('coverage')}><Globe2 size={20} /><span>Country &amp; region coverage</span><ChevronRight size={17} /></button>
         <button onClick={() => navigate('guides')}><BookOpen size={20} /><span>Guides</span><ChevronRight size={17} /></button>
         <button onClick={() => navigate('methodology')}><CircuitBoard size={20} /><span>Methodology</span><ChevronRight size={17} /></button>

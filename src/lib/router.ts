@@ -13,11 +13,14 @@ import { brand } from './legal';
 export type RouteName =
   | 'home' | 'calculator' | 'directory' | 'guides' | 'guide' | 'coverage'
   | 'methodology' | 'about' | 'history' | 'saved'
+  | 'markets' | 'economy' | 'status' | 'animation'
   | 'terms' | 'privacy' | 'disclaimer' | 'accessibility' | 'contact' | 'notFound';
 
 /** Static informational pages that share one parser branch. */
 const staticPages: Record<string, RouteName> = {
   coverage: 'coverage', methodology: 'methodology', about: 'about', history: 'history', saved: 'saved',
+  markets: 'markets', live: 'markets', economy: 'economy', indicators: 'economy',
+  status: 'status', animation: 'animation', mascot: 'animation',
   terms: 'terms', 'terms-and-conditions': 'terms', privacy: 'privacy', 'privacy-policy': 'privacy',
   disclaimer: 'disclaimer', accessibility: 'accessibility', contact: 'contact',
 };
@@ -57,6 +60,10 @@ export function routeTitle(route: Route, toolTitle?: string): string {
     case 'coverage': return `Coverage: countries and regions - ${site}`;
     case 'methodology': return `Methodology and computation - ${site}`;
     case 'about': return `About ${site}`;
+    case 'markets': return `Live markets: FX and digital assets - ${site}`;
+    case 'economy': return `Economy tracker: live World Bank indicators - ${site}`;
+    case 'status': return `Live data status - ${site}`;
+    case 'animation': return `The animation studio - ${site}`;
     case 'history': return `Calculation history - ${site}`;
     case 'saved': return `Saved calculations - ${site}`;
     case 'terms': return `Terms and Conditions - ${site}`;
@@ -76,6 +83,10 @@ export function routeDescription(route: Route): string {
     case 'methodology': return `How ${site} calculates: deterministic modules, numerical solvers, sensitivity analysis and a locally trained surrogate model with measured accuracy.`;
     case 'guides': return 'Practical explanations of amortization, tax bands, compounding, transaction fees and unit conversion.';
     case 'about': return `What ${site} is, what it deliberately does not do, and the limits of its reference data.`;
+    case 'markets': return 'Live European Central Bank reference exchange rates, 30-day trends and digital-asset spot prices, fetched directly by your browser and refreshed every minute.';
+    case 'economy': return 'Inflation, GDP per capita, unemployment and population pulled live from the World Bank Open Data API for fifteen major economies.';
+    case 'status': return 'Real-time reachability and round-trip timing for every upstream data feed the site uses, measured from your own browser.';
+    case 'animation': return `Nova and Pip, the hand-drawn characters of ${site}: cel-style SVG rigs, keyframed poses and a frame-by-frame cartoon strip.`;
     case 'terms': return `The Terms and Conditions that govern your use of the ${site} website, calculators, converters and reference data.`;
     case 'privacy': return `How ${site} handles information: no accounts, no analytics, data kept in your browser, and the third-party requests made only when you use specific features.`;
     case 'disclaimer': return `Important notice: ${site} results are planning estimates and are not tax, legal, lending, investment or medical advice.`;
@@ -94,9 +105,19 @@ export function navigate(hash: string) {
 export function useRoute(): [Route, (hash: string) => void] {
   const [route, setRoute] = useState<Route>(() => parseRoute(typeof window === 'undefined' ? '' : window.location.hash));
   useEffect(() => {
-    const sync = () => setRoute(parseRoute(window.location.hash));
+    // `hashchange` covers normal navigation; `popstate` catches the cases where
+    // Safari and older WebKit builds restore a history entry without firing it.
+    const sync = () => setRoute(current => {
+      const next = parseRoute(window.location.hash);
+      return next.hash === current.hash && next.name === current.name ? current : next;
+    });
     window.addEventListener('hashchange', sync);
-    return () => window.removeEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    sync();
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
   }, []);
   const go = useCallback((hash: string) => navigate(hash), []);
   return [route, go];
@@ -114,6 +135,10 @@ export function breadcrumbs(route: Route, toolShort?: string, toolGroupName?: st
     case 'coverage': return [home, { label: 'Coverage' }];
     case 'methodology': return [home, { label: 'Methodology' }];
     case 'about': return [home, { label: 'About' }];
+    case 'markets': return [home, { label: 'Live data' }, { label: 'Markets' }];
+    case 'economy': return [home, { label: 'Live data' }, { label: 'Economy tracker' }];
+    case 'status': return [home, { label: 'Live data' }, { label: 'Feed status' }];
+    case 'animation': return [home, { label: 'Animation studio' }];
     case 'history': return [home, { label: 'History' }];
     case 'saved': return [home, { label: 'Saved' }];
     case 'terms': return [home, { label: 'Terms and Conditions' }];

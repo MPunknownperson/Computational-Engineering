@@ -9,6 +9,10 @@ import "./styles/site.css";
 import "./styles/refresh.css";
 import "./styles/studio.css";
 import "./styles/brand.css";
+import "./styles/mascot.css";
+import "./styles/live.css";
+import "./styles/footer.css";
+import "./styles/compat.css";
 import App from "./App";
 import { installCustomUnits, loadWorkspace } from "./lib/utilityWorkspace";
 
