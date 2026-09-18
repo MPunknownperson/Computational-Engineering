@@ -19,6 +19,8 @@ const countryIso: Record<CountryId, string> = {
   GU: 'gu', VI: 'vi', AS: 'as', MP: 'mp', GE: 'ge', AM: 'am', AZ: 'az', KZ: 'kz', UZ: 'uz', MN: 'mn', KH: 'kh', MM: 'mm', LA: 'la', BO: 'bo', PY: 'py',
   MO: 'mo', GL: 'gl', FO: 'fo', GI: 'gi', IM: 'im', JE: 'je', GG: 'gg', BM: 'bm', KY: 'ky', AW: 'aw', CW: 'cw', NC: 'nc', PF: 'pf', AX: 'ax', AL: 'al', MK: 'mk',
   CR: 'cr', PA: 'pa', DO: 'do', GT: 'gt', JM: 'jm', TT: 'tt', FJ: 'fj', MV: 'mv', BT: 'bt', MD: 'md', BA: 'ba', ME: 'me', NA: 'na', BW: 'bw', MU: 'mu', RW: 'rw',
+  SS: 'ss', SOM: 'so', GN: 'gn', GW: 'gw', CG: 'cg', CF: 'cf', ER: 'er', DJ: 'dj', BI: 'bi', KM: 'km', ST: 'st', GQ: 'gq', TM: 'tm',
+  AF: 'af', YE: 'ye', SY: 'sy', LY: 'ly', MR: 'mr', BQ: 'bq', SX: 'sx', TC: 'tc', VG: 'vg', AI: 'ai', MS: 'ms', FK: 'fk', PM: 'pm',
 };
 
 const commons = (file: string) => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}`;

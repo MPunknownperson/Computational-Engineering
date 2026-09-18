@@ -96,8 +96,8 @@ function inputRules(tool: ToolId, v: Values, ctx: CalculationContext): NumericRu
   } else if (tool === 'scientific') {
     if (v.method === 'quadratic') { add('a', 'Coefficient a', -1e12); add('b', 'Coefficient b', -1e12); add('c', 'Constant c', -1e12); }
     else { add('x', 'Variable x', -1e12); add('y', 'Variable y', -1e12); }
-  } else if (tool === 'units') add('amount', 'Measurement', -1e12);
-  else { add('height', 'Height', .1, 400); add('weight', 'Weight', .1, 1500); }
+  } else if (tool === 'units') { add('amount', 'Measurement', -1e12); add('sigFigs', 'Significant figures', 1, 15, true); }
+  else { add('height', 'Height', .1, 400); add('weight', 'Weight', .1, 1500); add('targetBmi', 'Target BMI', 10, 60); }
   return rules;
 }
 
@@ -129,6 +129,8 @@ const optionRules: Partial<Record<ToolId, Record<string, string[]>>> = {
   transaction: { taxMode: ['inclusive', 'exclusive'] },
   probability: { event: ['and', 'or', 'xor', 'neither'], binomialEvent: ['exactly', 'atleast', 'atmost'] },
   scientific: { angle: ['degrees', 'radians'] },
+  units: { notation: ['auto', 'plain', 'scientific'] },
+  bmi: { standard: ['who', 'asia-pacific'] },
 };
 
 function normalizeValues(tool: ToolId, values: Values, ctx: CalculationContext) {

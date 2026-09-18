@@ -13,6 +13,7 @@ import { methodSettings } from './methods';
 import { regionalChecks } from './regionalChecks';
 import { engineChecks } from './engine/checks';
 import { siteChecks } from './engine/siteChecks';
+import { utilityChecks } from './engine/utilityChecks';
 
 export interface EngineCheck { name: string; passed: boolean; detail: string }
 function engineCheckCases(): [string, () => void][] {
@@ -23,6 +24,7 @@ function engineCheckCases(): [string, () => void][] {
     ...regionalChecks,
     ...engineChecks,
     ...siteChecks,
+    ...utilityChecks,
     ['Zero-interest loan', () => near(payment(12000, 0, 12), 1000)],
     ['Standard mortgage payment', () => near(payment(360000, .065 / 12, 360), 2275.444884574675, .001)],
     ['Amortization conserves principal', () => { const result = calculate('mortgage', toolById.mortgage.defaults, ctx); near(result.schedule!.reduce((sum,row) => sum + row.principal,0),360000); near(result.schedule![result.schedule!.length - 1].balance,0); }],

@@ -1,0 +1,121 @@
+/*
+ * Utility studio + period controls.
+ * Purely additive: reuses the tokens defined in insights.css and the idioms
+ * already established by the insights view, scenario strips and tax reference
+ * block, so the new surfaces read as part of the same product.
+ */
+
+/* ---------- Studio shell ---------- */
+.studio { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.studio-head {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border: var(--hairline); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--elevation-1);
+}
+.studio-head::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(34rem 14rem at 8% -20%, color-mix(in srgb, var(--blue) 12%, transparent), transparent 70%),
+    radial-gradient(26rem 12rem at 96% 0%, color-mix(in srgb, var(--purple) 11%, transparent), transparent 70%);
+}
+.studio-icon {
+  display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; flex-shrink: 0;
+  border-radius: 13px 13px 13px 5px; color: var(--purple);
+  background: linear-gradient(140deg, var(--blue-light), var(--purple-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 18%, transparent);
+}
+.studio-head h2 { font-size: 20px; font-weight: 600; letter-spacing: -.5px; }
+.studio-head p { margin-top: 5px; font-size: 12px; line-height: 1.8; color: var(--secondary); max-width: 74ch; }
+.studio-counts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-4); margin: var(--space-1) 0 0; padding-top: var(--space-3); border-top: var(--hairline); }
+.studio-counts dt { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.studio-counts dd { margin: 4px 0 0; font-size: 19px; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+
+/* ---------- Cards (same recipe as .insights-section) ---------- */
+.studio-card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-4); background: var(--surface); border: var(--hairline); border-radius: var(--radius-md); box-shadow: var(--elevation-1);
+}
+.studio-card h3 { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.studio-card h3 svg { color: var(--blue); flex-shrink: 0; }
+.studio-note { font-size: 11.5px; line-height: 1.75; color: var(--secondary); max-width: 74ch; }
+.studio-card > .primary-button, .studio-card > .secondary-button { align-self: flex-start; }
+
+.studio-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-2) var(--space-3); }
+.studio-form .field { margin: 0; }
+
+.studio-valid, .studio-invalid { display: flex; align-items: flex-start; gap: 7px; font-size: 11.5px; line-height: 1.7; padding: 9px 12px; border-radius: var(--radius-sm); border-left-width: 3px; border-left-style: solid; }
+.studio-valid { color: #1f6a53; background: color-mix(in srgb, #3f8d72 10%, var(--surface)); border: var(--hairline); border-left: 3px solid #3f8d72; }
+.studio-invalid { color: #8d4257; background: color-mix(in srgb, #b0455f 9%, var(--surface)); border: var(--hairline); border-left: 3px solid #b0455f; }
+.studio-valid svg { flex-shrink: 0; margin-top: 2px; }
+.studio-valid code, .studio-invalid code { font-family: var(--mono); font-size: 11px; }
+:root[data-theme="ink"] .studio-valid { color: #9fd9c0; }
+:root[data-theme="ink"] .studio-invalid { color: #f0b0c0; }
+
+/* Saved objects: tangible, list-like, with quiet hover motion. */
+.studio-list { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.studio-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 11px 13px; border: var(--hairline); border-radius: var(--radius-sm); background: var(--canvas);
+  transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.studio-list li:hover { border-color: var(--blue-border); background: color-mix(in srgb, var(--blue-light) 55%, var(--canvas)); transform: translateX(2px); }
+.studio-list li > div:first-child { min-width: 0; }
+.studio-list strong { display: block; font-size: 12.5px; font-weight: 600; }
+.studio-list small { display: block; margin-top: 3px; font-size: 10.5px; line-height: 1.6; color: var(--secondary); overflow-wrap: anywhere; }
+.studio-list code { font-family: var(--mono); font-size: 10.5px; }
+.studio-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.studio-actions.wide { flex-wrap: wrap; }
+.studio-actions .text-button { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--blue); }
+.delete-button:hover:not(:disabled) { color: #b0455f; background: color-mix(in srgb, #b0455f 10%, transparent); }
+
+/* Metrics: identical to .model-metrics so the two views feel like one system. */
+.studio-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--space-2); margin: 0; }
+.studio-metrics > div { padding: var(--space-2); background: var(--canvas); border-radius: var(--radius-sm); border: var(--hairline); }
+.studio-metrics dt { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.studio-metrics dd { margin: 5px 0 0; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--navy); }
+
+.sweep-chart { width: 100%; height: auto; display: block; border-radius: var(--radius-sm); background: var(--canvas); border: var(--hairline); padding: 6px 4px 2px; }
+.sweep-chart polyline { stroke-linecap: round; }
+
+/* ---------- Period strip (same recipe as .tax-reference) ---------- */
+.period-strip {
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--canvas); border: 1px solid var(--border); border-radius: 5px; padding: 13px 14px 14px; margin-bottom: 19px;
+}
+.period-strip-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 10px; font-size: 11px; color: var(--secondary); }
+.period-strip-head svg { align-self: center; color: var(--purple); }
+.period-strip-head strong { font-size: 12px; font-weight: 600; color: var(--blue); }
+.period-strip .fields-grid { gap: 14px 16px; }
+.period-note { font-size: 10.5px; line-height: 1.6; color: var(--muted); }
+
+/* ---------- "Yours" strip: a labelled variant of the scenario strip ---------- */
+.workspace-strip .scenario-strip-label { color: var(--blue); }
+.workspace-strip .scenario-chip { border-style: dashed; }
+.workspace-strip .scenario-chip:hover { border-style: solid; }
+
+@media (max-width: 760px) {
+  .studio-head { grid-template-columns: 1fr; }
+  .studio-counts { gap: var(--space-3); }
+  .studio-list li { flex-direction: column; align-items: flex-start; }
+  .studio-actions { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-list li { transition: none; }
+  .studio-list li:hover { transform: none; }
+}
+
+/* Empty states: inviting rather than blank. */
+.studio-empty {
+  display: flex; align-items: flex-start; gap: 9px; padding: 14px 15px;
+  border: 1px dashed color-mix(in srgb, var(--purple) 40%, var(--border)); border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--purple-bg) 55%, var(--surface));
+}
+.studio-empty svg { flex-shrink: 0; margin-top: 2px; color: var(--purple); }
+.studio-empty p { font-size: 11.5px; line-height: 1.75; color: var(--secondary); }
+
+/* Home: the studio pitch card carries the studio's own accent. */
+.pitch-card-studio { position: relative; overflow: hidden; isolation: isolate; }
+.pitch-card-studio::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(22rem 10rem at 100% 0%, color-mix(in srgb, var(--purple) 12%, transparent), transparent 70%); }
+.pitch-card-studio .pitch-icon { color: var(--purple); background: var(--purple-bg); }

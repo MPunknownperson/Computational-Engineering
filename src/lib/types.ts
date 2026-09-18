@@ -14,7 +14,9 @@ export type CountryId = 'US' | 'CA' | 'GB' | 'AU' | 'DE' | 'FR' | 'JP' | 'IN' | 
   | 'XK' | 'AD' | 'MC' | 'BB' | 'GY' | 'TL' | 'SB' | 'VU' | 'WS' | 'TO'
   | 'CI' | 'CM' | 'ZR' | 'SZ' | 'LS' | 'GA' | 'BJ' | 'BF' | 'ML' | 'NE' | 'TD' | 'SL' | 'LR' | 'GM'
   | 'SR' | 'BZ' | 'HN' | 'NI' | 'SV' | 'HT' | 'LC' | 'AG' | 'VC' | 'GD' | 'KN' | 'DM'
-  | 'MG' | 'LI' | 'SM' | 'CV' | 'PW' | 'FM' | 'MH' | 'KI' | 'NR' | 'TV' | 'CK';
+  | 'MG' | 'LI' | 'SM' | 'CV' | 'PW' | 'FM' | 'MH' | 'KI' | 'NR' | 'TV' | 'CK'
+  | 'SS' | 'SOM' | 'GN' | 'GW' | 'CG' | 'CF' | 'ER' | 'DJ' | 'BI' | 'KM' | 'ST' | 'GQ' | 'TM'
+  | 'AF' | 'YE' | 'SY' | 'LY' | 'MR' | 'BQ' | 'SX' | 'TC' | 'VG' | 'AI' | 'MS' | 'FK' | 'PM';
 export type ComplexityMode = 'simple' | 'standard' | 'advanced';
 export type TaxRegime = 'national' | 'devolved' | 'separate-return' | 'territorial' | 'local-surtax' | 'no-wage-tax' | 'cantonal';
 

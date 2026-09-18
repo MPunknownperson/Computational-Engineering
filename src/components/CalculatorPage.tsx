@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUp, Calculator, Check, ChevronDown, CircuitBoard, GitCompareArrows, Landmark, ListOrdered, RotateCcw } from 'lucide-react';
+import { ArrowRight, ArrowUp, Calculator, Check, ChevronDown, CircuitBoard, GitCompareArrows, Landmark, ListOrdered, RotateCcw, Wand2 } from 'lucide-react';
 import type { CalculatorStore } from '../hooks/useCalculators';
 import { toolById } from '../lib/catalog';
 import { complexityLevels, toolComplexityCopy } from '../lib/complexity';
@@ -9,15 +9,16 @@ import ToolFields from './ToolFields';
 import ResultPanel from './ResultPanel';
 import { ComparisonView, DetailView } from './DetailViews';
 import InsightsView from './InsightsView';
+import UtilityStudio, { isUtilityTool } from './UtilityStudio';
 import LocationFields, { LocationSummary } from './LocationFields';
 import FlagIcon from './FlagIcon';
 import { ToolGlyph } from './ToolGlyph';
 import { PanelLoader } from './motion';
 
-export type CalculatorTab = 'calculator' | 'details' | 'compare' | 'insights';
-export const calculatorTabs: CalculatorTab[] = ['calculator', 'details', 'compare', 'insights'];
+export type CalculatorTab = 'calculator' | 'details' | 'compare' | 'insights' | 'studio';
+export const calculatorTabs: CalculatorTab[] = ['calculator', 'details', 'compare', 'insights', 'studio'];
 
-const shortLabel: Record<CalculatorTab, string> = { calculator: 'Calculator', details: 'Details', compare: 'Compare', insights: 'Insights' };
+const shortLabel: Record<CalculatorTab, string> = { calculator: 'Calculator', details: 'Details', compare: 'Compare', insights: 'Insights', studio: 'Studio' };
 
 interface Props {
   store: CalculatorStore;
@@ -68,6 +69,7 @@ export default function CalculatorPage({ store, tab, onTab, onExport, onSave, on
     { id: 'details' as CalculatorTab, label: ['mortgage', 'car'].includes(store.active) ? 'Payment schedule' : store.active === 'tax' ? 'Tax breakdown' : store.active === 'compound' ? 'Growth schedule' : 'Calculation details', Icon: ListOrdered },
     { id: 'compare' as CalculatorTab, label: store.active === 'tax' ? 'Compare regions' : 'Compare scenarios', Icon: GitCompareArrows },
     { id: 'insights' as CalculatorTab, label: 'Computation insights', Icon: CircuitBoard },
+    ...(isUtilityTool(store.active) ? [{ id: 'studio' as CalculatorTab, label: 'Utility studio', Icon: Wand2 }] : []),
   ];
 
   return <div className="calculator-shell route-enter">
@@ -166,7 +168,14 @@ export default function CalculatorPage({ store, tab, onTab, onExport, onSave, on
         /> : tab === 'details' && store.result ? <>
           {store.dirty && <p className="inline-warning">The inputs have changed. This breakdown reflects the previous calculation.</p>}
           <DetailView key={`${store.active}-${store.result.value}`} result={store.result} ctx={store.displayContext} onExport={onExport} />
-        </> : tab === 'insights' ? <InsightsView
+        </> : tab === 'studio' && isUtilityTool(store.active) ? <UtilityStudio
+          key={`studio-${store.active}`}
+          tool={store.active}
+          values={store.values}
+          ctx={store.context}
+          onApply={partial => { store.applyValues(partial); store.notify('Applied to the calculator. Press Calculate to confirm the result.'); }}
+          onNotify={store.notify}
+        /> : tab === 'insights' ? <InsightsView
           key={`${store.active}-${store.settings.country}-${store.settings.region}`}
           tool={store.active}
           values={store.values}

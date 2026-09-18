@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { ArrowLeftRight, Banknote, CalendarDays, CreditCard, Globe2, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Sparkles, TrendingUp, Wallet } from 'lucide-react';
+import { useMemo, useRef } from 'react';
+import { ArrowLeftRight, Banknote, Bookmark, CalendarDays, CreditCard, Globe2, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Sparkles, TrendingUp, Wallet } from 'lucide-react';
 import { NumberField, SelectField, TextField, Toggle } from './Fields';
 import MethodPicker from './MethodPicker';
 import OptionGroup from './OptionGroup';
@@ -11,6 +11,11 @@ import type { ScenarioPreset } from '../lib/scenarios';
 import type { InputIssue } from '../lib/processing';
 import type { CalculationContext, ComplexityMode, ToolId, Values } from '../lib/types';
 import { toolSectionVisible } from '../lib/complexity';
+import { describeSelection, fiscalStarts, monthOptions, resolvePeriod } from '../lib/periods';
+import type { DayCount, PeriodKind } from '../lib/periods';
+import { loadWorkspace, rankUsage } from '../lib/utilityWorkspace';
+import type { CurrencyPair, SavedFormula } from '../lib/utilityWorkspace';
+import { utilityRanker } from '../lib/engine/optimizer';
 
 interface Props {
   tool: ToolId;
@@ -36,7 +41,8 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
   const select = (field: string, label: string, entries: [string, string][], className?: string) => <SelectField key={field} field={field} label={label} value={v[field]} onChange={value => change(field, value)} options={entries.map(([value, label]) => ({ value, label }))} error={errors[field]} className={className} />;
   const toggle = (field: string, label: string, description?: string) => <Toggle key={field} field={field} label={label} checked={v[field] === 'true'} onChange={value => change(field, String(value))} description={hints ? description : undefined} />;
   const strip = mode !== 'simple' ? <ScenarioStrip tool={tool} ctx={ctx} values={v} onApply={onApplyPreset} /> : null;
-  const methods = <>{strip}<MethodPicker tool={tool} values={v} onChange={change} hints={hints && tool !== 'units'} /></>;
+  const ownStrip = ['currency', 'probability', 'scientific', 'units', 'bmi'].includes(tool) ? <WorkspaceStrip tool={tool} onApply={onApplyPreset} /> : null;
+  const methods = <>{strip}{ownStrip}<MethodPicker tool={tool} values={v} onChange={change} hints={hints && tool !== 'units'} /></>;
 
   if (tool === 'mortgage') {
     const downPercent = v.downMode === 'percent' ? parseNumericValue(v.down) : parseNumericValue(v.down) / parseNumericValue(v.price) * 100;
@@ -81,6 +87,7 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
         <span className="tax-reference-body"><strong>{legalCountry.legalBody}</strong><small>{region.name.replace(' (custom tax)', '')} &middot; Dated employment-income reference</small></span>
         {select('year', 'Reference year', legalCountry.years.map(pack => [pack.id, pack.label] as [string, string]), 'tax-year-select')}
       </div>
+      {v.taxPeriod !== 'annual' && <PeriodStrip values={v} ctx={ctx} onChange={change} />}
       <div className="fields-grid section-gap">
         {select('taxPeriod', 'Calculation frequency', [['annual', 'Annual total (Full year)'], ['monthly', 'Monthly paycheck (1 month)'], ['weekly', 'Weekly paycheck (52 weeks)'], ['biweekly', 'Biweekly paycheck (26 pay periods)'], ['partial', 'Partial year (Prorated months)']])}
         {v.taxPeriod === 'partial' && num('monthsCount', 'Months worked in year', undefined, 'months', 'Prorates brackets and deductions for partial-year residence.')}
@@ -255,9 +262,55 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
     </> : <><div className="quadratic-preview mono">ax<sup>2</sup> + bx + c = 0</div><div className="fields-grid">{num('a', 'Coefficient a')}{num('b', 'Coefficient b')}{num('c', 'Constant c')}</div></>}</>;
   }
 
-  if (tool === 'units') return <>{methods}{num('amount', 'Value to convert')}<div className="swap-fields">{select('from', 'From unit', Object.entries(unitGroups[v.category]?.units || {}).map(([id, unit]) => [id, `${unit.name} (${id})`]))}<button type="button" className="swap-button" onClick={onSwap} title="Swap units" aria-label="Swap units"><ArrowLeftRight size={20} /></button>{select('to', 'To unit', Object.entries(unitGroups[v.category]?.units || {}).map(([id, unit]) => [id, `${unit.name} (${id})`]))}</div>{hints && show('catalog') && <p className="context-hint"><SlidersHorizontal size={16} />Temperature offsets are handled automatically. Decimal places only affect display rounding.</p>}</>;
+  if (tool === 'units') return <>{methods}{num('amount', 'Value to convert')}<div className="swap-fields">{select('from', 'From unit', Object.entries(unitGroups[v.category]?.units || {}).map(([id, unit]) => [id, `${unit.name} (${id})`]))}<button type="button" className="swap-button" onClick={onSwap} title="Swap units" aria-label="Swap units"><ArrowLeftRight size={20} /></button>{select('to', 'To unit', Object.entries(unitGroups[v.category]?.units || {}).map(([id, unit]) => [id, `${unit.name} (${id})`]))}</div>{show('catalog') && <div className="fields-grid">{select('sigFigs', 'Significant figures shown', [3, 4, 5, 6, 8, 10, 12, 15].map(n => [String(n), `${n} significant figures`]))}</div>}{hints && show('catalog') && <p className="context-hint"><SlidersHorizontal size={16} />Temperature offsets are handled automatically. Significant figures only affect display rounding; custom units you define in the Utility studio appear in these lists and convert through the same base unit.</p>}</>;
 
-  return <>{methods}<div className="fields-grid">{num('height', 'Height', undefined, v.units === 'metric' ? 'cm' : 'in')}{num('weight', 'Weight', undefined, v.units === 'metric' ? 'kg' : 'lb')}</div>{hints && show('guidance') && <p className="context-hint"><ShieldCheck size={16} />For adults only. BMI is a screening reference, not an assessment of individual health.</p>}</>;
+  return <>{methods}<div className="fields-grid">{num('height', 'Height', undefined, v.units === 'metric' ? 'cm' : 'in')}{num('weight', 'Weight', undefined, v.units === 'metric' ? 'kg' : 'lb')}{show('system') && select('standard', 'Reference band set', [['who', 'WHO international adult'], ['asia-pacific', 'Asia-Pacific adult cut-offs']])}{show('guidance') && num('targetBmi', 'Target BMI for weight inversion', undefined, 'BMI', 'The engine inverts the ratio at this BMI to report a target weight.')}</div>{hints && show('guidance') && <p className="context-hint"><ShieldCheck size={16} />For adults only. BMI is a screening reference, not an assessment of individual health. The ratio is identical in both band sets; only the descriptive category and reference weight range change.</p>}</>;
+}
+
+/** Surfaces the person's own saved definitions in the calculator, ranked by frequency and recency. */
+function WorkspaceStrip({ tool, onApply }: { tool: ToolId; onApply: (partial: Values) => void }) {
+  const workspace = useMemo(() => loadWorkspace(), []);
+  const entries = tool === 'currency' ? rankUsage<CurrencyPair>(workspace.pairs, 5).map(item => ({ id: item.id, label: item.label, values: { from: item.from, to: item.to, spread: String(item.spread), fee: String(item.fee) } }))
+    : tool === 'scientific' ? rankUsage<SavedFormula>(workspace.formulas, 5).map(item => ({ id: item.id, label: item.name, values: { method: 'expression', expression: item.expression, x: String(item.variables.x), y: String(item.variables.y), angle: item.angle } }))
+      : tool === 'bmi' ? workspace.profiles.slice(0, 5).map(item => ({ id: item.id, label: item.name, values: { units: item.units, height: String(item.height), weight: String(item.weight) } }))
+        : tool === 'probability' ? workspace.scenarios.slice(0, 5).map(item => ({ id: item.id, label: item.name, values: item.values }))
+          : workspace.units.slice(0, 5).map(item => ({ id: item.id, label: `${item.name} (${item.code})`, values: { category: item.category, from: item.code } }));
+  if (!entries.length) return null;
+  return <div className="scenario-strip workspace-strip">
+    <span className="scenario-strip-label"><Bookmark size={13} /> Yours</span>
+    <div className="scenario-chips">
+      {entries.map(entry => <button type="button" key={entry.id} className="scenario-chip" onClick={() => { utilityRanker.observe(entry.id, tool); onApply(entry.values as Values); }}>{entry.label}</button>)}
+    </div>
+  </div>;
+}
+
+/** Year, month, pay-cycle and exact-date selection for period-aware tools. */
+function PeriodStrip({ values, ctx, onChange }: { values: Values; ctx: CalculationContext; onChange: (field: string, value: string) => void }) {
+  const year = Number(values.year?.slice(0, 4)) || new Date().getUTCFullYear();
+  const kind: PeriodKind = values.taxPeriod === 'monthly' ? 'month'
+    : values.taxPeriod === 'weekly' ? 'weekly'
+      : values.taxPeriod === 'biweekly' ? 'biweekly'
+        : values.taxPeriod === 'partial' ? 'custom-range' : 'annual';
+  const month = Number(values.month) || 1;
+  const period = resolvePeriod({ kind, year, month, start: values.periodStart, end: values.periodEnd, fiscalStartMonth: fiscalStarts[ctx.country] || 1 }, (values.dayCount as DayCount) || 'actual/actual');
+  return <div className="period-strip">
+    <div className="period-strip-head"><CalendarDays size={15} /><strong>{period.label}</strong><span>{describeSelection(period).split(' · ').slice(1).join(' · ')}</span></div>
+    <div className="fields-grid">
+      {kind === 'month' && <SelectField label="Month" value={String(month)} onChange={value => onChange('month', value)} options={monthOptions(year)} />}
+      {kind === 'custom-range' && <>
+        <TextField label="Period start" type="date" value={values.periodStart || `${year}-01-01`} onChange={value => onChange('periodStart', value)} />
+        <TextField label="Period end" type="date" value={values.periodEnd || `${year}-12-31`} onChange={value => onChange('periodEnd', value)} />
+      </>}
+      {(kind === 'weekly' || kind === 'biweekly') && <TextField label="Cycle start date" type="date" value={values.periodStart || `${year}-01-01`} onChange={value => onChange('periodStart', value)} />}
+      <SelectField label="Day-count convention" value={values.dayCount || 'actual/actual'} onChange={value => onChange('dayCount', value)} options={[
+        { value: 'actual/actual', label: 'Actual / actual (leap-exact)' },
+        { value: 'actual/365', label: 'Actual / 365' },
+        { value: 'actual/360', label: 'Actual / 360' },
+        { value: '30/360', label: '30 / 360' },
+      ]} />
+    </div>
+    <p className="period-note">{period.note}</p>
+  </div>;
 }
 
 function ScenarioStrip({ tool, ctx, values, onApply }: { tool: ToolId; ctx: CalculationContext; values: Values; onApply: (partial: Values) => void }) {

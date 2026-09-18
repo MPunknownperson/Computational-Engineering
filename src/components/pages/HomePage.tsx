@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, CircuitBoard, Globe2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, CircuitBoard, Globe2, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 import { tools, toolById } from '../../lib/catalog';
 import { countries } from '../../lib/regions';
 import { guides } from '../../lib/content';
@@ -89,6 +89,17 @@ export default function HomePage({ onNavigate }: { onNavigate: (hash: string) =>
           here is filing advice.
         </p>
         <button className="text-button" onClick={() => onNavigate('about')}>What this is not<ArrowRight size={15} /></button>
+      </Reveal>
+      <Reveal as="article" className="pitch-card pitch-card-studio" delay={140}>
+        <span className="pitch-icon"><Wand2 size={20} /></span>
+        <h3>Make the tools your own</h3>
+        <p>
+          The converters and everyday calculators have a studio: define your own units and
+          constants, save expressions, currency pairs, probability scenarios and measurement
+          profiles. Everything is validated, stays on your device, and reorders itself around
+          how you actually work.
+        </p>
+        <button className="text-button" onClick={() => onNavigate('units')}>Open the unit converter<ArrowRight size={15} /></button>
       </Reveal>
     </section>
 

@@ -7,7 +7,13 @@ import "./styles/insights.css";
 import "./styles/motion.css";
 import "./styles/site.css";
 import "./styles/refresh.css";
+import "./styles/studio.css";
 import App from "./App";
+import { installCustomUnits, loadWorkspace } from "./lib/utilityWorkspace";
+
+// User-defined units join the catalog before first render so every module,
+// including the round-trip validator and exports, sees the same unit set.
+installCustomUnits(loadWorkspace());
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -6,6 +6,7 @@ import { unitGroups } from './catalog';
 import { evaluateExpression } from './expression';
 import { formatMoney, formatNumber } from './format';
 import { taxDefaultsForLocation } from './regionalSettings';
+import { toSignificant } from './engine/optimizer';
 
 const BLUE = '#4564ed', PINK = '#edacd3', PURPLE = '#aa8be7', GRAY = '#cbd1e8';
 const fieldNames: Record<string, string> = { price: 'Price', down: 'Down payment', rate: 'Interest / fee rate', years: 'Term in years', months: 'Term in months', n: 'Trials / objects', k: 'Successes / selected objects', p: 'Success probability', pa: 'P(A)', pb: 'P(B)', joint: 'Joint probability', given: 'Condition probability', propertyTax: 'Property tax rate', customRate: 'Custom exchange rate', income: 'Annual income', extra: 'Extra payment' };
@@ -655,12 +656,27 @@ export function convertUnit(amount: number, category: string, from: string, to: 
   return amount * group.units[from].factor / group.units[to].factor;
 }
 function units(v: Values): CalculationResult {
-  const amount = numberValue(v, 'amount', -1e12), value = convertUnit(amount, v.category, v.from, v.to);
+  const amount = numberValue(v, 'amount', -1e12);
+  const exact = convertUnit(amount, v.category, v.from, v.to);
+  // Significant figures are a presentation choice; the exact value still drives the round-trip check.
+  const digits = Math.min(15, Math.max(1, Math.round(Number(v.sigFigs) || 8)));
+  const value = v.sigFigs ? toSignificant(exact, digits) : exact;
   const group = unitGroups[v.category];
+  const custom = group.units[v.from]?.name.endsWith('(custom)') || group.units[v.to]?.name.endsWith('(custom)');
   const relation = v.category === 'temperature' ? 'C = (F - 32) x 5/9; K = C + 273.15' : `1 ${v.from} = ${formatNumber(convertUnit(1, v.category, v.from, v.to), 8)} ${v.to}`;
   return { label: 'Your converted measurement', value, format: 'number', suffix: v.to, description: `${group.units[v.from].name} to ${group.units[v.to].name}.`, breakdown: [],
-    metrics: [{ label: 'Conversion relationship', value: relation }, { label: 'Category', value: group.label }], formula: v.category === 'temperature' ? relation : 'Target = source x source factor / target factor',
-    steps: [`Start with ${amount} ${v.from}.`, relation, `Result: ${formatNumber(value, 8)} ${v.to}. Rounding is applied only to the display.`], warnings: v.category === 'data' ? ['kB/MB/GB are decimal (powers of 1000); KiB/MiB/GiB are binary (powers of 1024).'] : [],
+    metrics: [
+      { label: 'Conversion relationship', value: relation },
+      { label: 'Category', value: group.label },
+      { label: 'Significant figures shown', value: `${digits} (exact value retained internally)` },
+      ...(Math.abs(exact - value) > 0 ? [{ label: 'Display rounding', value: formatNumber(Math.abs(exact - value), 10) }] : []),
+    ],
+    formula: v.category === 'temperature' ? relation : 'Target = source x source factor / target factor',
+    steps: [`Start with ${amount} ${v.from}.`, relation, `Exact result ${exact} ${v.to}, shown to ${digits} significant figures. Rounding is applied only to the display.`],
+    warnings: [
+      ...(v.category === 'data' ? ['kB/MB/GB are decimal (powers of 1000); KiB/MiB/GiB are binary (powers of 1024).'] : []),
+      ...(custom ? ['This conversion uses a unit you defined. Its factor is applied exactly as entered and is not verified against a standards body.'] : []),
+    ],
   };
 }
 
@@ -701,12 +717,30 @@ function bmi(v: Values): CalculationResult {
   const meters = v.units === 'imperial' ? height * .0254 : height / 100;
   const kg = v.units === 'imperial' ? weight * .45359237 : weight;
   const value = kg / (meters * meters);
-  const category = value < 18.5 ? 'Underweight range' : value < 25 ? 'Healthy reference range' : value < 30 ? 'Overweight range' : 'Obesity range';
+  // Two documented adult band sets. The ratio never changes; only the label mapping does.
+  const asiaPacific = v.standard === 'asia-pacific';
+  const bands = asiaPacific
+    ? { under: 18.5, healthyTop: 23, overweightTop: 27.5, source: 'WHO Western Pacific Region adult cut-offs' }
+    : { under: 18.5, healthyTop: 25, overweightTop: 30, source: 'WHO international adult classification' };
+  const category = value < bands.under ? 'Underweight range' : value < bands.healthyTop ? 'Healthy reference range' : value < bands.overweightTop ? 'Overweight / increased-risk range' : 'Obesity range';
   const weightFactor = v.units === 'imperial' ? 1 / .45359237 : 1, suffix = v.units === 'imperial' ? 'lb' : 'kg';
-  return { label: 'Your body mass index', value, format: 'number', suffix: 'BMI', description: category, breakdown: [],
-    metrics: [{ label: 'Adult reference range', value: '18.5 to 24.9 BMI' }, { label: 'Reference weight range', value: `${formatNumber(18.5 * meters * meters * weightFactor, 1)} to ${formatNumber(24.9 * meters * meters * weightFactor, 1)} ${suffix}` }],
-    formula: 'BMI = weight (kg) / height (m)^2', steps: [`Convert to SI: ${formatNumber(kg, 4)} kg and ${formatNumber(meters, 4)} m.`, `Divide ${kg} by ${meters}^2.`, 'Compare with general adult reference bands. BMI does not measure body composition.'],
-    warnings: ['For non-pregnant adults only. BMI is a screening reference, not a diagnosis; it may not reflect individual health, muscle mass, or ethnicity-related risk. Discuss health concerns with a qualified professional.'],
+  const target = Math.min(60, Math.max(10, Number(v.targetBmi) || bands.healthyTop - 1));
+  const targetWeight = target * meters * meters * weightFactor;
+  const currentWeight = v.units === 'imperial' ? weight : kg;
+  return { label: 'Your body mass index', value, format: 'number', suffix: 'BMI', description: `${category} under the ${bands.source}.`, breakdown: [],
+    metrics: [
+      { label: 'Reference band set', value: asiaPacific ? 'Asia-Pacific adult cut-offs' : 'WHO international adult' },
+      { label: 'Healthy reference range', value: `${bands.under} to ${(bands.healthyTop - .1).toFixed(1)} BMI` },
+      { label: 'Reference weight range', value: `${formatNumber(bands.under * meters * meters * weightFactor, 1)} to ${formatNumber((bands.healthyTop - .1) * meters * meters * weightFactor, 1)} ${suffix}` },
+      { label: `Weight at target BMI ${target}`, value: `${formatNumber(targetWeight, 1)} ${suffix}` },
+      { label: 'Difference from target weight', value: `${currentWeight - targetWeight >= 0 ? '+' : ''}${formatNumber(currentWeight - targetWeight, 1)} ${suffix}` },
+    ],
+    formula: 'BMI = weight (kg) / height (m)^2',
+    steps: [`Convert to SI: ${formatNumber(kg, 4)} kg and ${formatNumber(meters, 4)} m.`, `Divide ${kg} by ${meters}^2.`, `Invert the ratio at BMI ${target} to obtain the target weight of ${formatNumber(targetWeight, 1)} ${suffix}.`, 'Compare with the selected adult reference bands. BMI does not measure body composition.'],
+    warnings: [
+      'For non-pregnant adults only. BMI is a screening reference, not a diagnosis; it may not reflect individual health, muscle mass, or ethnicity-related risk. Discuss health concerns with a qualified professional.',
+      asiaPacific ? 'Asia-Pacific cut-offs are lower because cardiometabolic risk rises at a lower BMI in several Asian populations. Choose the band set deliberately.' : 'International bands are not adjusted for population, build or age.',
+    ],
   };
 }
 

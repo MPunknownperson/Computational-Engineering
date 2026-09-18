@@ -7,6 +7,7 @@ export const tools: ToolDefinition[] = [
   { id: 'tax', title: 'Income Tax Calculator', short: 'Income tax', description: 'Estimate income tax and take-home pay using national and regional tax rules.', category: 'Finance & money', accent: 'purple',
     defaults: {
       income: '85000', otherIncome: '0', pretax: '0', method: 'progressive', year: '2025', taxPeriod: 'annual', monthsCount: '12', county: '', filing: 'single',
+      month: '1', periodStart: '', periodEnd: '', dayCount: 'actual/actual',
       deductionMode: 'standard', deduction: '15750', flatRate: '22', regionalRate: '5', includeRegional: 'true', includeCountyLocal: 'false', localRate: '0',
       credits: '0', ctc: '0', contributions: '0', payroll: 'false', marriage: 'false', medicare: 'false', social: '0', age65: 'false', dependents: '0', withholding: '0',
       customCap1: '10000', customRate1: '5', customCap2: '40000', customRate2: '10', customCap3: '100000', customRate3: '20', customCap4: '300000', customRate4: '30', customRate5: '40',
@@ -35,10 +36,10 @@ export const tools: ToolDefinition[] = [
     defaults: { method: 'expression', expression: 'sqrt(x^2 + y^2)', x: '3', y: '4', angle: 'radians', a: '1', b: '-5', c: '6' },
     formula: 'Use +, -, *, /, ^, parentheses, and scientific functions.', compareFields: [{ key: 'x', label: 'Variable x' }, { key: 'y', label: 'Variable y' }, { key: 'a', label: 'Quadratic coefficient a' }] },
   { id: 'units', title: 'Unit Converter', short: 'Units', description: 'Convert length, weight, temperature, area, volume, speed, time, and digital storage.', category: 'Math & everyday', accent: 'pink',
-    defaults: { category: 'length', amount: '100', from: 'cm', to: 'in' },
+    defaults: { category: 'length', amount: '100', from: 'cm', to: 'in', sigFigs: '8', notation: 'auto' },
     formula: 'Target value = source value x source factor / target factor', compareFields: [{ key: 'amount', label: 'Source value' }] },
   { id: 'bmi', title: 'BMI Calculator', short: 'BMI', description: 'Calculate adult body mass index using metric or imperial measurements.', category: 'Math & everyday', accent: 'purple',
-    defaults: { units: 'metric', height: '175', weight: '75' },
+    defaults: { units: 'metric', height: '175', weight: '75', standard: 'who', targetBmi: '22' },
     formula: 'BMI = weight (kg) / height (m)^2', compareFields: [{ key: 'weight', label: 'Weight' }, { key: 'height', label: 'Height' }] },
 ];
 

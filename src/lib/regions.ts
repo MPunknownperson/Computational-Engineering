@@ -1,5 +1,6 @@
 import type { CountryId, TaxRegime, WorkspaceSettings } from './types';
 import { additionalCountries, expandRegionalCoverage } from './countryExpansion';
+import { expandYearCoverage, extraSovereigns } from './coverageExpansion';
 
 export type Bracket = [number, number];
 
@@ -112,6 +113,7 @@ const usYear = (
 
 export const countries: Record<CountryId, Country> = {
   ...additionalCountries,
+  ...(extraSovereigns as Record<CountryId, Country>),
   US: {
     name: 'United States',
     legalBody: 'Internal Revenue Service (IRS)',
@@ -1379,8 +1381,8 @@ export const countries: Record<CountryId, Country> = {
     taxYear: '2025/26',
     source: { name: 'IRD Hong Kong salaries tax rates', url: 'https://www.ird.gov.hk/eng/tax/ind_stp.htm' },
     years: [
-      { id: '2024/25', label: '2024/25', deduction: { single: 132000, joint: 264000, head: 132000 }, federal: { single: [[50000, .02], [50000, .06], [50000, .1], [50000, .14], [Infinity, .17]], joint: [], head: [] } },
-      { id: '2025/26', label: '2025/26', deduction: { single: 132000, joint: 264000, head: 132000 }, federal: { single: [[50000, .02], [50000, .06], [50000, .1], [50000, .14], [Infinity, .17]], joint: [], head: [] } },
+      { id: '2024/25', label: '2024/25', deduction: { single: 132000, joint: 264000, head: 132000 }, federal: { single: [[50000, .02], [100000, .06], [150000, .1], [200000, .14], [Infinity, .17]], joint: [], head: [] } },
+      { id: '2025/26', label: '2025/26', deduction: { single: 132000, joint: 264000, head: 132000 }, federal: { single: [[50000, .02], [100000, .06], [150000, .1], [200000, .14], [Infinity, .17]], joint: [], head: [] } },
     ],
     regions: [
       { id: 'HK-HK', name: 'Hong Kong Island / Kowloon / New Territories', code: 'HK-HK', cities: ['Central', 'Tsim Sha Tsui', 'Sha Tin'], counties: [], propertyTax: 0.15, salesTax: 0, flatTax: 0, medianIncome: 360000, costOfLivingIndex: 134, taxStructure: 'Territorial salaries tax', statuteCitation: 'Inland Revenue Ordinance Cap. 112', governingBody: 'IRD Hong Kong', description: 'One salaries-tax system for the whole SAR under the Inland Revenue Ordinance.', taxRegime: 'territorial', divergenceNote: 'Hong Kong salaries tax uses IRD progressive or standard-rate assessment on Hong Kong-source employment income.' },
@@ -1811,7 +1813,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Bangladesh', legalBody: 'National Board of Revenue (NBR)', rules: 'Progressive individual tax with a tax-free threshold that differs for women, seniors, and persons with disabilities.',
     currency: 'BDT', symbol: '৳', regionLabel: 'Division', taxYear: '2025/26',
     source: { name: 'NBR Bangladesh', url: 'https://nbr.gov.bd/' },
-    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 350000, joint: 350000, head: 350000 }, federal: { single: [[100000, .05], [400000, .10], [500000, .15], [500000, .20], [Infinity, .25]], joint: [], head: [] } }],
+    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 350000, joint: 350000, head: 350000 }, federal: { single: [[100000, .05], [500000, .10], [1000000, .15], [1500000, .20], [Infinity, .25]], joint: [], head: [] } }],
     regions: [
       { id: 'BD-C', name: 'Dhaka Division', code: 'BD-C', cities: ['Dhaka', 'Gazipur'], counties: [{ id: 'BD-C-DH', name: 'Dhaka City', seat: 'Dhaka', population: 8900000, medianIncome: 480000, propertyTaxRate: 0.12, localSalesTaxRate: 0, localIncomeTaxRate: 0, rules: 'Holding tax is municipal; income tax is NBR.' }], propertyTax: 0.12, salesTax: 15, flatTax: 0, medianIncome: 450000, costOfLivingIndex: 30, taxStructure: 'Progressive with tax-free threshold', statuteCitation: 'Income Tax Act 2023', governingBody: 'NBR', description: 'National progressive rates.', taxRegime: 'national' },
       { id: 'BD-B', name: 'Chattogram Division', code: 'BD-B', cities: ['Chattogram'], counties: [], propertyTax: 0.1, salesTax: 15, flatTax: 0, medianIncome: 380000, costOfLivingIndex: 27, taxStructure: 'Progressive with tax-free threshold', statuteCitation: 'Income Tax Act 2023', governingBody: 'NBR Chattogram', description: 'Port city; same national rates.', taxRegime: 'national' },
@@ -1831,7 +1833,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Nigeria', legalBody: 'Federal Inland Revenue Service (FIRS) / State IRS', rules: 'PIT is collected by states using the national progressive tariff (Pay-As-You-Earn). VAT 7.5% is federal.',
     currency: 'NGN', symbol: '₦', regionLabel: 'State', taxYear: '2025',
     source: { name: 'FIRS / PITA', url: 'https://www.firs.gov.ng/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[300000, .07], [300000, .11], [500000, .15], [500000, .19], [1600000, .21], [Infinity, .24]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[300000, .07], [600000, .11], [1100000, .15], [1600000, .19], [3200000, .21], [Infinity, .24]], joint: [], head: [] } }],
     regions: [
       { id: 'NG-LA', name: 'Lagos State', code: 'NG-LA', cities: ['Ikeja', 'Victoria Island', 'Lekki'], counties: [{ id: 'NG-LA-ET', name: 'Eti-Osa', seat: 'Ikoyi', population: 400000, medianIncome: 2400000, propertyTaxRate: 0.5, localSalesTaxRate: 0, localIncomeTaxRate: 0, rules: 'Lagos Internal Revenue Service administers PAYE. Land use charge is local and optional here.' }], propertyTax: 0.5, salesTax: 7.5, flatTax: 0, medianIncome: 2200000, costOfLivingIndex: 32, taxStructure: 'National PITA via state IRS', statuteCitation: 'Personal Income Tax Act', governingBody: 'LIRS / FIRS', description: 'State-administered national PAYE.', taxRegime: 'national' },
       { id: 'NG-FC', name: 'FCT Abuja', code: 'NG-FC', cities: ['Abuja', 'Garki'], counties: [], propertyTax: 0.4, salesTax: 7.5, flatTax: 0, medianIncome: 1800000, costOfLivingIndex: 30, taxStructure: 'National PITA', statuteCitation: 'PITA', governingBody: 'FCT IRS', description: 'Federal capital; same PITA bands.', taxRegime: 'national' },
@@ -1851,7 +1853,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Jordan', legalBody: 'Income and Sales Tax Department (ISTD)', rules: 'Progressive personal income tax with personal and family exemptions. General sales tax 16%.',
     currency: 'JOD', symbol: 'JD', regionLabel: 'Governorate', taxYear: '2025',
     source: { name: 'ISTD Jordan', url: 'https://www.istd.gov.jo/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 9000, joint: 18000, head: 9000 }, federal: { single: [[5000, .05], [5000, .1], [5000, .15], [5000, .2], [Infinity, .25]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 9000, joint: 18000, head: 9000 }, federal: { single: [[5000, .05], [10000, .1], [15000, .15], [20000, .2], [Infinity, .25]], joint: [], head: [] } }],
     regions: [
       { id: 'JO-AM', name: 'Amman', code: 'JO-AM', cities: ['Amman', 'Abdali'], counties: [{ id: 'JO-AM-C', name: 'Greater Amman', seat: 'Amman', population: 4000000, medianIncome: 8000, propertyTaxRate: 0.15, localSalesTaxRate: 0, localIncomeTaxRate: 0, rules: 'Building and land tax is municipal; income tax is ISTD.' }], propertyTax: 0.15, salesTax: 16, flatTax: 0, medianIncome: 7500, costOfLivingIndex: 44, taxStructure: 'Progressive with exemptions', statuteCitation: 'Income Tax Law', governingBody: 'ISTD', description: 'National progressive rates after exemptions.', taxRegime: 'national' },
     ],
@@ -1879,7 +1881,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Cyprus', legalBody: 'Tax Department Cyprus', rules: 'Progressive personal income tax with a tax-free threshold. Special Defence Contribution may apply to certain passive income, not ordinary wages.',
     currency: 'EUR', symbol: '€', regionLabel: 'District', taxYear: '2025',
     source: { name: 'Cyprus Tax Department', url: 'https://www.mof.gov.cy/mof/tax/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 19500, joint: 19500, head: 19500 }, federal: { single: [[8500, .2], [8000, .25], [14400, .3], [Infinity, .35]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 19500, joint: 19500, head: 19500 }, federal: { single: [[8500, .2], [16500, .25], [30900, .3], [Infinity, .35]], joint: [], head: [] } }],
     regions: [
       { id: 'CY-NI', name: 'Nicosia', code: 'CY-NI', cities: ['Nicosia'], counties: [], propertyTax: 0.1, salesTax: 19, flatTax: 0, medianIncome: 22000, costOfLivingIndex: 68, taxStructure: 'Progressive with tax-free band', statuteCitation: 'Income Tax Law', governingBody: 'Tax Department', description: 'National progressive rates.', taxRegime: 'national' },
       { id: 'CY-LI', name: 'Limassol', code: 'CY-LI', cities: ['Limassol'], counties: [], propertyTax: 0.1, salesTax: 19, flatTax: 0, medianIncome: 23000, costOfLivingIndex: 70, taxStructure: 'Progressive with tax-free band', statuteCitation: 'Income Tax Law', governingBody: 'Tax Department Limassol', description: 'Commercial hub; same national rates.', taxRegime: 'national' },
@@ -1917,7 +1919,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Sri Lanka', legalBody: 'Inland Revenue Department', rules: 'Progressive personal income tax with a tax-free threshold. APIT is withheld from employment income.',
     currency: 'LKR', symbol: 'Rs', regionLabel: 'Province', taxYear: '2025',
     source: { name: 'IRD Sri Lanka', url: 'https://www.ird.gov.lk/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 1200000, joint: 1200000, head: 1200000 }, federal: { single: [[500000, .06], [500000, .12], [500000, .18], [500000, .24], [500000, .3], [Infinity, .36]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 1200000, joint: 1200000, head: 1200000 }, federal: { single: [[500000, .06], [1000000, .12], [1500000, .18], [2000000, .24], [2500000, .3], [Infinity, .36]], joint: [], head: [] } }],
     regions: [
       { id: 'LK-1', name: 'Western Province (Colombo)', code: 'LK-1', cities: ['Colombo', 'Dehiwala'], counties: [], propertyTax: 0.2, salesTax: 18, flatTax: 0, medianIncome: 900000, costOfLivingIndex: 32, taxStructure: 'Progressive APIT/PIT', statuteCitation: 'Inland Revenue Act', governingBody: 'IRD', description: 'National progressive rates.', taxRegime: 'national' },
     ],
@@ -1935,7 +1937,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Ghana', legalBody: 'Ghana Revenue Authority (GRA)', rules: 'PAYE progressive bands on employment income. SSNIT contributions are separate.',
     currency: 'GHS', symbol: 'GH₵', regionLabel: 'Region', taxYear: '2025',
     source: { name: 'GRA Ghana', url: 'https://gra.gov.gh/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[490, 0], [110, .05], [130, .1], [3000, .175], [16395, .25], [50417, .3], [Infinity, .35]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[490, 0], [600, .05], [730, .1], [3730, .175], [20125, .25], [70542, .3], [Infinity, .35]], joint: [], head: [] } }],
     regions: [
       { id: 'GH-AA', name: 'Greater Accra', code: 'GH-AA', cities: ['Accra', 'Tema'], counties: [{ id: 'GH-AA-AC', name: 'Accra Metropolitan', seat: 'Accra', population: 2000000, medianIncome: 36000, propertyTaxRate: 0.1, localSalesTaxRate: 0, localIncomeTaxRate: 0, rules: 'Property rate is local; PAYE is national GRA.' }], propertyTax: 0.1, salesTax: 15, flatTax: 0, medianIncome: 34000, costOfLivingIndex: 36, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act 2015 (Act 896)', governingBody: 'GRA', description: 'National PAYE bands.', taxRegime: 'national' },
     ],
@@ -1944,7 +1946,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Tanzania', legalBody: 'Tanzania Revenue Authority (TRA)', rules: 'PAYE progressive monthly bands. Skills Development Levy is employer-side.',
     currency: 'TZS', symbol: 'TSh', regionLabel: 'Region', taxYear: '2025',
     source: { name: 'TRA Tanzania', url: 'https://www.tra.go.tz/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[270000, 0], [250000, .08], [230000, .2], [250000, .25], [Infinity, .3]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[270000, 0], [520000, .08], [750000, .2], [1000000, .25], [Infinity, .3]], joint: [], head: [] } }],
     regions: [
       { id: 'TZ-02', name: 'Dar es Salaam', code: 'TZ-02', cities: ['Dar es Salaam'], counties: [], propertyTax: 0.15, salesTax: 18, flatTax: 0, medianIncome: 9000000, costOfLivingIndex: 34, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act', governingBody: 'TRA', description: 'National PAYE.', taxRegime: 'national' },
     ],
@@ -1953,7 +1955,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Uganda', legalBody: 'Uganda Revenue Authority (URA)', rules: 'PAYE progressive bands with a zero-rated threshold. NSSF is separate.',
     currency: 'UGX', symbol: 'USh', regionLabel: 'District', taxYear: '2025',
     source: { name: 'URA Uganda', url: 'https://www.ura.go.ug/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[235000, 0], [100000, .1], [165000, .2], [Infinity, .3]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[235000, 0], [335000, .1], [500000, .2], [Infinity, .3]], joint: [], head: [] } }],
     regions: [
       { id: 'UG-C', name: 'Kampala', code: 'UG-C', cities: ['Kampala'], counties: [], propertyTax: 0.1, salesTax: 18, flatTax: 0, medianIncome: 12000000, costOfLivingIndex: 33, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act Cap. 340', governingBody: 'URA', description: 'National PAYE.', taxRegime: 'national' },
     ],
@@ -1962,7 +1964,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Senegal', legalBody: 'Direction Générale des Impôts et des Domaines (DGID)', rules: 'Progressive IR with family quotient elements. CSS and IPM contributions are separate.',
     currency: 'XOF', symbol: 'CFA', regionLabel: 'Region', taxYear: '2025',
     source: { name: 'DGID Senegal', url: 'https://www.dgid.sn/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[630000, 0], [870000, .2], [1000000, .3], [1000000, .35], [1700000, .37], [Infinity, .4]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[630000, 0], [1500000, .2], [2500000, .3], [3500000, .35], [5200000, .37], [Infinity, .4]], joint: [], head: [] } }],
     regions: [
       { id: 'SN-DK', name: 'Dakar', code: 'SN-DK', cities: ['Dakar', 'Pikine'], counties: [], propertyTax: 0.2, salesTax: 18, flatTax: 0, medianIncome: 2500000, costOfLivingIndex: 38, taxStructure: 'Progressive IR', statuteCitation: 'CGI Sénégal', governingBody: 'DGID', description: 'National progressive IR.', taxRegime: 'national' },
     ],
@@ -1971,7 +1973,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Tunisia', legalBody: 'Direction Générale des Impôts', rules: 'Progressive IRPP with multiple brackets. CNSS is separate.',
     currency: 'TND', symbol: 'د.ت', regionLabel: 'Governorate', taxYear: '2025',
     source: { name: 'DGI Tunisia', url: 'https://www.impots.finances.gov.tn/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[5000, 0], [5000, .26], [10000, .28], [30000, .32], [Infinity, .35]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[5000, 0], [10000, .26], [20000, .28], [50000, .32], [Infinity, .35]], joint: [], head: [] } }],
     regions: [
       { id: 'TN-11', name: 'Tunis', code: 'TN-11', cities: ['Tunis', 'La Marsa'], counties: [], propertyTax: 0.2, salesTax: 19, flatTax: 0, medianIncome: 18000, costOfLivingIndex: 36, taxStructure: 'Progressive IRPP', statuteCitation: 'Code de l’IRPP', governingBody: 'DGI', description: 'National progressive IRPP.', taxRegime: 'national' },
     ],
@@ -2188,7 +2190,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Gibraltar', legalBody: 'Gibraltar Income Tax Office', rules: 'Gross Income Based System (GIBS) or Allowance Based System. Not UK PAYE/HMRC Income Tax.',
     currency: 'GIP', symbol: '£', regionLabel: 'Area', taxYear: '2025/26',
     source: { name: 'Gibraltar Income Tax Office', url: 'https://www.gibraltar.gov.gi/' },
-    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 3203, joint: 3203, head: 3203 }, federal: { single: [[17000, .14], [8000, .17], [8000, .19], [15000, .25], [25000, .28], [32000, .35], [Infinity, .39]], joint: [], head: [] } }],
+    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 3203, joint: 3203, head: 3203 }, federal: { single: [[17000, .14], [25000, .17], [33000, .19], [48000, .25], [73000, .28], [105000, .35], [Infinity, .39]], joint: [], head: [] } }],
     regions: [{ id: 'GI-GI', name: 'Gibraltar', code: 'GI-GI', cities: ['Gibraltar'], counties: [], propertyTax: 0, salesTax: 0, flatTax: 0, medianIncome: 35000, costOfLivingIndex: 108, taxStructure: 'GIBS / allowance-based', statuteCitation: 'Income Tax Act 2010', governingBody: 'Income Tax Office', description: 'British Overseas Territory with its own income tax. Not HMRC.', taxRegime: 'territorial', divergenceNote: 'Gibraltar is not taxed as the United Kingdom. HMRC PAYE bands are not used.' }],
   },
   IM: {
@@ -2340,7 +2342,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Fiji', legalBody: 'Fiji Revenue and Customs Service', rules: 'Progressive PAYE with a tax-free threshold. FNPF is separate.',
     currency: 'FJD', symbol: 'FJ$', regionLabel: 'Division', taxYear: '2025',
     source: { name: 'FRCS', url: 'https://www.frcs.org.fj/' },
-    years: [{ id: '2025', label: '2025', deduction: { single: 30000, joint: 30000, head: 30000 }, federal: { single: [[20000, .18], [20000, .2], [30000, .24], [Infinity, .32]], joint: [], head: [] } }],
+    years: [{ id: '2025', label: '2025', deduction: { single: 30000, joint: 30000, head: 30000 }, federal: { single: [[20000, .18], [40000, .2], [70000, .24], [Infinity, .32]], joint: [], head: [] } }],
     regions: [
       { id: 'FJ-C', name: 'Central (Suva)', code: 'FJ-C', cities: ['Suva'], counties: [], propertyTax: 0.2, salesTax: 15, flatTax: 0, medianIncome: 28000, costOfLivingIndex: 48, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act 2015', governingBody: 'FRCS', description: 'National PAYE.', taxRegime: 'national' },
     ],
@@ -2395,7 +2397,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Namibia', legalBody: 'Inland Revenue / NamRA', rules: 'Progressive PAYE with a tax-free threshold. Social security is separate.',
     currency: 'NAD', symbol: 'N$', regionLabel: 'Region', taxYear: '2025/26',
     source: { name: 'NamRA', url: 'https://www.namra.org.na/' },
-    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[50000, 0], [50000, .18], [100000, .25], [200000, .28], [400000, .3], [800000, .32], [Infinity, .37]], joint: [], head: [] } }],
+    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[50000, 0], [100000, .18], [200000, .25], [400000, .28], [800000, .3], [1600000, .32], [Infinity, .37]], joint: [], head: [] } }],
     regions: [
       { id: 'NA-KH', name: 'Khomas (Windhoek)', code: 'NA-KH', cities: ['Windhoek'], counties: [], propertyTax: 0.4, salesTax: 15, flatTax: 0, medianIncome: 180000, costOfLivingIndex: 42, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act 24 of 1981', governingBody: 'NamRA', description: 'National PAYE.', taxRegime: 'national' },
     ],
@@ -2404,7 +2406,7 @@ export const countries: Record<CountryId, Country> = {
     name: 'Botswana', legalBody: 'BURS', rules: 'Progressive PAYE with a tax-free threshold. BURS administers national tax.',
     currency: 'BWP', symbol: 'P', regionLabel: 'District', taxYear: '2025/26',
     source: { name: 'BURS', url: 'https://www.burs.org.bw/' },
-    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[48000, 0], [48000, .05], [60000, .125], [84000, .1875], [Infinity, .25]], joint: [], head: [] } }],
+    years: [{ id: '2025/26', label: '2025/26', deduction: { single: 0, joint: 0, head: 0 }, federal: { single: [[48000, 0], [96000, .05], [156000, .125], [240000, .1875], [Infinity, .25]], joint: [], head: [] } }],
     regions: [
       { id: 'BW-SE', name: 'South-East (Gaborone)', code: 'BW-SE', cities: ['Gaborone'], counties: [], propertyTax: 0.3, salesTax: 14, flatTax: 0, medianIncome: 80000, costOfLivingIndex: 40, taxStructure: 'Progressive PAYE', statuteCitation: 'Income Tax Act', governingBody: 'BURS', description: 'National PAYE.', taxRegime: 'national' },
     ],
@@ -2431,6 +2433,7 @@ export const countries: Record<CountryId, Country> = {
 };
 
 expandRegionalCoverage(countries);
+expandYearCoverage(countries);
 
 export const countryOptions = Object.entries(countries)
   .map(([value, item]) => ({ value, label: item.name }))
@@ -2758,16 +2761,24 @@ export function getCounty(region: Region, countyId?: string): CountyData | undef
   return region.counties.find(c => c.id === countyId);
 }
 
+/** Indexed estimates widen the selectable range but never become the default. */
+export const isVerifiedPack = (pack: TaxYearPack) => !pack.label.includes('indexed estimate');
+
+function latestVerifiedPack(country: Country): TaxYearPack {
+  const verified = country.years.filter(isVerifiedPack);
+  const pool = verified.length ? verified : country.years;
+  return pool[pool.length - 1];
+}
+
 export function getTaxYear(country: CountryId, yearId?: string): TaxYearPack {
   const c = countries[country] || countries.US;
-  const packs = c.years;
-  if (!yearId) return packs[packs.length - 1];
-  return packs.find(p => p.id === yearId) || packs[packs.length - 1];
+  if (!yearId) return latestVerifiedPack(c);
+  return c.years.find(p => p.id === yearId) || latestVerifiedPack(c);
 }
 
 export function latestTaxYearId(country: CountryId): string {
   const c = countries[country] || countries.US;
-  return c.years[c.years.length - 1].id;
+  return latestVerifiedPack(c).id;
 }
 
 export const referenceSources = [

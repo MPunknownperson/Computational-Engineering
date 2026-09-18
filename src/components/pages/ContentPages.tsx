@@ -55,6 +55,8 @@ export function MethodologyPage({ onNavigate }: { onNavigate: (hash: string) => 
     { icon: <GitBranch size={19} />, title: 'Numerical services', body: 'A shared layer adds memoized evaluation, central-difference sensitivity with elasticity ranking, and a bracketed secant/bisection solver for target seeking. The solver reports failure rather than returning an unverified answer.' },
     { icon: <CircuitBoard size={19} />, title: 'Local surrogate model', body: 'A small neural network is trained in your browser on samples drawn from the exact engine using a low-discrepancy sequence. It reports held-out R-squared, mean, mean-percentage and worst-case error, and previews are suppressed when accuracy falls outside the threshold.' },
     { icon: <Network size={19} />, title: 'Cross-module collaboration', body: 'Modules feed each other: take-home income drives a solved affordability figure, the surplus drives a growth projection, and results can be restated through the currency and fee modules. A link is omitted with a stated reason when its inputs are missing.' },
+    { icon: <Cpu size={19} />, title: 'Utility optimization path', body: 'The practical tools are driven by sliders and keystrokes rather than one heavy loop, so they use a separate path: a numeric-keyed ring cache that avoids building string keys, unrolled typed-array sweeps for range previews, compensated summation for long accumulations, and delta tracking that reuses the previous frame when a single field moved.' },
+    { icon: <GitBranch size={19} />, title: 'Temporal resolution', body: 'Calendar years, fiscal years, quarters, months, pay cycles and exact date ranges resolve to whole days with leap years handled exactly. Four day-count conventions are selectable, and every period reports its own day count, business days and share of a year.' },
   ];
   return <div className="content-page route-enter">
     <header className="page-intro">
@@ -81,6 +83,24 @@ export function MethodologyPage({ onNavigate }: { onNavigate: (hash: string) => 
         Training runs in time-sliced frames so typing and scrolling stay responsive, and it can be
         cancelled at any time. Accuracy figures shown next to a prediction are computed on samples
         the network never saw during training.
+      </p>
+    </section>
+
+    <section className="article-section">
+      <h2>Your own definitions</h2>
+      <p>
+        The utility tools accept user-created content: custom units, named constants,
+        saved expressions, conversion pairs, probability scenarios and measurement
+        profiles. Each definition is validated before it can affect a calculation — a
+        custom unit cannot overwrite a standard one, a constant cannot shadow a reserved
+        parser name, and a factor outside safe floating-point range is refused.
+      </p>
+      <p>
+        Accepted definitions become first-class inputs: custom units convert through the
+        same canonical base unit and pass the same round-trip check, and results that use
+        one say so. The ordering of your saved items adapts to how often and how recently
+        you use them, using a small recency-weighted frequency model that runs on this
+        device and explains every position it assigns.
       </p>
     </section>
 
