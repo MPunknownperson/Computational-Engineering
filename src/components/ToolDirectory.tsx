@@ -5,6 +5,7 @@ import { countries, getRegion } from '../lib/regions';
 import { formatResult } from '../lib/format';
 import type { CalculatorStore } from '../hooks/useCalculators';
 import { ToolGlyph } from './ToolGlyph';
+import { Reveal } from './motion';
 
 export type ToolGroup = 'All' | 'Financial' | 'Math' | 'Converters' | 'Health';
 export function toolGroup(id: ToolId): ToolGroup {
@@ -18,7 +19,7 @@ export function ToolDirectory({ group, onGroup, onOpen }: { group: ToolGroup; on
   const filtered = tools.filter(tool => group === 'All' || toolGroup(tool.id) === group);
   return <section className="directory-section">
     <nav className="directory-filters" aria-label="Calculator categories">{(['All', 'Financial', 'Math', 'Converters', 'Health'] as ToolGroup[]).map(item => <button key={item} onClick={() => onGroup(item)} className={group === item ? 'active' : ''} aria-pressed={group === item}>{item}</button>)}</nav>
-    <div className="directory-list">{filtered.map(tool => <button className={`directory-tool tone-${tool.accent}`} key={tool.id} onClick={() => onOpen(tool.id)}><span className="directory-glyph"><ToolGlyph tool={tool.id} size={48} /></span><div><span className="directory-category">{toolGroup(tool.id)}</span><h2>{tool.title}</h2><p>{tool.description}</p></div><ArrowRight size={20} /></button>)}</div>
+    <div className="directory-list">{filtered.map((tool, index) => <Reveal key={tool.id} delay={index * 40}><button className={`directory-tool tone-${tool.accent}`} onClick={() => onOpen(tool.id)}><span className="directory-glyph"><ToolGlyph tool={tool.id} size={48} /></span><div><span className="directory-category">{toolGroup(tool.id)}</span><h2>{tool.title}</h2><p>{tool.description}</p></div><ArrowRight size={20} /></button></Reveal>)}</div>
     {filtered.length === 0 && <div className="empty-state"><h2>No calculators in this category</h2><p>Choose a different category to see the available tools.</p><button className="secondary-button" onClick={() => onGroup('All')}>Show all calculators</button></div>}
   </section>;
 }

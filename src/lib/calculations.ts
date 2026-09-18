@@ -5,6 +5,7 @@ import type { Bracket } from './regions';
 import { unitGroups } from './catalog';
 import { evaluateExpression } from './expression';
 import { formatMoney, formatNumber } from './format';
+import { taxDefaultsForLocation } from './regionalSettings';
 
 const BLUE = '#4564ed', PINK = '#edacd3', PURPLE = '#aa8be7', GRAY = '#cbd1e8';
 const fieldNames: Record<string, string> = { price: 'Price', down: 'Down payment', rate: 'Interest / fee rate', years: 'Term in years', months: 'Term in months', n: 'Trials / objects', k: 'Successes / selected objects', p: 'Success probability', pa: 'P(A)', pb: 'P(B)', joint: 'Joint probability', given: 'Condition probability', propertyTax: 'Property tax rate', customRate: 'Custom exchange rate', income: 'Annual income', extra: 'Extra payment' };
@@ -145,6 +146,7 @@ function mortgage(v: Values, ctx: CalculationContext): CalculationResult {
 }
 
 function tax(v: Values, ctx: CalculationContext): CalculationResult {
+  v = { ...taxDefaultsForLocation(ctx.country, ctx.region, ctx.county), ...v };
   const isMonthly = v.taxPeriod === 'monthly';
   const isWeekly = v.taxPeriod === 'weekly';
   const isBiweekly = v.taxPeriod === 'biweekly';
@@ -162,6 +164,7 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
 
   const country = countries[ctx.country];
   const pack = getTaxYear(ctx.country, v.year || '');
+  const profile = country.profiles?.find(item => item.value === v.taxProfile) || country.profiles?.[0];
   const canadianPayroll = ctx.country === 'CA' && v.payroll === 'true';
   const cppEarnings = Math.max(0, Math.min(income, 71300) - 3500);
   const cppBase = canadianPayroll ? cppEarnings * .0495 : 0;
@@ -172,7 +175,7 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
   const law = jurisdictionProfile(ctx.country, ctx.region);
   const joint = v.filing === 'joint';
   const status: 'single' | 'joint' | 'head' = joint ? 'joint' : v.filing === 'head' ? 'head' : 'single';
-  let deduction = pack.deduction[status];
+  let deduction = profile?.allowance ?? pack.deduction[status];
   let federalCredit = 0;
   let brackets: Bracket[];
   const packNotes: string[] = [];
@@ -218,10 +221,12 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
     const lito = pack.credit?.(income) || 0;
     if (lito > 0) { federalCredit += lito; packNotes.push(`${pack.creditLabel}: ${formatMoney(lito, ctx.currency)} credited for the ${pack.label} pack.`); }
   } else {
-    brackets = pack.federal.single;
+    brackets = profile?.brackets || pack.federal.single;
     packNotes.push(`${country.legalBody} reference, ${pack.label}: ${country.rules}`);
   }
   if (v.deductionMode === 'custom') deduction = numberValue(v, 'deduction') * annualMultiplier;
+  if (country.additionalAllowanceLabel && v.method === 'progressive') deduction += numberValue(v, 'countryRelief');
+  if (profile) packNotes.push(`${profile.label}: ${profile.description}${v.method !== 'progressive' ? ' The selected custom/flat method overrides this profile tariff.' : ''}`);
   const taxable = Math.max(0, adjusted - deduction);
 
   // Custom user-defined bracket tiers (independent of country reference packs)
@@ -300,6 +305,10 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
     localTax += adjusted * rate;
     packNotes.push(`Custom levy at ${(rate * 100).toFixed(3)}% of adjusted income.`);
   }
+  if (v.localFixed === 'true') {
+    localTax += numberValue(v, 'localAnnualAmount');
+    packNotes.push('The entered annual local charge is included and prorated to the selected display period. It is not an automatic jurisdiction lookup.');
+  }
 
   let payroll = numberValue(v, 'contributions') * annualMultiplier + cppBase + cppEnhanced + ei + caSdi;
   if (v.payroll === 'true' && ctx.country === 'US') {
@@ -318,20 +327,22 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
     if (!enabledLevy(l.id, false)) return;
     const rate = numberValue(v, `${l.id}Rate`, 0, 100) / 100;
     const cap = numberValue(v, `${l.id}Cap`, 0, 1e12);
-    const base = cap > 0 ? Math.min(income, cap) : income;
+    const wages = l.id === 'countryPayroll' && v.countryPayrollBaseMode === 'custom' ? numberValue(v, 'countryPayrollBase') : income;
+    const base = cap > 0 ? Math.min(wages, cap) : wages;
     payroll += base * rate;
     packNotes.push(`${l.label} enabled at ${(rate * 100).toFixed(2)}%${cap > 0 ? ` up to ${formatMoney(cap, ctx.currency)}` : ''}.`);
   });
   // Country-specific extras that are percentage levies
-  const percentExtras = ['solidarity', 'churchTax', 'mls', 'usc', 'prsi', 'communalTax', 'municipalTax', 'municipalTaxFi', 'yle', 'kommunalSkatt', 'surtaxPt', 'irapRegionale', 'regionalEs', 'solidarityPl', 'residentTax', 'localIncomeTax', 'cess', 'surchargeIn', 'nhiTax', 'housingFee', 'trygdeavgift', 'cantonalTax', 'scotlandBands'];
-  const structuralLevyIds = ['scotlandBands', 'regionalEs', 'cantonalTax', 'kommunalSkatt', 'municipalTax', 'municipalTaxFi', 'residentTax', 'localIncomeTax', 'irapRegionale', 'trygdeavgift'];
+  const percentExtras = ['solidarity', 'churchTax', 'mls', 'usc', 'communalTax', 'surtaxPt', 'solidarityPl', 'residentTax', 'localIncomeTax', 'cess', 'surchargeIn', 'nhiTax', 'cantonalTax'];
   levy.filter((l: LocalLevyOption) => percentExtras.includes(l.id)).forEach((l: LocalLevyOption) => {
     if (!enabledLevy(l.id, l.defaultOn)) return;
-    if (structuralLevyIds.includes(l.id)) return;
     const rate = numberValue(v, `${l.id}Rate`, 0, 100) / 100;
-    if (l.id === 'solidarity' || l.id === 'solidarityPl' || l.id === 'churchTax' || l.id === 'mls') localTax += (regionalTax + nationalTax) * rate;
+    if (['solidarity', 'churchTax', 'cess', 'surchargeIn'].includes(l.id)) localTax += (regionalTax + nationalTax) * rate;
+    else if (['localIncomeTax', 'communalTax'].includes(l.id)) localTax += nationalTax * rate;
+    else if (l.id === 'solidarityPl') localTax += Math.max(0, taxable - 1000000) * rate;
+    else if (['residentTax', 'cantonalTax'].includes(l.id)) localTax += taxable * rate;
     else localTax += adjusted * rate;
-    packNotes.push(`${l.label} applied at ${(rate * 100).toFixed(2)}%.`);
+    packNotes.push(`${l.label} estimate applied at ${(rate * 100).toFixed(2)}%. Check the relevant exemption and contribution rules separately.`);
   });
 
   // Optional indirect/spending and property estimates use provisional net.
@@ -386,7 +397,8 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
     value: net,
     format: 'money',
     suffix: periodSuffix,
-    description: `${country.legalBody} · ${pack.label} reference · ${region.name.replace(' (custom tax)', '')}${ctx.city ? ` / ${ctx.city}` : ''}. ${region.taxStructure} state structure.`,
+    description: `${country.legalBody} · ${pack.label} · ${region.name.replace(' (custom tax)', '')}${ctx.city ? ` / ${ctx.city}` : ''}. ${region.taxStructure}.`,
+    taxBasis: { annualGross: gross, annualTaxable: taxable, annualDeduction: deduction, annualMultiplier, displayDivisor, profile: profile?.label },
     breakdown: [
       { label: 'Take-home income', value: Math.max(0, net), color: BLUE },
       { label: 'National income tax', value: finalNational, color: PINK },
@@ -400,7 +412,7 @@ function tax(v: Values, ctx: CalculationContext): CalculationResult {
     metrics: [
       { label: 'Total income tax', value: (nationalTax + regionalTax + localTax) / displayDivisor, format: 'money' },
       { label: 'Effective income tax rate', value: gross ? ((nationalTax + regionalTax + localTax) / gross * 100) : 0, format: 'percent' },
-      { label: `Real PPP take-home (COLI ${region.costOfLivingIndex || 100})`, value: realPppNet, format: 'money' },
+      ...(region.costOfLivingIndex > 0 ? [{ label: `Real PPP take-home (COLI ${region.costOfLivingIndex})`, value: realPppNet, format: 'money' as const }] : []),
       { label: 'Selected levies total', value: finalAllTax, format: 'money' },
       ...(withholding > 0 ? [{ label: refundOrOwed >= 0 ? 'Estimated refund (+)' : 'Estimated balance due (-)', value: Math.abs(refundOrOwed / displayDivisor), format: 'money' as const }] : []),
       ...(dependentCreditAuto > 0 ? [{ label: 'Dependent child credit', value: dependentCreditAuto / displayDivisor, format: 'money' as const }] : []),

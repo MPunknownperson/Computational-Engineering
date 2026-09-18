@@ -7,6 +7,7 @@ import { buildToolModule } from './toolModules';
 import { getEvidenceSources } from './evidence';
 import { habitSuggestions, loadHabits } from './habits';
 import { parseNumericValue } from './format';
+import { taxDefaultsForLocation, transitionTaxLocation } from './regionalSettings';
 import type { CalculationCheck, CalculationContext, CalculationResult, ToolId, Values } from './types';
 
 export interface InputIssue { field: string; message: string }
@@ -43,7 +44,14 @@ function inputRules(tool: ToolId, v: Values, ctx: CalculationContext): NumericRu
       add('customCap4', 'Tier 4 ceiling', 0, 1e12); add('customRate4', 'Tier 4 rate', 0, 100); add('customRate5', 'Top rate', 0, 100);
     }
     const region = getRegion(ctx.country, ctx.region);
-    if (v.includeRegional === 'true' && ['US', 'CA'].includes(ctx.country) && !region.brackets && region.flatTax === undefined) add('regionalRate', 'Regional tax rate', 0, 100);
+    if (v.includeRegional === 'true' && (region.customTax || (['US', 'CA'].includes(ctx.country) && !region.brackets && region.flatTax === undefined))) add('regionalRate', 'Regional tax rate', 0, 100);
+    if (countries[ctx.country].additionalAllowanceLabel) add('countryRelief', 'Additional annual deduction', 0, 1e12);
+    if (v.localFixed === 'true') add('localAnnualAmount', 'Annual local charge', 0, 1e12);
+    if (v.countryPayroll === 'true' && countries[ctx.country].contribution) {
+      add('countryPayrollRate', 'Employee contribution rate', .0001, 100);
+      if (v.countryPayrollBaseMode === 'custom') add('countryPayrollBase', 'Eligible annual wages', 0, 1e12);
+      if (countries[ctx.country].contribution?.requiresCap) add('countryPayrollCap', 'Annual insurable earnings ceiling', .01, 1e12);
+    }
     add('localRate', 'Local tax rate', 0, 100); add('credits', 'Tax credits'); add('contributions', 'Contributions');
     if (ctx.country === 'US') { add('ctc', 'Child tax credit', 0, 100000); add('dependents', 'Minor children', 0, 8, true); add('withholding', 'Withholding already paid', 0, 1e12); }
     if (!['US', 'CA', 'GB', 'AU', 'AE'].includes(ctx.country)) add('social', 'Social contributions', 0, 50);
@@ -52,9 +60,9 @@ function inputRules(tool: ToolId, v: Values, ctx: CalculationContext): NumericRu
       if ((v[levy.id] ?? String(levy.defaultOn)) !== 'true') return;
       const rateKey = `${levy.id}Rate`;
       // These levies are implemented in the engine as structural switches, not percentages.
-      const structuralOnly = ['scotlandBands', 'regionalEs', 'cantonalTax', 'kommunalSkatt', 'municipalTax', 'municipalTaxFi', 'residentTax', 'localIncomeTax', 'irapRegionale', 'trygdeavgift', 'labourCredit', 'deducaoLegal', 'subsidioEmpleo', 'npwp', 'th13Month', 'rebatesZa', 'ufAdjust', 'marriageAllowance', 'tourismDirham', 'municipalPatent', 'independiente', 'pvd', 'mpfExtra', 'npwp'];
+      const structuralOnly = ['stateIncome', 'provinceIncome', 'regionIncome'];
       if (structuralOnly.includes(levy.id)) return;
-      const appliedAsPercent = ['localIncome', 'customLevy', 'propertyTax'].includes(levy.id)
+      const appliedAsPercent = ['localIncome', 'customLevy', 'propertyTax', 'churchTax', 'communalTax', 'residentTax', 'localIncomeTax', 'cantonalTax'].includes(levy.id)
         || (levy.kind === 'payroll' && v[rateKey] !== undefined && v[rateKey] !== '')
         || (levy.kind === 'sales' && v[rateKey] !== undefined && v[rateKey] !== '')
         || (levy.kind === 'solidarity' && v[rateKey] !== undefined && v[rateKey] !== '')
@@ -96,6 +104,7 @@ function inputRules(tool: ToolId, v: Values, ctx: CalculationContext): NumericRu
 const optionRules: Partial<Record<ToolId, Record<string, string[]>>> = {
   mortgage: { downMode: ['amount', 'percent'], frequency: ['12', '26', '52'], convention: ['monthly', 'semiannual', 'effective'], includeCosts: ['true', 'false'] },
   tax: {
+    countryPayrollBaseMode: ['income', 'custom'], localFixed: ['true', 'false'],
     filing: ['single', 'joint', 'head'], taxPeriod: ['annual', 'monthly', 'weekly', 'biweekly', 'partial'], deductionMode: ['standard', 'custom'],
     includeRegional: ['true', 'false'], includeCountyLocal: ['true', 'false'], payroll: ['true', 'false'], marriage: ['true', 'false'], medicare: ['true', 'false'], age65: ['true', 'false'],
     stateIncome: ['true', 'false'], provinceIncome: ['true', 'false'], regionIncome: ['true', 'false'], localIncome: ['true', 'false'],
@@ -122,12 +131,13 @@ const optionRules: Partial<Record<ToolId, Record<string, string[]>>> = {
   scientific: { angle: ['degrees', 'radians'] },
 };
 
-function normalizeValues(tool: ToolId, values: Values) {
+function normalizeValues(tool: ToolId, values: Values, ctx: CalculationContext) {
   const normalized: Values = {};
   const options = { ...optionRules[tool], [methodSettings[tool].key]: methodSettings[tool].options.map(option => option.value) };
+  const allowed = tool === 'tax' ? taxDefaultsForLocation(ctx.country, ctx.region, ctx.county) : toolById[tool].defaults;
   for (const [key, value] of Object.entries(values)) {
-    if (!(key in toolById[tool].defaults) || typeof value !== 'string') continue;
-    const numeric = !['expression', 'date', 'from', 'to'].includes(key) && !(key in options) ? parseNumericValue(value) : NaN;
+    if (!(key in allowed) || typeof value !== 'string') continue;
+    const numeric = !['expression', 'date', 'from', 'to', 'county', 'taxProfile'].includes(key) && !(key in options) ? parseNumericValue(value) : NaN;
     normalized[key] = Number.isFinite(numeric) ? String(numeric) : value.trim();
   }
   return normalized;
@@ -138,6 +148,14 @@ function inspectInputs(tool: ToolId, values: Values, ctx: CalculationContext) {
   const method = methodSettings[tool];
   if (!method.options.some(option => option.value === values[method.key])) issues.push({ field: method.key, message: 'Select a supported calculation method.' });
   if (tool === 'tax') {
+    const profiles = countries[ctx.country].profiles;
+    if (profiles && !profiles.some(profile => profile.value === values.taxProfile)) issues.push({ field: 'taxProfile', message: 'Choose a supported country tax profile.' });
+    for (const levy of localLevyOptions(ctx.country, ctx.region, values.county)) {
+      if (values[levy.id] !== undefined && !['true', 'false'].includes(values[levy.id])) issues.push({ field: levy.id, message: 'Choose whether to include this levy.' });
+    }
+    const duplicatePayroll = ctx.country === 'US' ? 'fica' : ctx.country === 'CA' ? 'cppEi' : ctx.country === 'GB' ? 'ni' : '';
+    if (duplicatePayroll && values.payroll === 'true' && values[duplicatePayroll] === 'true') issues.push({ field: duplicatePayroll, message: 'Use either the payroll calculation or the editable payroll estimate, not both.' });
+    if (ctx.country === 'AU' && values.medicare === 'true' && values.medicareLevy === 'true') issues.push({ field: 'medicareLevy', message: 'Enable only one Medicare levy calculation to avoid double counting.' });
     const yearIds = countries[ctx.country].years.map(pack => pack.id);
     if (!values.year || !yearIds.includes(values.year)) issues.push({ field: 'year', message: `Choose a ${ctx.country} reference year (${yearIds.join(', ')}).` });
     const region = getRegion(ctx.country, ctx.region);
@@ -214,9 +232,9 @@ function valuesNeedRate(v: Values) { return v.source !== 'manual' && v.from !== 
 
 export function processCalculation(tool: ToolId, values: Values, ctx: CalculationContext): ProcessedCalculation {
   if (!Object.prototype.hasOwnProperty.call(toolById, tool)) return { result: null, normalized: {}, issues: [], error: 'Choose a supported calculation tool.' };
-  const withLocality = tool === 'tax' && ctx.county && !values.county ? { ...values, county: ctx.county } : values;
-  const normalized = normalizeValues(tool, withLocality);
-  if (!Object.prototype.hasOwnProperty.call(countries, ctx.country) || !countries[ctx.country].regions.some(region => region.id === ctx.region)) return { result: null, normalized, issues: [{ field: 'region', message: 'Choose a valid country and region.' }], error: 'Choose a valid country and region.' };
+  if (!Object.prototype.hasOwnProperty.call(countries, ctx.country) || !countries[ctx.country].regions.some(region => region.id === ctx.region)) return { result: null, normalized: {}, issues: [{ field: 'region', message: 'Choose a valid country and region.' }], error: 'Choose a valid country and region.' };
+  const withLocality = tool === 'tax' ? { ...taxDefaultsForLocation(ctx.country, ctx.region, ctx.county), ...values, ...(ctx.county !== undefined ? { county: ctx.county } : {}) } : values;
+  const normalized = normalizeValues(tool, withLocality, ctx);
   const issues = inspectInputs(tool, normalized, ctx);
   if (issues.length) return { result: null, normalized, issues, error: issues[0].message };
   // Compact cache key: full payload hashed to keep Map lookups fast as jurisdictions grow.
@@ -291,26 +309,19 @@ export function transformInput(tool: ToolId, values: Values, field: string, valu
   if (tool === 'mortgage' && field === 'downMode' && value !== values.downMode && parseNumericValue(values.price) > 0) convert('down', value === 'percent' ? 100 / parseNumericValue(values.price) : parseNumericValue(values.price) / 100);
   if (tool === 'bmi' && field === 'units' && value !== values.units) { convert('height', value === 'imperial' ? 1 / 2.54 : 2.54); convert('weight', value === 'imperial' ? 1 / .45359237 : .45359237); }
   if (tool === 'units' && field === 'category' && unitGroups[value]) { const units = Object.keys(unitGroups[value].units); next.from = units[0]; next.to = units[1]; }
-  if (tool === 'tax' && field === 'county') {
-    const county = getRegion('US', 'CA').counties.find(c => c.id === value);
-    if (county) {
-      next.caDistrictSalesRate = String(county.localSalesTaxRate);
-      next.caPropertyRate = String(county.propertyTaxRate);
-      next.caLocalIncomeRate = String(county.localIncomeTaxRate);
-    }
-  }
   return next;
 }
 
 export function applyRegionalPresets(data: Record<ToolId, Values>, previous: CalculationContext, next: CalculationContext) {
-  if (next.regionalPresets === false) return data;
+  const tax = transitionTaxLocation(data.tax, previous, next);
+  if (next.regionalPresets === false) return { ...data, tax };
   const before = getRegion(previous.country, previous.region), after = getRegion(next.country, next.region);
   const mortgage = { ...data.mortgage }, car = { ...data.car };
   // A location change updates only untouched presets, never an explicitly different cost assumption.
   if (parseNumericValue(mortgage.propertyTax) === before.propertyTax) mortgage.propertyTax = String(after.propertyTax);
   if (parseNumericValue(car.salesTax) === before.salesTax) car.salesTax = String(after.salesTax);
   if (mortgage.convention === (previous.country === 'CA' ? 'semiannual' : 'monthly')) mortgage.convention = next.country === 'CA' ? 'semiannual' : 'monthly';
-  return { ...data, mortgage, car };
+  return { ...data, mortgage, car, tax };
 }
 
 export function scenarioValue(field: string, value: string, tool?: ToolId, values: Values = {}) {
@@ -335,7 +346,7 @@ export const goalDefinitions: Partial<Record<ToolId, { field: string; label: str
 export function solveCalculationGoal(tool: ToolId, values: Values, ctx: CalculationContext, target: number) {
   const definition = goalDefinitions[tool];
   if (!definition || !Number.isFinite(target) || target < 0) throw new Error('Enter a valid non-negative target.');
-  const normalized = normalizeValues(tool, values);
+  const normalized = normalizeValues(tool, values, ctx);
   let low = tool === 'mortgage' ? normalized.downMode === 'amount' ? Math.max(1, Number(normalized.down)) : 1 : tool === 'currency' ? Number(normalized.fee) : 0;
   let high = Math.max(low + 1000, Number(normalized[definition.field]) * 2, 1000);
   const evaluate = (value: number) => {

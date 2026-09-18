@@ -32,9 +32,9 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
   const show = (section: string) => toolSectionVisible(tool, section, mode);
   const errors = Object.fromEntries(issues.map(issue => [issue.field, issue.message]));
   const invalid = (...fields: string[]) => fields.some(field => errors[field]);
-  const num = (field: string, label: string, prefix?: string, suffix?: string, hint?: string) => <NumberField key={field} field={field} label={label} value={v[field] || ''} onChange={value => change(field, value)} prefix={prefix} suffix={suffix} hint={hint} showHint={hints} error={errors[field]} locale={ctx.locale} />;
+  const num = (field: string, label: string, prefix?: string, suffix?: string, hint?: string) => <NumberField key={field} field={field} label={label} value={v[field] || ''} onChange={value => change(field, value)} prefix={prefix} suffix={suffix} hint={hint} showHint={hints} error={errors[field]} locale={ctx.locale} allowNegative={['x', 'y', 'a', 'b', 'c'].includes(field) || (tool === 'compound' && ['rate', 'inflation'].includes(field)) || (tool === 'units' && field === 'amount')} />;
   const select = (field: string, label: string, entries: [string, string][], className?: string) => <SelectField key={field} field={field} label={label} value={v[field]} onChange={value => change(field, value)} options={entries.map(([value, label]) => ({ value, label }))} error={errors[field]} className={className} />;
-  const toggle = (field: string, label: string, description?: string) => <Toggle key={field} label={label} checked={v[field] === 'true'} onChange={value => change(field, String(value))} description={hints ? description : undefined} />;
+  const toggle = (field: string, label: string, description?: string) => <Toggle key={field} field={field} label={label} checked={v[field] === 'true'} onChange={value => change(field, String(value))} description={hints ? description : undefined} />;
   const strip = mode !== 'simple' ? <ScenarioStrip tool={tool} ctx={ctx} values={v} onApply={onApplyPreset} /> : null;
   const methods = <>{strip}<MethodPicker tool={tool} values={v} onChange={change} hints={hints && tool !== 'units'} /></>;
 
@@ -74,11 +74,11 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
 
   if (tool === 'tax') {
     const region = getRegion(ctx.country, ctx.region);
-    const customRegion = ['US', 'CA'].includes(ctx.country) && !region.brackets && region.flatTax === undefined;
+    const customRegion = region.customTax || (['US', 'CA'].includes(ctx.country) && !region.brackets && region.flatTax === undefined);
     const legalCountry = countries[ctx.country];
     return <>{methods}
       <div className="tax-reference" role="note">
-        <span className="tax-reference-body"><strong>{legalCountry.legalBody}</strong><small>{region.name.replace(' (custom tax)', '')} &middot; {legalCountry.rules}</small></span>
+        <span className="tax-reference-body"><strong>{legalCountry.legalBody}</strong><small>{region.name.replace(' (custom tax)', '')} &middot; Dated employment-income reference</small></span>
         {select('year', 'Reference year', legalCountry.years.map(pack => [pack.id, pack.label] as [string, string]), 'tax-year-select')}
       </div>
       <div className="fields-grid section-gap">
@@ -86,12 +86,14 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
         {v.taxPeriod === 'partial' && num('monthsCount', 'Months worked in year', undefined, 'months', 'Prorates brackets and deductions for partial-year residence.')}
         {num('income', v.taxPeriod === 'monthly' ? 'Monthly gross wages' : v.taxPeriod === 'weekly' ? 'Weekly gross wages' : v.taxPeriod === 'biweekly' ? 'Biweekly gross wages' : 'Employment income', symbol, undefined, v.taxPeriod === 'monthly' ? 'Enter gross pay for 1 month.' : v.taxPeriod === 'weekly' ? 'Enter gross pay for 1 week.' : v.taxPeriod === 'biweekly' ? 'Enter gross pay for 2 weeks.' : 'Annual gross salary or wages.')}
         {num('otherIncome', v.taxPeriod === 'annual' ? 'Other ordinary income' : 'Other period income', symbol)}
-        {ctx.country === 'US' ? select('filing', 'Filing status', [['single', 'Single'], ['joint', 'Married, filing jointly']]) : <div className="reference-field"><span>Filing profile</span><strong>Resident individual</strong><small>{legalCountry.legalBody} reference, {legalCountry.years.find(pack => pack.id === v.year)?.label}</small></div>}
+        {legalCountry.profiles ? select('taxProfile', 'Taxpayer profile', legalCountry.profiles.map(profile => [profile.value, profile.label])) : ctx.country === 'US' ? select('filing', 'Filing status', [['single', 'Single'], ['joint', 'Married, filing jointly']]) : <div className="reference-field"><span>Filing profile</span><strong>Resident individual</strong><small>{legalCountry.legalBody} reference, {legalCountry.years.find(pack => pack.id === v.year)?.label}</small></div>}
         {select('deductionMode', 'Deduction method', [['standard', ctx.country === 'CA' ? 'No additional deduction' : 'Standard allowance'], ['custom', 'Custom deduction']])}
         {v.deductionMode === 'custom' && num('deduction', 'National deduction', symbol)}
         {v.method === 'flat' && num('flatRate', 'National flat rate', undefined, '%')}
         {customRegion && num('regionalRate', 'Custom regional rate', undefined, '%', 'No official regional schedule is loaded.')}
+        {legalCountry.additionalAllowanceLabel && v.method === 'progressive' && num('countryRelief', legalCountry.additionalAllowanceLabel, symbol, undefined, 'Annual tax-base relief only, not a cash deduction. Enter qualifying additional deductions; do not repeat the basic allowance or pre-tax adjustments.')}
       </div>
+      {legalCountry.profiles && <p className="country-profile-note">{legalCountry.profiles.find(profile => profile.value === v.taxProfile)?.description}<a href={legalCountry.source.url} target="_blank" rel="noreferrer">View country reference<Globe2 size={13} /></a></p>}
 
       {show('customBrackets') && v.method === 'custom' && (
         <div className="custom-brackets-box section-gap">
@@ -125,7 +127,6 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
       )}
       {show('levies') && (() => {
         const localityId = ctx.county || v.county;
-        const selectedLocality = region.counties.find(c => c.id === localityId);
         const levies = localLevyOptions(ctx.country, ctx.region, localityId);
         const visible = levies.filter(l => levyVisibleAt(l.id, mode));
         const hidden = levies.length - visible.length;
@@ -133,9 +134,8 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
           <div className="county-selector-box section-gap ca-levy-box">
             <div className="ca-levy-heading">
               <strong>Optional levies for {legalCountry.name}</strong>
-              <span>Country and region income tax can be used on their own. Choose extra items below. Locality is set in Location, not here.</span>
+              <span>Include only what applies to you. Rates are editable planning assumptions, not a complete payslip.</span>
             </div>
-            {selectedLocality && <p className="levy-hidden-note">Using locality: {selectedLocality.name}. Change it under Location.</p>}
             {hidden > 0 && <p className="levy-hidden-note">{hidden} more levy options available in a higher detail mode.</p>}
             <div className="ca-levy-list">
               {visible.map(levy => {
@@ -151,12 +151,13 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
                     </div>
                     <p>{levy.condition}</p>
                     <div className="standalone-toggle">{toggle(levy.id, enabled ? 'Included in this calculation' : 'Not included', 'You can turn this on or off regardless of typical mandatory status.')}</div>
-                    {levy.kind === 'payroll' && enabled && <div className="fields-grid">{num(`${levy.id}Rate`, 'Rate on payroll', undefined, '%')}{num(`${levy.id}Cap`, 'Wage base / contribution ceiling', symbol)}</div>}
+                    {levy.kind === 'payroll' && enabled && <><div className="fields-grid">{num(`${levy.id}Rate`, 'Employee rate', undefined, '%')}{num(`${levy.id}Cap`, 'Annual eligible earnings ceiling', symbol, undefined, 'Annual salary ceiling, not a contribution amount. Zero means uncapped unless a ceiling is required for this country.')}{levy.id === 'countryPayroll' && select('countryPayrollBaseMode', 'Contribution base', [['income', 'Use employment income'], ['custom', 'Enter eligible annual wages']])}{levy.id === 'countryPayroll' && v.countryPayrollBaseMode === 'custom' && num('countryPayrollBase', 'Eligible wages / year', symbol)}</div>{levy.id === 'countryPayroll' && legalCountry.contribution && <a className="levy-source" href={legalCountry.contribution.source.url} target="_blank" rel="noreferrer">{legalCountry.contribution.source.name}<Globe2 size={13} /></a>}</>}
                     {levy.kind === 'sales' && enabled && <div className="fields-grid">{num(`${levy.id}Rate`, 'Base rate on taxable spending', undefined, '%')}{num('taxableSpendShare', 'Share of after-tax income treated as taxable spending', undefined, '%')}</div>}
                     {levy.kind === 'property' && enabled && <div className="fields-grid">{num('assessedValue', 'Assessed value', symbol)}{num(`${levy.id}Rate`, 'Effective rate', undefined, '%')}</div>}
                     {(levy.id === 'localIncome' || levy.id === 'customLevy') && enabled && num(`${levy.id}Rate`, 'Rate on adjusted income', undefined, '%')}
                     {levy.kind === 'health' && enabled && num(`${levy.id}Rate`, 'Rate', undefined, '%')}
                     {levy.kind === 'solidarity' && enabled && num(`${levy.id}Rate`, 'Rate on income tax or income', undefined, '%')}
+                    {enabled && ['churchTax', 'communalTax', 'residentTax', 'localIncomeTax', 'cantonalTax'].includes(levy.id) && num(`${levy.id}Rate`, 'Applicable rate (see basis above)', undefined, '%')}
                   </div>
                 );
               })}
@@ -165,7 +166,13 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
         );
       })()}
 
-      {show('personal') && ['US', 'CA'].includes(ctx.country) && <div className="standalone-toggle">{toggle('payroll', ctx.country === 'US' ? 'Include employee FICA' : 'Include employee CPP & EI', 'Annualized, single-earner estimate.')}</div>}
+      {show('levies') && <div className="option-groups section-gap">
+        <OptionGroup title="Other local charges" description="Enter a fixed annual municipal or local amount" icon={<Wallet size={20} />} tone="blue" invalid={invalid('localAnnualAmount')}>
+          {toggle('localFixed', 'Include an annual local charge', 'Use an amount from your local authority. It is prorated to the calculation frequency, and is not inferred from your locality name.')}
+          {v.localFixed === 'true' && <div className="section-gap">{num('localAnnualAmount', 'Local charge / year', symbol)}</div>}
+        </OptionGroup>
+      </div>}
+      {show('personal') && ['US', 'CA'].includes(ctx.country) && <div className="standalone-toggle">{toggle('payroll', ctx.country === 'US' ? 'Include employee FICA' : 'Include employee CPP & EI', 'Annualized, single-earner estimate. Do not also enable the flat payroll estimate above.')}</div>}
       {show('personal') && <div className="option-groups section-gap">
         <OptionGroup title="Deductions & credits" description="Pre-tax adjustments, credits, and country-specific credits" icon={<Wallet size={20} />} tone="purple" invalid={invalid('pretax', 'credits', 'contributions', 'ctc')}><div className="fields-grid">{num('pretax', 'Pre-tax adjustments', symbol)}{num('credits', 'National tax credits', symbol)}{num('contributions', 'Other yearly contributions', symbol)}{ctx.country === 'US' && num('ctc', 'Additional child tax credit amount', symbol, undefined, 'Optional extra amount on top of dependents-based credit.')}</div></OptionGroup>
         {ctx.country === 'GB' && <OptionGroup title="United Kingdom options" description="Marriage Allowance and National Insurance" icon={<Wallet size={20} />} tone="blue">{toggle('marriage', 'Apply Marriage Allowance', 'Transfers part of a non-taxpayer\u2019s allowance.')}{toggle('payroll', 'Include Class 1 National Insurance')}</OptionGroup>}
@@ -175,12 +182,11 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
         {ctx.country === 'JP' && <OptionGroup title="Japan options" description="Inhabitant tax and social insurance" icon={<Wallet size={20} />} tone="blue">{toggle('residentTax', 'Include local inhabitant tax (jūminzei)')}{num('social', 'Shakai hoken estimate', undefined, '%')}</OptionGroup>}
         {ctx.country === 'IN' && <OptionGroup title="India options" description="Cess and surcharge" icon={<Wallet size={20} />} tone="blue">{toggle('cess', 'Include health & education cess')}{toggle('surchargeIn', 'Include high-income surcharge')}</OptionGroup>}
         {ctx.country === 'NZ' && <OptionGroup title="New Zealand options" description="ACC earner levy" icon={<Wallet size={20} />} tone="blue">{num('social', 'ACC earner levy', undefined, '%')}</OptionGroup>}
-        {ctx.country === 'CH' && <OptionGroup title="Switzerland options" description="Cantonal and wealth tax" icon={<Wallet size={20} />} tone="blue">{toggle('cantonalTax', 'Include cantonal/communal income tax')}{toggle('wealthTax', 'Include wealth tax estimate')}</OptionGroup>}
         {ctx.country === 'IE' && <OptionGroup title="Ireland options" description="USC and PRSI" icon={<Wallet size={20} />} tone="blue">{toggle('usc', 'Include USC')}{toggle('prsi', 'Include PRSI')}</OptionGroup>}
         {ctx.country === 'SG' && <OptionGroup title="Singapore options" description="CPF" icon={<Wallet size={20} />} tone="blue">{toggle('cpf', 'Include employee CPF')}</OptionGroup>}
         {ctx.country === 'HK' && <OptionGroup title="Hong Kong options" description="MPF" icon={<Wallet size={20} />} tone="blue">{toggle('mpf', 'Include MPF contributions')}</OptionGroup>}
         {ctx.country === 'KR' && <OptionGroup title="Korea options" description="Local income tax surcharge" icon={<Wallet size={20} />} tone="blue">{toggle('localIncomeTax', 'Include 10% local income-tax surcharge')}</OptionGroup>}
-        {ctx.country === 'BR' && <OptionGroup title="Brazil options" description="INSS and simplified deduction" icon={<Wallet size={20} />} tone="blue">{toggle('inss', 'Include INSS')}{toggle('deducaoLegal', 'Apply desconto simplificado')}</OptionGroup>}
+        {ctx.country === 'BR' && <OptionGroup title="Brazil options" description="INSS contribution estimate" icon={<Wallet size={20} />} tone="blue">{toggle('inss', 'Include INSS estimate', 'Rate and annual eligible earnings ceiling are set in the levy options above.')}</OptionGroup>}
         {!['US', 'CA', 'GB', 'AU', 'AE', 'DE', 'FR', 'JP', 'IN', 'NZ', 'CH', 'IE', 'SG', 'HK', 'KR', 'BR'].includes(ctx.country) && <OptionGroup title={`${legalCountry.name} options`} description="Social contributions & extra levies" icon={<Wallet size={20} />} tone="blue" invalid={invalid('social')}><div className="fields-grid">{num('social', 'Social contributions / levies', undefined, '%')}</div></OptionGroup>}
       </div>}
     </>;
@@ -215,11 +221,12 @@ export default function ToolFields({ tool, values: v, ctx, onChange: change, onA
 
   if (tool === 'currency') return <>{methods}{num('amount', 'Amount to convert', undefined, v.from)}
     <div className="swap-fields">{select('from', 'From', currencies.map(code => [code, code]))}<button type="button" className="swap-button" onClick={onSwap} title="Swap currencies" aria-label="Swap currencies"><ArrowLeftRight size={20} /></button>{select('to', 'To', currencies.map(code => [code, code]))}</div>
-    {show('source') && (v.source === 'manual' ? num('customRate', `1 ${v.from} equals`, undefined, v.to) : <>
+    {(show('source') || v.source !== 'latest' || rateStatus === 'error') && (v.source === 'manual' ? num('customRate', `1 ${v.from} equals`, undefined, v.to) : <>
       {v.source === 'historical' && <TextField label="Reference date" value={v.date} onChange={value => change('date', value)} type="date" />}
       <div className={`rate-status ${rateStatus === 'error' ? 'error-text' : ''}`}><span className={`status-dot ${rateStatus === 'loading' ? 'pulsing' : ''}`} /><span>{rateStatus === 'loading' ? 'Fetching daily reference...' : rateStatus === 'error' ? 'Rate unavailable. Retry or select Custom rate.' : v.from === v.to ? 'Same currency: 1 to 1' : `ECB reference / ${ctx.rateDate || 'awaiting rate'}`}</span><button type="button" className="rate-refresh" onClick={onRefresh} disabled={rateStatus === 'loading'}><RefreshCw size={14} className={rateStatus === 'loading' ? 'spin' : ''} />Refresh</button></div>
+      {rateStatus === 'error' && <button type="button" className="text-button" onClick={() => change('source', 'manual')}>Enter a custom rate<ArrowLeftRight size={15} /></button>}
     </>)}
-    {!show('source') && v.source !== 'manual' && <div className={`rate-status ${rateStatus === 'error' ? 'error-text' : ''}`}><span className={`status-dot ${rateStatus === 'loading' ? 'pulsing' : ''}`} /><span>{rateStatus === 'loading' ? 'Fetching daily reference...' : rateStatus === 'error' ? 'Rate unavailable.' : v.from === v.to ? 'Same currency: 1 to 1' : `ECB reference / ${ctx.rateDate || 'awaiting rate'}`}</span></div>}
+    {!show('source') && v.source === 'latest' && rateStatus !== 'error' && <div className="rate-status"><span className={`status-dot ${rateStatus === 'loading' ? 'pulsing' : ''}`} /><span>{rateStatus === 'loading' ? 'Fetching daily reference...' : v.from === v.to ? 'Same currency: 1 to 1' : `ECB reference / ${ctx.rateDate || 'awaiting rate'}`}</span></div>}
     {show('costs') && <div className="option-groups section-gap"><OptionGroup title="Conversion costs" description="Allow for the provider's spread and fixed fee" icon={<CreditCard size={20} />} tone="pink" invalid={invalid('spread', 'fee')}><div className="fields-grid">{num('spread', 'Exchange spread', undefined, '%')}{num('fee', 'Fixed fee', undefined, v.from)}</div></OptionGroup></div>}
   </>;
 

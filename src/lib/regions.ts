@@ -1,4 +1,5 @@
 import type { CountryId, TaxRegime, WorkspaceSettings } from './types';
+import { additionalCountries, expandRegionalCoverage } from './countryExpansion';
 
 export type Bracket = [number, number];
 
@@ -24,6 +25,7 @@ export interface CountyData {
   localSalesTaxRate: number; // local add-on in %
   localIncomeTaxRate: number; // local wage/income tax in %
   rules: string;
+  labelOnly?: boolean;
 }
 
 export interface Region {
@@ -45,9 +47,19 @@ export interface Region {
   description: string;
   taxRegime?: TaxRegime;
   divergenceNote?: string;
+  customTax?: boolean;
+  referenceOnly?: boolean;
 }
 
-interface Country {
+export interface TaxProfile {
+  value: string;
+  label: string;
+  description: string;
+  brackets?: Bracket[];
+  allowance?: number;
+}
+
+export interface Country {
   name: string;
   legalBody: string;
   rules: string;
@@ -58,6 +70,12 @@ interface Country {
   regions: Region[];
   source: { name: string; url: string };
   years: TaxYearPack[];
+  locale?: string;
+  localityLabel?: string;
+  coverageNote?: string;
+  profiles?: TaxProfile[];
+  additionalAllowanceLabel?: string;
+  contribution?: { label: string; rate: number; annualCap: number; description: string; source: { name: string; url: string }; requiresCap?: boolean };
 }
 
 const US_RATES = [.1, .12, .22, .24, .32, .35, .37];
@@ -93,6 +111,7 @@ const usYear = (
 });
 
 export const countries: Record<CountryId, Country> = {
+  ...additionalCountries,
   US: {
     name: 'United States',
     legalBody: 'Internal Revenue Service (IRS)',
@@ -2411,6 +2430,12 @@ export const countries: Record<CountryId, Country> = {
 
 };
 
+expandRegionalCoverage(countries);
+
+export const countryOptions = Object.entries(countries)
+  .map(([value, item]) => ({ value, label: item.name }))
+  .sort((a, b) => a.label.localeCompare(b.label, 'en'));
+
 export const defaultSettings: WorkspaceSettings = {
   country: 'US',
   region: 'CA',
@@ -2423,6 +2448,11 @@ export const defaultSettings: WorkspaceSettings = {
   showHints: true,
   regionalPresets: true,
   rememberInputs: true,
+  followCountryFormat: false,
+  swipeNavigation: true,
+  comfortableControls: false,
+  showResultAfterCalculate: true,
+  layout: 'auto',
   taxYear: '2025',
   month: 1,
   complexity: 'standard',
@@ -2471,6 +2501,7 @@ export interface LocalLevyOption {
   defaultOn: boolean;
   mandatoryLabel: 'Always optional in this calculator' | 'Usually mandatory if applicable' | 'Optional surcharge';
   appliesTo?: 'income' | 'spending' | 'property' | 'payroll';
+  defaultCap?: number;
 }
 
 /**
@@ -2486,7 +2517,7 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
   const out: LocalLevyOption[] = [];
 
   // 1. State / provincial / regional income tax
-  out.push({
+  if (isUS || isCAProvince || region.customTax || region.brackets || (region.flatTax || 0) > 0) out.push({
     id: isUS ? 'stateIncome' : isCAProvince ? 'provinceIncome' : 'regionIncome',
     label: `${region.name} income tax`,
     kind: 'state-income',
@@ -2506,7 +2537,7 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
     defaultRate: localIncome,
     condition: localIncome > 0
       ? `${county?.name} levies ${localIncome}% on earned income/wages. In real life this is normally mandatory for residents or workers in this locality.`
-      : `${region.name} does not levy a general local income tax on wages. Enable with a custom rate only to model a specific local levy.`,
+      : 'No verified local wage-tax rate is preset for this selection. Enter a rate only if it applies to your situation.',
     defaultOn: false,
     mandatoryLabel: localIncome > 0 ? 'Usually mandatory if applicable' : 'Always optional in this calculator',
     appliesTo: 'income',
@@ -2557,10 +2588,18 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
     label: pd.label,
     kind: 'payroll',
     defaultRate: pd.rate,
+    defaultCap: pd.cap,
     condition: `${pd.condition} Rate and ceiling are editable for your own situation.`,
     defaultOn: false,
     mandatoryLabel: pd.mandatory,
     appliesTo: 'payroll',
+  });
+
+  if (countryData.contribution) out.push({
+    id: 'countryPayroll', label: countryData.contribution.label, kind: 'payroll',
+    defaultRate: countryData.contribution.rate, defaultCap: countryData.contribution.annualCap,
+    condition: countryData.contribution.description, defaultOn: false,
+    mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'payroll',
   });
 
   // 4. Sales / VAT / GST spending estimate
@@ -2570,7 +2609,7 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
     id: isUS ? 'stateSales' : 'vatSpending',
     label: isUS ? `${region.name} sales & use tax` : `${countryData.name} VAT/GST spending estimate`,
     kind: 'sales',
-    defaultRate: baseSales,
+    defaultRate: baseSales + districtSales,
     condition: isUS
       ? `${baseSales}% statewide base${districtSales ? ` plus ${districtSales}% ${county?.name || 'local'} district add-on` : ''} on taxable goods/services. Not withheld from wages; enable only for an indirect-tax spending estimate.`
       : `${countryData.name} VAT/GST of ${baseSales}% on taxable spending. Not an income tax; enable only for an indirect-tax spending estimate.`,
@@ -2606,11 +2645,11 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
       { id: 'churchTax', label: 'Kirchensteuer (church tax)', kind: 'other', defaultRate: 9, condition: 'Church surcharge on income tax for registered church members (8–9% depending on state).', defaultOn: false, mandatoryLabel: 'Optional surcharge', appliesTo: 'income' },
     ],
     CH: [
-      { id: 'cantonalTax', label: `Cantonal/communal income tax (${region.name})`, kind: 'state-income', defaultRate: 20, condition: 'Cantonal and communal income tax as a percentage of federal tax base; varies by canton and commune.', defaultOn: true, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
+      { id: 'cantonalTax', label: `Cantonal/communal effective-rate estimate (${region.name})`, kind: 'state-income', defaultRate: 0, condition: 'Enter an effective percentage of national taxable income for your canton and commune. This estimate is not an official cantonal tariff or multiplier calculation.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
       { id: 'wealthTax', label: 'Cantonal wealth tax', kind: 'property', defaultRate: 0.3, condition: 'Annual net wealth tax on worldwide taxable assets; thresholds and rates are cantonal.', defaultOn: false, mandatoryLabel: 'Always optional in this calculator', appliesTo: 'property' },
     ],
     IE: [
-      { id: 'usc', label: 'Universal Social Charge (USC)', kind: 'health', defaultRate: 0.5, condition: 'Banded USC on gross income: 0.5%, 2%, 3%, 8% above €70,044.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
+      { id: 'usc', label: 'USC effective-rate estimate', kind: 'health', defaultRate: 0, condition: 'Enter an effective USC rate for your circumstances. This optional percentage estimate does not calculate the separate statutory USC bands.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
       { id: 'prsi', label: 'PRSI', kind: 'payroll', defaultRate: 4, condition: 'Pay-Related Social Insurance on insurable earnings.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'payroll' },
     ],
     BE: [
@@ -2655,7 +2694,7 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
       { id: 'crim', label: 'CRIM property tax', kind: 'property', defaultRate: 0.8, condition: 'Municipal property tax on CRIM-assessed value.', defaultOn: false, mandatoryLabel: 'Always optional in this calculator', appliesTo: 'property' },
     ],
     JP: [
-      { id: 'residentTax', label: 'Local inhabitant tax (jūminzei)', kind: 'local-income', defaultRate: 10, condition: '10% flat on prior-year taxable income (6% municipal + 4% prefectural) plus per-capita levy. Off by default.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
+      { id: 'residentTax', label: 'Local inhabitant tax estimate', kind: 'local-income', defaultRate: 10, condition: 'Editable percentage of this model\'s national taxable income. Actual inhabitant tax uses a prior-year local tax base and per-capita charges, which are not automatically calculated.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
     ],
     KR: [
       { id: 'localIncomeTax', label: 'Local income tax', kind: 'local-income', defaultRate: 10, condition: '10% surcharge on national income tax liability. Off by default.', defaultOn: false, mandatoryLabel: 'Usually mandatory if applicable', appliesTo: 'income' },
@@ -2703,17 +2742,16 @@ export function localLevyOptions(country: CountryId, regionId: string, countyId?
     label: 'Custom additional levy',
     kind: 'other',
     defaultRate: 0,
-    condition: 'Enter any percentage on adjusted income for a levy, surcharge, tithhe, deduction, or personal situation.',
+    condition: 'Enter a percentage of adjusted income for an additional levy or surcharge. This is a custom estimate, not an automatic local tax lookup.',
     defaultOn: false,
     mandatoryLabel: 'Always optional in this calculator',
     appliesTo: 'income',
   });
 
-  return out;
+  // Do not expose switches for statutory methods the engine does not implement.
+  const embeddedOrUnsupported = new Set(['scotlandBands', 'marriageAllowance', 'wealthTax', 'municipalTax', 'municipalTaxFi', 'kommunalSkatt', 'trygdeavgift', 'irapRegionale', 'regionalEs', 'labourCredit', 'deducaoLegal', 'subsidioEmpleo', 'npwp', 'th13Month', 'rebatesZa', 'ufAdjust', 'tourismDirham', 'municipalPatent', 'crim', 'housingFee', 'yle', 'begravnings']);
+  return out.filter(item => !embeddedOrUnsupported.has(item.id)).map(item => item.id === 'churchTax' && country === 'DE' && ['BY', 'BW'].includes(regionId) ? { ...item, defaultRate: 8 } : item);
 }
-
-/** Backwards-compatible alias. */
-export const californiaLocalLevies = (countyId?: string) => localLevyOptions('US', 'CA', countyId);
 
 export function getCounty(region: Region, countyId?: string): CountyData | undefined {
   if (!countyId || !region.counties?.length) return undefined;
@@ -2755,5 +2793,6 @@ export const referenceSources = [
   countries.PR.source,
   countries.PT.source,
   countries.BE.source,
+  ...Object.values(additionalCountries).map(country => country.source),
   { name: 'Frankfurter daily reference exchange rates', url: 'https://frankfurter.dev/' },
 ];

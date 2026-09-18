@@ -8,13 +8,19 @@ export function parseNumericValue(value: string): number {
 }
 
 export function normalizeNumberInput(text: string, locale = 'en-US') {
-  const raw = text.replace(/\s/g, '');
+  const raw = text.normalize('NFKC')
+    .replace(/[\u0660-\u0669]/g, digit => String(digit.charCodeAt(0) - 0x660))
+    .replace(/[\u06f0-\u06f9]/g, digit => String(digit.charCodeAt(0) - 0x6f0))
+    .replace(/[\u0966-\u096f]/g, digit => String(digit.charCodeAt(0) - 0x966))
+    .replace(/[\s\u061c\u200e\u200f\u202a-\u202e]/g, '').replace(/\u2212/g, '-')
+    .replace(/\u066c/g, '').replace(/\u066b/g, '.').replace(/\u066a/g, '%');
   const decimal = new Intl.NumberFormat(locale).formatToParts(1.5).find(part => part.type === 'decimal')?.value || '.';
   if (decimal === ',') {
     if (raw.includes(',')) return raw.replace(/\./g, '').replace(',', '.');
     return /^[+-]?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, '') : raw;
   }
-  if (raw.includes(',') && !raw.includes('.') && !/^[+-]?\d{1,3}(,\d{3})+$/.test(raw)) return raw.replace(',', '.');
+  const grouped = /^[+-]?\d{1,3}(,\d{3})+$/.test(raw) || (locale === 'en-IN' && /^[+-]?\d{1,2}(,\d{2})*,\d{3}$/.test(raw));
+  if (raw.includes(',') && !raw.includes('.') && !grouped && raw.split(',').length === 2) return raw.replace(',', '.');
   return raw.replace(/,/g, '');
 }
 

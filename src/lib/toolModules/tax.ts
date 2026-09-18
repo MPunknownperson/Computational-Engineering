@@ -6,19 +6,20 @@ export const taxModule: ToolModule = {
   id: 'tax',
   name: 'Multi-jurisdiction tax network',
   description: 'Selects a year pack, filing profile, national method, state/provincial method, local taxes, credits, payroll contributions, and period proration.',
-  dataInputs: ['country', 'tax authority', 'reference year', 'region', 'county', 'filing status', 'income period', 'income', 'deductions', 'credits', 'payroll contributions'],
+  dataInputs: ['country', 'tax authority', 'reference year', 'region', 'optional locality', 'taxpayer profile', 'filing status', 'income period', 'income', 'deductions', 'credits', 'payroll contributions', 'annual local charges'],
   companionTools: ['mortgage', 'transaction', 'currency'],
   build: (v, ctx, result) => {
     const country = countries[ctx.country], region = getRegion(ctx.country, ctx.region), pack = getTaxYear(ctx.country, v.year);
-    const months = v.taxPeriod === 'monthly' ? 1 : v.taxPeriod === 'partial' ? Number(v.monthsCount) : 12;
-    const annualMultiplier = 12 / months;
+    const annualMultiplier = result.taxBasis?.annualMultiplier || (v.taxPeriod === 'monthly' ? 12 : v.taxPeriod === 'weekly' ? 52 : v.taxPeriod === 'biweekly' ? 26 : v.taxPeriod === 'partial' ? 12 / Number(v.monthsCount) : 1);
+    const divisor = result.taxBasis?.displayDivisor || annualMultiplier;
     const status: 'single' | 'joint' | 'head' = v.filing === 'joint' ? 'joint' : v.filing === 'head' ? 'head' : 'single';
-    const gross = (Number(v.income) + Number(v.otherIncome)) * annualMultiplier;
-    const deduction = v.deductionMode === 'custom' ? Number(v.deduction) * annualMultiplier : pack.deduction[status];
-    const taxable = Math.max(0, gross - Number(v.pretax) * annualMultiplier - deduction);
+    const gross = result.taxBasis?.annualGross ?? (Number(v.income) + Number(v.otherIncome)) * annualMultiplier;
+    const deduction = result.taxBasis?.annualDeduction ?? (v.deductionMode === 'custom' ? Number(v.deduction) * annualMultiplier : pack.deduction[status]);
+    const taxable = result.taxBasis?.annualTaxable ?? Math.max(0, gross - Number(v.pretax) * annualMultiplier - deduction);
     return {
       formulas: [
-        formula('annualize', 'Period annualization', 'Annual income = entered income x 12 / months represented', 'Applies annual tax law to monthly and partial-year input.', v.taxPeriod !== 'annual'),
+        formula('annualize', 'Period annualization', `Annual income = entered income x ${annualMultiplier}`, 'Applies the annual tariff to the selected income period.', v.taxPeriod !== 'annual'),
+        ...(result.taxBasis?.profile ? [formula('profile', 'Country taxpayer profile', `Tariff selected by profile: ${result.taxBasis.profile}`, 'Uses the country-specific reference unless the custom or flat method overrides it.', v.method === 'progressive')] : []),
         formula('taxable', 'Taxable income', 'Taxable income = gross income - pre-tax adjustments - standard/custom deduction', 'Produces the national tax base.'),
         formula('progressive', 'Progressive bracket tax', 'Tax = Σ max(0, min(taxable, upper_i) - lower_i) x rate_i', `Uses the ${country.legalBody} ${pack.label} bracket pack.`, v.method === 'progressive'),
         formula('custom-brackets', 'Custom jurisdiction tiers', 'Tax = Σ max(0, min(taxable, customCap_i) - cap_(i-1)) x customRate_i', 'Applies user-defined cumulative tier thresholds and rates independently of national packs.', v.method === 'custom'),
@@ -27,10 +28,11 @@ export const taxModule: ToolModule = {
         formula('dependent-chip', 'Dependent child credit', 'Children x per-child credit (per reference year)', 'Applies the Child Tax Credit based on reference year amount and number of dependents.', ctx.country === 'US' && Number(v.dependents) > 0),
         formula('credits', 'Credits', 'Net national tax = max(0, bracket tax - personal credits - entered credits)', 'Credits reduce tax rather than taxable income.'),
         formula('regional', 'Regional income tax', region.flatTax !== undefined ? 'Regional tax = adjusted income x regional flat rate' : 'Regional tax = Σ regional brackets - regional personal credit', `${region.governingBody}; ${region.statuteCitation}`, v.includeRegional === 'true'),
-        formula('local', 'County / municipal tax', 'Local tax = adjusted income x (county wage-tax rate + entered local rate)', 'Adds only a selected or entered local tax.', Number(part(result, 'Local & county tax')) > 0 || Number(part(result, 'Local tax estimate')) > 0),
+        formula('local', 'Local charges', 'Local charges = enabled percentage levies + entered annual local charge', 'A locality label never adds a tax automatically. Each enabled levy uses its documented base.', Number(part(result, 'Local tax estimate')) > 0),
+        formula('country-relief', 'Additional annual tax-base relief', 'Taxable income = adjusted income - basic/custom allowance - eligible annual relief', 'An additional tax-base deduction, not a second cash deduction.', Boolean(country.additionalAllowanceLabel && v.method === 'progressive' && Number(v.countryRelief) > 0)),
         formula('payroll', 'Payroll contributions', 'Contributions = jurisdiction-specific capped wage contributions + entered contributions', 'Handles enabled FICA, CPP/EI, National Insurance, Medicare, or custom social contributions.', Number(part(result, 'Payroll / contributions')) > 0),
         formula('withholding-balance', 'Withholding / refund comparison', 'Refund or balance due = withholding paid - assessed tax', 'Compares the amount already withheld from your paycheck to your total income tax liability.', Number(v.withholding) > 0),
-        formula('prorate', 'Displayed period result', `Displayed result = annual result x ${months} / 12`, 'Returns a monthly or partial-year result.', v.taxPeriod !== 'annual'),
+        formula('prorate', 'Displayed period result', `Displayed result = annual result / ${divisor}`, 'Returns the selected monthly, weekly, biweekly or partial-year result.', v.taxPeriod !== 'annual'),
       ],
       nodes: [
         node('annual-income', 'Annualized gross income', 'Period normalization', gross, 'money', `${v.taxPeriod || 'annual'} input annualization`, ['taxable']),

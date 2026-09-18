@@ -1,6 +1,7 @@
 import { ArrowRight, Bookmark, Check, Copy, Download, LoaderCircle, ShieldCheck, TriangleAlert } from 'lucide-react';
 import type { CalculationContext, CalculationResult, Part, ToolId } from '../lib/types';
 import { formatMoney, formatNumber, formatResult } from '../lib/format';
+import { AnimatedNumber } from './motion';
 
 const palette = ['#2855b5', '#9675bf', '#d492b6', '#72869e', '#559587', '#a19bc3'];
 
@@ -47,7 +48,7 @@ export default function ResultPanel({ result, error, loading, context, tool, sav
   if (!result || loading) return <aside className="result-pane"><div className="section-heading"><h2><span className="section-number">02</span>Your results</h2></div><div className="result-empty" role={error && !loading ? 'alert' : 'status'}>
     {loading ? <LoaderCircle className="spin" size={26} /> : error ? <TriangleAlert size={26} /> : null}
     <h3>{loading ? 'Loading reference rate' : error ? 'Check your inputs' : 'Ready to calculate'}</h3>
-    <p>{loading ? 'Retrieving the daily exchange rate. Your amount is not sent to the provider.' : error || 'Enter the values on the left, then press Calculate.'}</p>
+    <p>{loading ? 'Retrieving the daily exchange rate. Your amount is not sent to the provider.' : error || 'Enter your values, then press Calculate. Your result will appear here.'}</p>
   </div></aside>;
 
   const currency = result.currency || context.currency;
@@ -59,7 +60,12 @@ export default function ResultPanel({ result, error, loading, context, tool, sav
     <div className="section-heading"><h2><span className="section-number">02</span>Your results</h2><span className={dirty ? 'stale-label' : 'result-mode'}>{dirty ? 'Update required' : context.live ? 'Live calculation' : 'Calculated'}</span></div>
     <div className="result-highlight" key={`${tool}-${revision}`}>
       <div className="result-label-row"><h3>{label}</h3><button type="button" className="icon-button" onClick={onCopy} title="Copy result" aria-label="Copy result"><Copy size={17} /></button></div>
-      <div className={`result-value ${value.length > 17 ? 'long-value' : ''}`} role="status" aria-live="polite" aria-atomic="true"><strong>{value}</strong>{result.suffix && <span>{result.suffix}</span>}</div>
+      <div className={`result-value ${value.length > 17 ? 'long-value' : ''}`} role="status" aria-live="polite" aria-atomic="true">
+        <strong>{typeof result.value === 'number' && result.format !== 'text'
+          ? <AnimatedNumber value={result.value} format={live => formatResult({ ...result, value: live }, context)} />
+          : value}</strong>
+        {result.suffix && <span>{result.suffix}</span>}
+      </div>
       <p>{result.description}</p>
 
       {result.audit?.module && <div className="module-status"><ShieldCheck size={14} /><span>{result.audit.module.name}</span></div>}

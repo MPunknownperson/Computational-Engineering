@@ -10,13 +10,19 @@ import type { ToolId, Values } from './types';
 import { tools, unitGroups } from './catalog';
 import { validateReferenceRate } from './rates';
 import { methodSettings } from './methods';
+import { regionalChecks } from './regionalChecks';
+import { engineChecks } from './engine/checks';
+import { siteChecks } from './engine/siteChecks';
 
 export interface EngineCheck { name: string; passed: boolean; detail: string }
-export function runEngineChecks(): EngineCheck[] {
+function engineCheckCases(): [string, () => void][] {
   const ctx = { ...defaultSettings, currency: 'USD' };
   const near = (actual: number, expected: number, tolerance = .00001) => { if (!Number.isFinite(actual) || Math.abs(actual - expected) > tolerance) throw new Error(`Expected ${expected}; received ${actual}`); };
   const rejects = (fn: () => unknown) => { let rejected = false; try { fn(); } catch { rejected = true; } if (!rejected) throw new Error('Invalid input was not rejected.'); };
   const checks: [string, () => void][] = [
+    ...regionalChecks,
+    ...engineChecks,
+    ...siteChecks,
     ['Zero-interest loan', () => near(payment(12000, 0, 12), 1000)],
     ['Standard mortgage payment', () => near(payment(360000, .065 / 12, 360), 2275.444884574675, .001)],
     ['Amortization conserves principal', () => { const result = calculate('mortgage', toolById.mortgage.defaults, ctx); near(result.schedule!.reduce((sum,row) => sum + row.principal,0),360000); near(result.schedule![result.schedule!.length - 1].balance,0); }],
@@ -165,5 +171,26 @@ export function runEngineChecks(): EngineCheck[] {
       if (!sct.warnings.some(w => /Scottish Income Tax/i.test(w))) throw new Error('Scotland note missing.');
     }],
   ];
-  return checks.map(([name, check]) => { try { check(); return { name, passed: true, detail: 'Passed' }; } catch (error) { return { name, passed: false, detail: error instanceof Error ? error.message : 'Failed' }; } });
+  return checks;
+}
+
+function executeCheck([name, check]: [string, () => void]): EngineCheck {
+  try { check(); return { name, passed: true, detail: 'Passed' }; }
+  catch (error) { return { name, passed: false, detail: error instanceof Error ? error.message : 'Failed' }; }
+}
+
+export function runEngineChecks(): EngineCheck[] {
+  return engineCheckCases().map(executeCheck);
+}
+
+export async function runEngineChecksResponsive(onProgress: (results: EngineCheck[], total: number) => void, signal: AbortSignal) {
+  const cases = engineCheckCases();
+  const results: EngineCheck[] = [];
+  for (const check of cases) {
+    // Yield between checks so mobile navigation and the progress label stay responsive.
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    if (signal.aborted) return;
+    results.push(executeCheck(check));
+    onProgress([...results], cases.length);
+  }
 }

@@ -44,6 +44,9 @@ export const tools: ToolDefinition[] = [
 
 export const toolById = Object.fromEntries(tools.map(tool => [tool.id, tool])) as Record<ToolId, ToolDefinition>;
 export const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'NZD', 'SGD', 'HKD', 'TWD', 'SEK', 'NOK', 'DKK', 'MXN', 'BRL', 'ZAR', 'KRW', 'CLP', 'PLN', 'THB', 'IDR', 'PHP', 'AED', 'ARS', 'CZK', 'RON', 'HUF', 'COP', 'PEN', 'MYR', 'VND', 'EGP', 'SAR', 'ILS', 'TRY', 'UAH', 'BGN', 'ISK', 'QAR', 'KWD', 'PKR', 'BDT', 'KES', 'NGN', 'MAD', 'JOD', 'RSD', 'UYU', 'LKR', 'NPR', 'GHS', 'TZS', 'UGX', 'XOF', 'TND', 'LBP', 'OMR', 'BHD', 'GEL', 'AMD', 'AZN', 'KZT', 'UZS', 'MNT', 'KHR', 'MMK', 'LAK', 'BOB', 'PYG', 'MOP', 'GIP', 'BMD', 'KYD', 'AWG', 'ANG', 'XPF', 'ALL', 'MKD', 'CRC', 'PAB', 'DOP', 'GTQ', 'JMD', 'TTD', 'FJD', 'MVR', 'BTN', 'MDL', 'BAM', 'NAD', 'BWP', 'MUR', 'RWF'];
+currencies.push('BND', 'BSD', 'SCR', 'ZMW', 'PGK', 'ETB', 'AOA', 'MWK', 'MZN', 'DZD', 'IQD', 'RUB', 'BYN', 'KGS', 'TJS', 'BBD', 'GYD', 'SBD', 'VUV', 'WST', 'TOP',
+  'XOF', 'XAF', 'CDF', 'SZL', 'LSL', 'SLE', 'LRD', 'GMD', 'SRD', 'BZD', 'HNL', 'NIO', 'HTG', 'XCD', 'MGA', 'CVE');
+
 export const unitGroups: Record<string, { label: string; units: Record<string, { name: string; factor: number }> }> = {
   length: { label: 'Length', units: { m: { name: 'Meters', factor: 1 }, cm: { name: 'Centimeters', factor: .01 }, mm: { name: 'Millimeters', factor: .001 }, km: { name: 'Kilometers', factor: 1000 }, in: { name: 'Inches', factor: .0254 }, ft: { name: 'Feet', factor: .3048 }, yd: { name: 'Yards', factor: .9144 }, mi: { name: 'Miles', factor: 1609.344 } } },
   mass: { label: 'Mass', units: { kg: { name: 'Kilograms', factor: 1 }, g: { name: 'Grams', factor: .001 }, mg: { name: 'Milligrams', factor: .000001 }, lb: { name: 'Pounds', factor: .45359237 }, oz: { name: 'Ounces', factor: .028349523125 }, tonne: { name: 'Metric tonnes', factor: 1000 } } },

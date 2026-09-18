@@ -8,7 +8,13 @@ export type CountryId = 'US' | 'CA' | 'GB' | 'AU' | 'DE' | 'FR' | 'JP' | 'IN' | 
   | 'RS' | 'SI' | 'CY' | 'MT' | 'UY' | 'EC' | 'LK' | 'NP' | 'GH' | 'TZ' | 'UG' | 'SN' | 'TN' | 'LB' | 'OM' | 'BH'
   | 'GU' | 'VI' | 'AS' | 'MP' | 'GE' | 'AM' | 'AZ' | 'KZ' | 'UZ' | 'MN' | 'KH' | 'MM' | 'LA' | 'BO' | 'PY'
   | 'MO' | 'GL' | 'FO' | 'GI' | 'IM' | 'JE' | 'GG' | 'BM' | 'KY' | 'AW' | 'CW' | 'NC' | 'PF' | 'AX' | 'AL' | 'MK'
-  | 'CR' | 'PA' | 'DO' | 'GT' | 'JM' | 'TT' | 'FJ' | 'MV' | 'BT' | 'MD' | 'BA' | 'ME' | 'NA' | 'BW' | 'MU' | 'RW';
+  | 'CR' | 'PA' | 'DO' | 'GT' | 'JM' | 'TT' | 'FJ' | 'MV' | 'BT' | 'MD' | 'BA' | 'ME' | 'NA' | 'BW' | 'MU' | 'RW'
+  | 'CN' | 'BN' | 'BS' | 'SC' | 'ZM' | 'PG'
+  | 'ET' | 'ZW' | 'AO' | 'MW' | 'MZ' | 'DZ' | 'IQ' | 'RU' | 'BY' | 'KG' | 'TJ'
+  | 'XK' | 'AD' | 'MC' | 'BB' | 'GY' | 'TL' | 'SB' | 'VU' | 'WS' | 'TO'
+  | 'CI' | 'CM' | 'ZR' | 'SZ' | 'LS' | 'GA' | 'BJ' | 'BF' | 'ML' | 'NE' | 'TD' | 'SL' | 'LR' | 'GM'
+  | 'SR' | 'BZ' | 'HN' | 'NI' | 'SV' | 'HT' | 'LC' | 'AG' | 'VC' | 'GD' | 'KN' | 'DM'
+  | 'MG' | 'LI' | 'SM' | 'CV' | 'PW' | 'FM' | 'MH' | 'KI' | 'NR' | 'TV' | 'CK';
 export type ComplexityMode = 'simple' | 'standard' | 'advanced';
 export type TaxRegime = 'national' | 'devolved' | 'separate-return' | 'territorial' | 'local-surtax' | 'no-wage-tax' | 'cantonal';
 
@@ -17,6 +23,7 @@ export interface WorkspaceSettings {
   region: string;
   county?: string;
   city: string;
+  customLocality?: boolean;
   precision: number;
   locale: string;
   live: boolean;
@@ -24,6 +31,11 @@ export interface WorkspaceSettings {
   showHints?: boolean;
   regionalPresets?: boolean;
   rememberInputs?: boolean;
+  followCountryFormat?: boolean;
+  swipeNavigation?: boolean;
+  comfortableControls?: boolean;
+  showResultAfterCalculate?: boolean;
+  layout?: 'auto' | 'stacked';
   taxYear?: string;
   month?: number; // 1-12 for monthly withholding/proration
   paradigm?: 'statutory' | 'academic' | 'ensemble';
@@ -133,6 +145,7 @@ export interface CalculationResult {
   centerLabel?: string;
   centerValue?: number;
   audit?: CalculationAudit;
+  taxBasis?: { annualGross: number; annualTaxable: number; annualDeduction: number; annualMultiplier: number; displayDivisor: number; profile?: string };
   regionalStats?: {
     medianIncome?: number;
     costOfLivingIndex?: number;

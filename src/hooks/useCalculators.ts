@@ -6,6 +6,7 @@ import { fetchReferenceRate } from '../lib/rates';
 import { loadHabits, recordHabit } from '../lib/habits';
 import type { CalculationContext, CalculationResult, ComplexityMode, CountryId, Snapshot, ToolId, Values, WorkspaceSettings } from '../lib/types';
 import { defaultToolComplexity } from '../lib/complexity';
+import { countryLocale, normalizeLocation, numberFormats, taxDefaultsForLocation } from '../lib/regionalSettings';
 
 const settingsKey = 'calcvault.settings.v3';
 const inputsKey = 'calcvault.inputs.v2';
@@ -24,16 +25,19 @@ function loadSettings(): WorkspaceSettings {
   const mappedRegion = stored.country === 'DC' as string ? 'DC' : stored.region;
   return {
     ...defaultSettings,
-    country,
-    region: getRegion(country, mappedRegion || '').id,
-    city: typeof stored.city === 'string' ? stored.city.slice(0, 100) : '',
+    ...normalizeLocation(country, mappedRegion || '', typeof stored.county === 'string' ? stored.county : '', stored.city, stored.customLocality === true || Boolean(stored.city && !stored.county)),
     precision: [0, 2, 4, 6].includes(stored.precision ?? -1) ? stored.precision! : 2,
-    locale: ['en-US', 'en-GB', 'de-DE', 'fr-FR'].includes(stored.locale || '') ? stored.locale! : 'en-US',
+    locale: numberFormats.some(format => format.value === stored.locale) ? stored.locale! : 'en-US',
     appearance: stored.appearance === 'ink' ? 'ink' : 'light',
     live: false,
     showHints: stored.showHints !== false,
     regionalPresets: stored.regionalPresets !== false,
     rememberInputs: stored.rememberInputs !== false,
+    followCountryFormat: stored.followCountryFormat === true,
+    swipeNavigation: stored.swipeNavigation !== false,
+    comfortableControls: stored.comfortableControls === true,
+    showResultAfterCalculate: stored.showResultAfterCalculate !== false,
+    layout: stored.layout === 'stacked' ? 'stacked' : 'auto',
     complexity: stored.complexity === 'simple' || stored.complexity === 'advanced' ? stored.complexity : 'standard',
     toolComplexity: {
       ...defaultToolComplexity(),
@@ -47,11 +51,11 @@ function loadSettings(): WorkspaceSettings {
 
 function regionalDefaults(tool: ToolId, settings: WorkspaceSettings): Values {
   const region = getRegion(settings.country, settings.region);
+  if (tool === 'tax') return taxDefaultsForLocation(settings.country, settings.region, settings.county);
   return {
     ...toolById[tool].defaults,
     ...(tool === 'mortgage' ? { propertyTax: String(region.propertyTax), convention: settings.country === 'CA' ? 'semiannual' : 'monthly' } : {}),
     ...(tool === 'car' ? { salesTax: String(region.salesTax) } : {}),
-    ...(tool === 'tax' ? { year: latestTaxYearId(settings.country), county: settings.county || '' } : {}),
   };
 }
 
@@ -63,6 +67,11 @@ function loadInputs(settings: WorkspaceSettings) {
     const previous = stored?.[tool.id];
     if (previous && typeof previous === 'object') {
       Object.entries(previous).forEach(([key, value]) => { if (key in values && typeof value === 'string') values[key] = value; });
+    }
+    if (tool.id === 'tax') {
+      values.county = settings.county || '';
+      if (!countries[settings.country].years.some(pack => pack.id === values.year)) values.year = latestTaxYearId(settings.country);
+      if (countries[settings.country].profiles && !countries[settings.country].profiles!.some(profile => profile.value === values.taxProfile)) values.taxProfile = defaults.taxProfile;
     }
     if (tool.id === 'units' && (!unitGroups[values.category] || !unitGroups[values.category].units[values.from] || !unitGroups[values.category].units[values.to])) return [tool.id, defaults];
     return [tool.id, values];
@@ -113,7 +122,7 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
   const displayed = settings.live ? draft : confirmed ? processCalculation(active, confirmed.values, confirmed.context) : { result: null, error: '' };
   const displayContext = settings.live || !confirmed ? context : { ...confirmed.context, precision: settings.precision, locale: settings.locale, live: false, complexity: confirmed.context.complexity };
   const dirty = !settings.live && (!confirmed || JSON.stringify(confirmed.values) !== JSON.stringify(values)
-    || context.country !== confirmed.context.country || context.region !== confirmed.context.region || context.city !== confirmed.context.city || context.complexity !== confirmed.context.complexity
+    || context.country !== confirmed.context.country || context.region !== confirmed.context.region || context.county !== confirmed.context.county || context.city !== confirmed.context.city || context.complexity !== confirmed.context.complexity
     || (active === 'currency' && (context.rate !== confirmed.context.rate || context.rateDate !== confirmed.context.rateDate)));
   const loading = active === 'currency' && fx.source !== 'manual' && fx.from !== fx.to
     && (exchange.key !== rateKey || exchange.status === 'loading' || exchange.status === 'idle');
@@ -128,6 +137,8 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
 
   useEffect(() => {
     document.documentElement.dataset.theme = settings.appearance;
+    document.documentElement.dataset.controls = settings.comfortableControls ? 'comfortable' : 'auto';
+    document.documentElement.dataset.layout = settings.layout || 'auto';
     try { localStorage.setItem(settingsKey, JSON.stringify(settings)); } catch { setStorageError(true); }
   }, [settings]);
   useEffect(() => {
@@ -166,16 +177,17 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
     return () => { cancelled = true; clearTimeout(timeout); controller.abort(); };
   }, [active, fx.from, fx.to, fx.source, fx.date, rateKey, refreshToken]);
 
-  function changeCountry(id: CountryId) {
-    const region = countries[id].regions[0];
-    const county = '';
-    const next = { ...settings, country: id, region: region.id, county, city: '' };
-    setData(previous => {
-      const withPreset = applyRegionalPresets(previous, context, { ...next, currency: countries[id].currency });
-      return { ...withPreset, tax: { ...withPreset.tax, year: latestTaxYearId(id), county } };
-    });
+  function changeLocation(id: CountryId, regionId: string, countyId = '', customLocality = false, city = '') {
+    const location = normalizeLocation(id, regionId, countyId, city, customLocality);
+    const next = { ...settings, ...location, locale: settings.followCountryFormat ? countryLocale(location.country) : settings.locale };
+    setData(previous => applyRegionalPresets(previous, context, { ...next, currency: countries[location.country].currency }));
     setSettings(next);
-    notify('Location updated. Custom costs are preserved; amounts are not currency-converted.');
+  }
+
+  function changeCountry(id: CountryId) {
+    if (!countries[id] || id === settings.country) return;
+    changeLocation(id, countries[id].regions[0].id);
+    notify('Country updated. Review amounts in the new currency; no currency conversion was performed.');
   }
 
   function setToolComplexity(mode: ComplexityMode) {
@@ -195,14 +207,11 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
   }
 
   function changeRegion(id: string, countyId?: string) {
-    const region = getRegion(settings.country, id);
-    const county = countyId !== undefined ? countyId : '';
-    const next = { ...settings, region: region.id, county, city: '' };
-    setData(previous => {
-      const withPreset = applyRegionalPresets(previous, context, { ...next, currency: country.currency });
-      return { ...withPreset, tax: { ...withPreset.tax, county } };
-    });
-    setSettings(next);
+    changeLocation(settings.country, id, countyId);
+  }
+
+  function changeLocality(id: string) {
+    changeLocation(settings.country, settings.region, id === '__custom' ? '' : id, id === '__custom', id === '__custom' ? settings.city : '');
   }
 
   function updateValue(key: string, value: string) {
@@ -234,7 +243,16 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
     if (!draft.result || loading) {
       notify(draft.error || 'Wait for the reference rate to load.');
       const issue = draft.issues[0];
-      if (issue) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-field="${issue.field}"] input, [data-field="${issue.field}"] select, [data-field="${issue.field}"] textarea`)?.focus());
+      if (issue) {
+        const selector = `[data-field="${issue.field}"] input, [data-field="${issue.field}"] select, [data-field="${issue.field}"] textarea`;
+        const target = document.querySelector<HTMLElement>(selector);
+        if (!target || !target.getClientRects().length) setToolComplexity('advanced');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const field = document.querySelector<HTMLElement>(selector);
+          field?.scrollIntoView({ block: 'center', behavior: 'auto' });
+          field?.focus({ preventScroll: true });
+        }));
+      }
       return false;
     }
     setSubmitted(previous => ({ ...previous, [active]: { values: { ...values }, context: { ...context } } }));
@@ -264,10 +282,11 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
 
   function restore(entry: Snapshot) {
     const next = { ...toolById[entry.tool].defaults, ...entry.values };
-    const restored = { ...settings, country: entry.settings.country, region: entry.settings.region, city: entry.settings.city };
+    const restored = { ...settings, ...normalizeLocation(entry.settings.country, entry.settings.region, entry.settings.county || entry.values.county || '', entry.settings.city, entry.settings.customLocality === true), toolComplexity: { ...settings.toolComplexity, [entry.tool]: entry.settings.toolComplexity?.[entry.tool] || entry.settings.complexity || 'standard' } };
+    if (entry.tool === 'tax') next.county = restored.county;
     setData(previous => ({ ...applyRegionalPresets(previous, context, { ...restored, currency: countries[restored.country].currency }), [entry.tool]: next }));
     setSettings(restored);
-    setSubmitted(previous => ({ ...previous, [entry.tool]: { values: next, context: { ...restored, currency: countries[restored.country].currency } } }));
+    setSubmitted(previous => ({ ...previous, [entry.tool]: { values: next, context: { ...restored, complexity: restored.toolComplexity[entry.tool], currency: countries[restored.country].currency } } }));
     setActive(entry.tool);
     notify('Saved inputs and regional settings restored.');
   }
@@ -281,13 +300,13 @@ export function useCalculators(initialTool: ToolId = 'mortgage') {
   }
 
   return {
-    active, setActive, values, settings, setSettings, country, region, context, displayContext,
+    active, setActive, values, data, settings, setSettings, country, region, context, displayContext,
     result: displayed.result, draft, error, dirty, loading, revision, snapshots, setSnapshots,
     notice, notify, dismissNotice: () => setNotice(''), storageError,
     rateStatus: exchange.key === rateKey ? exchange.status : 'loading',
     refreshRate: () => { forceRateRefresh.current = true; setRefreshToken(previous => previous + 1); },
-    changeCountry, changeRegion, updateValue, swapValues, reset, calculate, save, restore, apply, recordValues, applyValues, setToolComplexity, toolComplexity,
-    isSaved: snapshots.some(entry => entry.saved && entry.tool === active && entry.settings.country === settings.country && entry.settings.region === settings.region && JSON.stringify(entry.values) === JSON.stringify(recordValues())),
+    changeCountry, changeRegion, changeLocation, changeLocality, updateValue, swapValues, reset, calculate, save, restore, apply, recordValues, applyValues, setToolComplexity, toolComplexity,
+    isSaved: snapshots.some(entry => entry.saved && entry.tool === active && entry.settings.country === settings.country && entry.settings.region === settings.region && (entry.settings.county || '') === (settings.county || '') && entry.settings.city === settings.city && JSON.stringify(entry.values) === JSON.stringify(recordValues())),
   };
 }
 

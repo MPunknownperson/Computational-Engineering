@@ -1,0 +1,57 @@
+/* Presentation for the animation components. Motion is opt-out via the OS setting. */
+
+.reveal { opacity: 0; transform: translateY(10px); }
+.reveal.is-shown { opacity: 1; transform: none; transition: opacity .42s cubic-bezier(.2,.7,.3,1) var(--reveal-delay, 0ms), transform .42s cubic-bezier(.2,.7,.3,1) var(--reveal-delay, 0ms); }
+
+.spinner { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--blue) 22%, transparent); border-top-color: var(--blue); animation: spinner-turn .75s linear infinite; }
+@keyframes spinner-turn { to { transform: rotate(360deg); } }
+
+.progress-ring { flex-shrink: 0; transform: rotate(-90deg); }
+.progress-ring-track { stroke: color-mix(in srgb, var(--blue) 16%, transparent); }
+.progress-ring-value { stroke: var(--blue); }
+
+.skeleton { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+.skeleton-line { display: block; height: 11px; border-radius: 5px; background: linear-gradient(90deg, var(--canvas) 0%, color-mix(in srgb, var(--blue-light) 70%, var(--canvas)) 50%, var(--canvas) 100%); background-size: 220% 100%; animation: skeleton-sweep 1.4s ease-in-out infinite; }
+@keyframes skeleton-sweep { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+
+.loading-bar { display: flex; flex-direction: column; gap: 8px; }
+.loading-bar-track { display: block; height: 4px; border-radius: 3px; background: var(--canvas); overflow: hidden; }
+.loading-bar-value { display: block; width: 38%; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); animation: loading-slide 1.15s cubic-bezier(.45,0,.35,1) infinite; }
+@keyframes loading-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+.loading-bar-label { font-size: 11px; color: var(--secondary); }
+
+.progress-track { height: 6px; border-radius: 4px; background: var(--canvas); overflow: hidden; border: 1px solid var(--border); }
+.progress-track > span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue), var(--purple)); }
+
+.panel-loader { display: flex; flex-direction: column; gap: 16px; padding: 22px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.panel-loader-head { display: flex; gap: 13px; align-items: center; }
+.panel-loader-head strong { display: block; font-size: 13px; font-weight: 600; }
+.panel-loader-head small { display: block; margin-top: 3px; font-size: 11px; color: var(--secondary); line-height: 1.6; }
+
+.aurora { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; border-radius: inherit;
+  background:
+    radial-gradient(42rem 22rem at var(--aurora-x, 50%) var(--aurora-y, 42%), color-mix(in srgb, var(--blue) 17%, transparent), transparent 70%),
+    radial-gradient(34rem 20rem at 12% 8%, color-mix(in srgb, var(--purple) 14%, transparent), transparent 72%),
+    radial-gradient(30rem 18rem at 88% 18%, color-mix(in srgb, var(--pink) 13%, transparent), transparent 70%);
+}
+
+/* Route and view transitions */
+.route-enter { animation: route-in .34s cubic-bezier(.2,.7,.3,1) both; }
+@keyframes route-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.pulse-dot { position: relative; display: inline-flex; width: 7px; height: 7px; border-radius: 50%; background: #3f8d72; }
+.pulse-dot::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid #3f8d72; opacity: .6; animation: pulse-ring 1.9s ease-out infinite; }
+@keyframes pulse-ring { 0% { transform: scale(.6); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+
+.shimmer-text { background: linear-gradient(90deg, var(--secondary) 0%, var(--blue) 45%, var(--secondary) 90%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer-pan 2.4s linear infinite; }
+@keyframes shimmer-pan { to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .spinner { animation-duration: 1.6s; }
+  .skeleton-line, .loading-bar-value, .pulse-dot::after, .shimmer-text { animation: none; }
+  .loading-bar-value { width: 100%; }
+  .shimmer-text { color: var(--secondary); background: none; -webkit-background-clip: border-box; background-clip: border-box; }
+  .route-enter { animation: none; }
+  .aurora { --aurora-x: 50%; --aurora-y: 42%; }
+}

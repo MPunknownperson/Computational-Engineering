@@ -8,6 +8,7 @@ import { goalDefinitions, processCalculation, scenarioValue, solveCalculationGoa
 import { NumberField, SelectField } from './Fields';
 import { methodSettings } from '../lib/methods';
 import FlagIcon from './FlagIcon';
+import ScrollableTable from './ScrollableTable';
 
 export function DetailView({ result, ctx, onExport }: { result: CalculationResult; ctx: CalculationContext; onExport: () => void }) {
   const [group, setGroup] = useState('annual');
@@ -55,7 +56,15 @@ export function DetailView({ result, ctx, onExport }: { result: CalculationResul
   const formatNode = (node: NetworkNode) => typeof node.value === 'string' ? node.value : node.format === 'money' ? formatMoney(node.value, currency, ctx.precision, ctx.locale) : `${formatNumber(node.value, ctx.precision, ctx.locale)}${node.format === 'percent' ? '%' : ''}`;
   return <div className="detail-view content-enter"><div className="detail-intro"><div><h2>Calculation details</h2><p>Applied formulas, intermediate values, and numerical checks for this result.</p></div><button className="secondary-button" onClick={onExport}><Download size={16}/>Export calculation</button></div>
     {result.audit?.formulas ? <section className="formula-set"><div className="formula-set-header"><div><span>Calculation module</span><h3>{result.audit.module?.name}</h3></div><strong>{result.audit.formulas.filter(item => item.active).length} active formulas</strong></div><div className="formula-grid">{result.audit.formulas.map(item => <article key={item.id} className={item.active ? 'formula-active' : 'formula-inactive'}><div><span>{item.active ? 'Applied' : 'Alternative'}</span><h4>{item.title}</h4></div><code>{item.expression}</code><p>{item.purpose}</p></article>)}</div>{result.audit.module && <div className="module-links"><span>Works with:</span>{result.audit.module.companionTools.map(tool => <a href={`#${tool}`} key={tool}>{toolById[tool].short}<ArrowRight size={12}/></a>)}</div>}</section> : <div className="formula-reference"><span>Applied formula</span><code>{result.formula}</code></div>}
-    {table && <><div className="table-top"><h4>{result.schedule ? 'Your amortization schedule' : 'Calculation breakdown'}</h4>{result.schedule && <select aria-label="Schedule grouping" value={group} onChange={event => {setGroup(event.target.value);setPage(0);}}><option value="annual">By year</option><option value="payments">Every payment</option></select>}</div>{result.schedule && <p className="table-note">Loan principal and interest only. Ownership costs are excluded from this schedule.</p>}<div className="table-scroll"><table><thead><tr>{table.columns.map(column => <th key={column}>{column}</th>)}</tr></thead><tbody>{table.rows.slice(page * pageSize,(page + 1) * pageSize).map((row,index) => <tr key={`${group}-${page}-${index}`}>{row.map((value,i) => <td key={i}>{value}</td>)}</tr>)}</tbody></table>{table.rows.length === 0 && <p className="empty-table">No payments are needed for a fully funded purchase.</p>}</div>{pages > 1 && <div className="table-pagination"><span>Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize,table.rows.length)} of {table.rows.length}</span><div><button className="icon-button" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="Previous page"><ChevronLeft size={17}/></button><span>{page + 1} / {pages}</span><button className="icon-button" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)} aria-label="Next page"><ChevronRight size={17}/></button></div></div>}</>}
+    {table && <>
+      <div className="table-top"><h4>{result.schedule ? 'Your amortization schedule' : 'Calculation breakdown'}</h4>{result.schedule && <select aria-label="Schedule grouping" value={group} onChange={event => { setGroup(event.target.value); setPage(0); }}><option value="annual">By year</option><option value="payments">Every payment</option></select>}</div>
+      {result.schedule && <p className="table-note">Loan principal and interest only. Ownership costs are excluded from this schedule.</p>}
+      <ScrollableTable label={result.schedule ? 'Amortization schedule' : 'Calculation breakdown'}>
+        <table><thead><tr>{table.columns.map(column => <th scope="col" key={column}>{column}</th>)}</tr></thead><tbody>{table.rows.slice(page * pageSize, (page + 1) * pageSize).map((row, index) => <tr key={`${group}-${page}-${index}`}>{row.map((value, i) => <td key={i}>{value}</td>)}</tr>)}</tbody></table>
+        {table.rows.length === 0 && <p className="empty-table">No payments are needed for a fully funded purchase.</p>}
+      </ScrollableTable>
+      {pages > 1 && <div className="table-pagination"><span>Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, table.rows.length)} of {table.rows.length}</span><div><button type="button" className="icon-button" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="Previous page"><ChevronLeft size={17} /></button><span aria-live="polite">{page + 1} / {pages}</span><button type="button" className="icon-button" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)} aria-label="Next page"><ChevronRight size={17} /></button></div></div>}
+    </>}
     {result.audit && (
       <section className="calculation-audit">
         <div className="audit-header-row">
@@ -86,7 +95,7 @@ export function DetailView({ result, ctx, onExport }: { result: CalculationResul
         {result.audit.networkNodes && result.audit.networkNodes.length > 0 && (
           <div className="ensemble-matrix-box">
             <h4>{result.audit.module?.name || 'Calculation network'}</h4>
-            <div className="table-scroll">
+            <ScrollableTable label="Calculation stages and formulas">
               <table>
                 <thead>
                   <tr>
@@ -107,7 +116,7 @@ export function DetailView({ result, ctx, onExport }: { result: CalculationResul
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
           </div>
         )}
 
@@ -166,8 +175,8 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
   function addRegionScenario() {
     if (scenarios.length >= 4) return;
     const alt = getRegion(ctx.country, pickRegion);
-    const nextCtx = { ...ctx, region: alt.id, city: '', county: alt.counties[0]?.id };
-    const nextValues = { ...values, county: alt.counties[0]?.id || '' };
+    const nextCtx = { ...ctx, region: alt.id, city: '', county: '' };
+    const nextValues = { ...values, county: '', localIncome: 'false', localFixed: 'false' };
     const law = jurisdictionProfile(ctx.country, alt.id);
     const calc = run(nextValues, nextCtx);
     setScenarios(prev => [...prev, {
@@ -327,7 +336,7 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
             <h4>Metric Comparison</h4>
             <button type="button" className="secondary-button mini-btn" onClick={exportComparison}><Download size={13}/> Export CSV</button>
           </div>
-          <div className="table-scroll">
+          <ScrollableTable label="Scenario comparison metrics">
             <table>
               <thead>
                 <tr>
@@ -368,7 +377,7 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
                 </tr>
               </tbody>
             </table>
-          </div>
+          </ScrollableTable>
         </div>
       )}
 
@@ -385,7 +394,7 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
           <button className="primary-button" onClick={() => {
             const winnerItem = scenarios.find(s => s.id === winner.id);
             if (winnerItem) {
-              if (isTax) { onApply(winnerItem.values); const r = winnerItem.values.region || ctx.region; onRegion(r); }
+              if (isTax) { onApply(winnerItem.values); onRegion(winnerItem.context.region); }
               else onApply(winnerItem.values);
             }
           }}>
@@ -400,7 +409,7 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
             <h3>Multi-Year Historical Law & Inflation Comparison ({countries[ctx.country].name})</h3>
             <p>Examine how inflation adjustments, standard deduction shifts, and statutory rate brackets across past years impact your exact income.</p>
           </div>
-          <div className="table-scroll">
+          <ScrollableTable label="Historical tax year comparison">
             <table>
               <thead>
                 <tr>
@@ -445,7 +454,7 @@ function ScenarioLab({ tool, values, ctx, result, onApply, onRegion }: { tool: T
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollableTable>
         </div>
       )}
 
