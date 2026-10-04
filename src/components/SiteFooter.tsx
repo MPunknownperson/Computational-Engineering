@@ -1,69 +1,60 @@
 import Link from "next/link";
-import { BrandMark } from "./Brand";
+import { BrandMark, Wordmark } from "./Brand";
+import { SITE } from "@/lib/site";
+
+const COLS = [
+  { title: "Calculate", items: [
+    { href: "/tools/scientific", label: "Scientific calculator" },
+    { href: "/tools/units", label: "Unit converter" },
+    { href: "/tools/formula", label: "Custom formulas" },
+  ] },
+  { title: "By topic", items: [
+    { href: "/convert", label: "Unit converters" },
+    { href: "/calculate", label: "Online calculators" },
+    { href: "/reference", label: "Reference figures" },
+    { href: "/guides", label: "Math guides" },
+  ] },
+  { title: "Reference tools", items: [
+    { href: "/tools/currency", label: "Currency values" },
+    { href: "/tools/crypto", label: "Digital-asset prices" },
+    { href: "/tools/economy", label: "Economic indicators" },
+  ] },
+  { title: "Learn", items: [
+    { href: "/guides", label: "Worked guides" },
+    { href: "/guides/meters-to-feet", label: "Meters to feet" },
+    { href: "/guides/quadratic-equation-positive-root", label: "Quadratic formula" },
+    { href: "/guides/megabytes-vs-mebibytes", label: "MB vs MiB" },
+  ] },
+  { title: "Site", items: [
+    { href: "/calculators", label: "All tools" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+  ] },
+  { title: "Information", items: [
+    { href: "/terms", label: "Terms of Use" },
+    { href: "/privacy", label: "Privacy Notice" },
+    { href: "/disclaimer", label: "Disclaimer" },
+    { href: "/accessibility", label: "Accessibility" },
+  ] },
+];
 
 export function SiteFooter() {
-  const cols = [
-    {
-      title: "Calculate",
-      items: [
-        { href: "/tools/scientific", label: "Scientific" },
-        { href: "/tools/units", label: "Unit converter" },
-        { href: "/tools/formula", label: "Custom formula" },
-      ],
-    },
-    {
-      title: "Live data",
-      items: [
-        { href: "/tools/currency", label: "FX rates" },
-        { href: "/tools/crypto", label: "Crypto prices" },
-        { href: "/tools/economy", label: "Economy indicators" },
-      ],
-    },
-    {
-      title: "NumeriQ",
-      items: [
-        { href: "/calculators", label: "All tools" },
-        { href: "/about", label: "About" },
-      ],
-    },
-  ];
   return (
-    <footer className="mt-16 border-t-2 border-[color:var(--line)] bg-[color:var(--paper-2)]">
-      <div className="mx-auto max-w-7xl px-5 py-10 grid gap-10 md:grid-cols-4">
-        <div className="md:col-span-1">
-          <div className="flex items-center gap-2.5">
-            <BrandMark size={30} />
-            <span className="font-extrabold text-lg">
-              Numeri<span className="text-[color:var(--accent)]">Q</span>
-            </span>
-          </div>
-          <p className="mt-3 text-sm text-slate-600 max-w-xs">
-            A friendly calculation toolkit. Live market data, scientific math,
-            unit conversion and a custom formula engine — all in one place.
-          </p>
-          <p className="mt-3 text-xs text-slate-500">
-            Market data from Frankfurter (ECB), CoinGecko and the World Bank.
-            Not financial advice.
-          </p>
+    <footer className="relative z-[1] mt-20 border-t-2 border-[color:var(--line)] bg-[color:var(--paper-2)]">
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
+        <div>
+          <Link href="/" className="inline-flex items-center gap-2.5"><BrandMark size={32} /><Wordmark className="text-lg" /></Link>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-600">{SITE.description}</p>
         </div>
-        {cols.map((c) => (
-          <div key={c.title}>
-            <h3 className="font-bold mb-3">{c.title}</h3>
-            <ul className="space-y-2 text-sm">
-              {c.items.map((i) => (
-                <li key={i.href}>
-                  <Link href={i.href} className="hover:text-[color:var(--accent)]">
-                    {i.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {COLS.map((column) => (
+          <nav key={column.title} aria-label={column.title}>
+            <h2 className="mb-3 text-sm font-extrabold tracking-tight">{column.title}</h2>
+            <ul className="space-y-2 text-sm">{column.items.map((item) => <li key={item.href}><Link href={item.href} className="font-semibold text-slate-600 hover:text-[color:var(--ink)] hover:underline">{item.label}</Link></li>)}</ul>
+          </nav>
         ))}
       </div>
-      <div className="border-t border-black/10 py-4 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} NumeriQ · Built with Next.js, mathjs and
-        open data.
+      <div className="border-t-2 border-[color:var(--line)] px-5 py-5 text-center text-xs font-semibold text-slate-500">
+        © {new Date().getFullYear()} {SITE.name}. External reference information may be delayed, revised or unavailable.
       </div>
     </footer>
   );

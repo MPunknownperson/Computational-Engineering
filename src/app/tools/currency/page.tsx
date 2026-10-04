@@ -1,147 +1,219 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatedNumber, Reveal, Skeleton, PanelSwap } from "@/components/Motion";
+import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
+import { Icon } from "@/components/Icons";
+import { CURRENCIES } from "@/lib/catalog";
 
 type Latest = { amount: number; base: string; date: string; rates: Record<string, number> };
 type Series = { base: string; series: Record<string, Record<string, number>> };
-
 const POPULAR = ["EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "INR", "BRL", "KRW"];
 
 export default function CurrencyPage() {
-  const [base, setBase] = useState("USD");
-  const [target, setTarget] = useState("EUR");
-  const [amount, setAmount] = useState("100");
+  const search = useSearchParams();
+  const code = (key: string, fallback: string) => {
+    const value = search.get(key)?.toUpperCase();
+    return value && (CURRENCIES as readonly string[]).includes(value) ? value : fallback;
+  };
+  const rawAmount = search.get("amount") ?? "100";
+  const amount = rawAmount.length <= 80 && rawAmount.trim() && Number.isFinite(Number(rawAmount)) ? rawAmount : "100";
+  return <CurrencyWorkspace key={search.toString()} initial={{ base: code("base", "USD"), target: code("to", "EUR"), amount }} />;
+}
+
+function CurrencyWorkspace({ initial }: { initial: { base: string; target: string; amount: string } }) {
+  const [base, setBase] = useState(initial.base);
+  const [target, setTarget] = useState(initial.target);
+  const [amount, setAmount] = useState(initial.amount);
   const [latest, setLatest] = useState<Latest | null>(null);
   const [series, setSeries] = useState<Series | null>(null);
   const [asOf, setAsOf] = useState<Date | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    setErr(null);
     try {
-      const [lRes, sRes] = await Promise.all([
+      const [latestResponse, seriesResponse] = await Promise.all([
         fetch(`/api/fx?base=${encodeURIComponent(base)}`),
         fetch(`/api/fx?base=${encodeURIComponent(base)}&symbols=${encodeURIComponent(target)}&series=1`),
       ]);
-      if (!lRes.ok || !sRes.ok) throw new Error("upstream");
-      const l = await lRes.json();
-      const s = await sRes.json();
-      setLatest(l); setSeries(s); setAsOf(new Date());
-    } catch (e: any) {
-      setErr(e?.message || "fetch failed");
+      if (!latestResponse.ok || !seriesResponse.ok) throw new Error("unavailable");
+      const [latestPayload, seriesPayload] = await Promise.all([latestResponse.json(), seriesResponse.json()]);
+      setLatest(latestPayload);
+      setSeries(seriesPayload);
+      setAsOf(new Date());
+      setErr(null);
+    } catch {
+      setErr("Currency reference information is temporarily unavailable. Try again later.");
+    } finally {
+      setLoading(false);
     }
   }, [base, target]);
 
   useEffect(() => { refresh(); }, [refresh]);
-  // Auto-refresh every 60s
   useEffect(() => {
-    const t = setInterval(refresh, 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(refresh, 60_000);
+    return () => clearInterval(timer);
   }, [refresh]);
 
-  const rate = latest?.rates?.[target];
-  const amt = Number(amount);
-  const converted = rate && Number.isFinite(amt) ? amt * rate : null;
+  const rate = latest?.rates?.[target] ?? null;
+  const numericAmount = Number(amount);
+  const hasAmount = amount.trim().length > 0 && Number.isFinite(numericAmount);
+  const canConvert = hasAmount && rate !== null;
+  const converted = canConvert ? numericAmount * (rate as number) : null;
 
-  const chartPoints = useMemo(() => {
-    if (!series) return [];
-    return Object.entries(series.series).map(([date, r]) => ({
-      date, value: r[target] ?? null,
-    }));
-  }, [series, target]);
+  const chartPoints = useMemo(
+    () => series?.series
+      ? Object.entries(series.series).map(([, row]) => row[target] ?? null).filter((value): value is number => value !== null)
+      : [],
+    [series, target],
+  );
+
+  const gate = useConfirmGate(`${base}|${target}|${amount}`, canConvert);
+  const state = !hasAmount ? "needs-input" : !rate ? "invalid" : gate.revealed ? "revealed" : "awaiting";
+
+  function selectTarget(code: string) {
+    setTarget(code);
+    gate.reset();
+  }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
-      <div className="flex items-center gap-3">
-        <h1 className="h-title text-4xl"><span className="h-underline">Live</span> FX</h1>
-        <span className="chip"><span className="live-dot" /> ECB reference rates</span>
-      </div>
-      <p className="mt-2 text-slate-600">
-        Real-time exchange rates from the European Central Bank via Frankfurter.
-        Updates every 60 seconds.
-      </p>
-
-      <div className="mt-6 grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 sketch bg-white p-5">
-          <div className="grid md:grid-cols-3 gap-4 items-end">
-            <div>
-              <label className="block text-sm font-semibold mb-1">Amount</label>
-              <input className="input mono text-xl" value={amount}
-                onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">From</label>
-              <select className="select" value={base} onChange={(e) => setBase(e.target.value)}>
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1">To</label>
-              <select className="select" value={target} onChange={(e) => setTarget(e.target.value)}>
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-5 p-4 sketch-sm bg-[color:var(--paper-2)]">
-            <div className="text-xs uppercase tracking-wide font-semibold text-slate-500">Converted</div>
-            <div className="mono text-3xl font-bold mt-1">
-              {converted !== null ? `${converted.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${target}` : "—"}
-            </div>
-            <div className="text-sm text-slate-600 mt-1">
-              1 {base} = {rate ? rate.toFixed(4) : "—"} {target}
-              {asOf && <span> · refreshed {asOf.toLocaleTimeString()}</span>}
-              {err && <span className="text-[color:var(--accent)] ml-2">· {err}</span>}
-            </div>
-          </div>
-
-          <button className="btn mt-4" onClick={refresh}>Refresh now</button>
-
-          <div className="mt-6">
-            <h3 className="font-semibold mb-2">30-day trend · {base} → {target}</h3>
-            <Sparkline points={chartPoints.map(p => p.value).filter((v): v is number => v !== null)} />
-          </div>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-5 sm:py-12">
+      <Reveal>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="h-title text-4xl sm:text-5xl">Currency <span className="h-underline">converter</span></h1>
+          <span className="chip">Reference information</span>
         </div>
+        <p className="mt-3 max-w-2xl text-slate-600">
+          Enter an amount and choose two currencies, then press <strong>Convert</strong>. Reference values continue to
+          refresh in the background; the converted amount and trend appear only when you confirm. These figures are not
+          offers to exchange currency.
+        </p>
+      </Reveal>
 
-        <div className="sketch bg-white p-5">
-          <h3 className="font-bold mb-3">Popular rates from {base}</h3>
-          {latest ? (
-            <ul className="divide-y divide-black/5">
-              {POPULAR.filter(c => c !== base).map(c => (
-                <li key={c} className="py-2 flex items-center justify-between">
-                  <button className="text-left hover:text-[color:var(--accent)]" onClick={() => setTarget(c)}>
-                    <span className="font-semibold">{c}</span>
-                  </button>
-                  <span className="mono">{(latest.rates[c] ?? 0).toFixed(4)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : <div className="text-sm text-slate-500">Loading…</div>}
-        </div>
+      <div className="mt-8 grid gap-5 lg:grid-cols-3">
+        <Reveal className="lg:col-span-2">
+          <div className="sketch">
+            <ConfirmForm onSubmit={gate.confirm} label="Currency conversion">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label htmlFor="currency-amount" className="mb-1.5 block text-sm font-semibold text-slate-700">Amount</label>
+                  <input id="currency-amount" className="input mono !text-xl !font-bold" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
+                </div>
+                <div>
+                  <label htmlFor="currency-from" className="mb-1.5 block text-sm font-semibold text-slate-700">From</label>
+                  <select id="currency-from" className="select" value={base} onChange={(e) => { setBase(e.target.value); gate.reset(); }}>
+                    {CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="currency-to" className="mb-1.5 block text-sm font-semibold text-slate-700">To</label>
+                  <select id="currency-to" className="select" value={target} onChange={(e) => selectTarget(e.target.value)}>
+                    {CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div
+                id="currency-result"
+                role="status"
+                aria-live="polite"
+                className={`result-panel mt-6 ${gate.revealed ? "is-revealed" : "is-locked"}`}
+              >
+                <div className="text-[.62rem] font-bold uppercase tracking-[.16em] text-slate-500">Converted amount</div>
+                <div className="mono mt-1.5 min-h-[2.4rem] text-3xl font-extrabold sm:text-4xl">
+                  {gate.revealed && converted !== null ? (
+                    <>
+                      <AnimatedNumber value={converted} format={(n) => n.toLocaleString(undefined, { maximumFractionDigits: 4 })} />
+                      <span className="ml-2 text-xl text-slate-500">{target}</span>
+                    </>
+                  ) : (
+                    <LockedResult label="Converted amount hidden until you press Convert." />
+                  )}
+                </div>
+                {gate.revealed && (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+                    <span>1 {base} = <span className="mono font-bold text-[color:var(--ink)]">{rate ? rate.toFixed(4) : "—"}</span> {target}</span>
+                    {latest?.date && <span className="text-slate-500">· reference date {latest.date}</span>}
+                    {asOf && <span className="text-slate-500">· values received {asOf.toLocaleTimeString()}</span>}
+                  </div>
+                )}
+              </div>
+
+              <ConfirmBar
+                id="currency-confirm"
+                action="Convert"
+                state={state}
+                onConfirm={gate.confirm}
+                onReset={gate.reset}
+                hint="Enter an amount, then press Convert."
+                errorText={err ?? "Waiting for reference values. They refresh automatically."}
+                readyText={loading ? "Fetching reference values — the button becomes available shortly." : "Values ready — press Convert to show the result."}
+              />
+            </ConfirmForm>
+
+            <div className="mt-7">
+              <h2 className="mb-3 text-sm font-semibold text-slate-700">Recent trend · {base} → {target}</h2>
+              {gate.revealed
+                ? (chartPoints.length > 1
+                    ? <PanelSwap trigger={`${base}-${target}`}><Sparkline points={chartPoints} /></PanelSwap>
+                    : <p className="text-sm text-slate-500">No historical values are available for this pair.</p>)
+                : <div className="flex h-40 items-center justify-center rounded-xl border-2 border-dashed border-[color:var(--line)] text-sm text-slate-500">
+                    <Icon name="chart" size={16} className="mr-2" /> The trend appears after you press Convert.
+                  </div>}
+            </div>
+            <p className="mt-4 text-xs text-slate-500">Reference values may differ from rates available in an actual transaction.</p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={70}>
+          <div className="sketch">
+            <h2 className="font-bold tracking-tight">Other values from {base}</h2>
+            <p className="mt-1 text-xs text-slate-500">Choose one to set it as the target currency.</p>
+            {loading ? (
+              <div className="mt-4 space-y-2.5">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : (
+              <ul className="mt-3 space-y-1">
+                {POPULAR.filter((code) => code !== base).map((code) => (
+                  <li key={code}>
+                    <button
+                      type="button"
+                      className={`row-hover flex min-h-11 w-full items-center justify-between rounded-xl px-2.5 py-2 text-left ${code === target ? "!bg-[color:var(--accent)]/[0.08] ring-2 ring-[color:var(--accent)]/30" : ""}`}
+                      onClick={() => selectTarget(code)}
+                      aria-pressed={code === target}
+                    >
+                      <span className={`font-bold ${code === target ? "text-[color:var(--accent)]" : ""}`}>{code}</span>
+                      <span className="mono text-sm font-semibold">{latest?.rates?.[code]?.toFixed(4) ?? "—"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {err && <p className="mt-3 text-xs font-semibold text-rose-600">{err}</p>}
+          </div>
+        </Reveal>
       </div>
     </div>
   );
 }
 
-const CURRENCIES = ["USD","EUR","GBP","JPY","CHF","CAD","AUD","NZD","CNY","INR","BRL","MXN","KRW","SGD","HKD","SEK","NOK","DKK","ZAR","TRY"];
-
 function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2) return <div className="text-sm text-slate-500">Not enough data.</div>;
-  const w = 600, h = 140, pad = 10;
+  const w = 620, h = 156, pad = 14;
   const min = Math.min(...points), max = Math.max(...points);
   const dx = (w - pad * 2) / (points.length - 1);
-  const scaleY = (v: number) => h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
-  const path = points.map((v, i) => `${i === 0 ? "M" : "L"}${pad + i * dx},${scaleY(v)}`).join(" ");
-  const area = `${path} L${pad + (points.length - 1) * dx},${h - pad} L${pad},${h - pad} Z`;
+  const y = (value: number) => h - pad - ((value - min) / (max - min || 1)) * (h - pad * 2);
+  const line = points.map((value, i) => `${i === 0 ? "M" : "L"}${pad + i * dx},${y(value)}`).join(" ");
+  const area = `${line} L${pad + (points.length - 1) * dx},${h - pad} L${pad},${h - pad} Z`;
+  const first = points[0], last = points[points.length - 1];
+  const direction = last > first ? "rising" : last < first ? "falling" : "unchanged";
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-40 w-full" role="img" aria-label={`Recent currency trend ${direction}, from ${first.toFixed(4)} to ${last.toFixed(4)}.`}>
       <defs>
-        <linearGradient id="fxgrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#5b8cff" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#5b8cff" stopOpacity="0" />
-        </linearGradient>
+        <linearGradient id="currencyArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ff6b4a" stopOpacity=".25" /><stop offset="100%" stopColor="#ff6b4a" stopOpacity="0" /></linearGradient>
+        <linearGradient id="currencyLine" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stopColor="#ff6b4a" /><stop offset="100%" stopColor="#5b8cff" /></linearGradient>
       </defs>
-      <path d={area} fill="url(#fxgrad)" />
-      <path d={path} fill="none" stroke="#0b1020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={area} fill="url(#currencyArea)" />
+      <path d={line} fill="none" stroke="url(#currencyLine)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

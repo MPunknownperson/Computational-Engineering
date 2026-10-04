@@ -1,110 +1,171 @@
+import { GuideTeasers } from "@/components/search/GuideTeasers";
+import { metadataFor } from "@/lib/seo";
+import { SearchContext } from "@/components/search/SearchContext";
 import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
 import { ToolCard } from "@/components/ToolCard";
+import { Icon, type IconName } from "@/components/Icons";
+import { Reveal } from "@/components/Motion";
+import { Faq } from "@/components/home/Faq";
+import { FormulaLibrary } from "@/components/home/Sections";
+import { SITE } from "@/lib/site";
+import { CURRENCIES, COUNTRIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, CRYPTO_IDS, INDICATORS } from "@/lib/catalog";
+
+export const generateMetadata = () => metadataFor("/");
+
+type Tone = "coral" | "sky" | "sun" | "mint" | "pink" | "ink";
+
+const TOOLS: {
+  href: string; title: string; blurb: string; icon: IconName; tone: Tone; badge?: string; meta: string;
+}[] = [
+  { href: "/tools/scientific", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", tone: "coral", meta: "press Calculate" },
+  { href: "/tools/units", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories. Press Convert to reveal the answer and every other unit at once.`, icon: "swap", tone: "sky", meta: "press Convert" },
+  { href: "/tools/currency", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies. Press Convert to reveal the amount and the recent trend.`, icon: "globe", tone: "sun", badge: "updates", meta: "press Convert" },
+  { href: "/tools/crypto", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", tone: "mint", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
+  { href: "/tools/formula", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", tone: "pink", meta: "press Evaluate" },
+  { href: "/tools/economy", title: "Economic indicators", blurb: `${INDICATORS.map((i) => i.label.toLowerCase()).join(", ")} for ${COUNTRIES.length} selected economies. Press Show to reveal the figures.`, icon: "chart", tone: "ink", badge: "updates", meta: "press Show" },
+];
+
+const FACTS: { icon: IconName; title: string; body: string }[] = [
+  { icon: "function", title: "Use your own formulas", body: "Enter an expression such as P*(1+r/n)^(n*t), provide values for its variables and press Evaluate. Simplification and derivative estimates are aids, not proof of correctness." },
+  { icon: "bolt", title: "Reference information", body: "Currency values, digital-asset prices and public economic indicators appear in their respective tools. Their sources, coverage and update frequency differ." },
+  { icon: "shield", title: "No account required", body: "Use the calculators without a profile. If you choose to save a formula, a random workspace reference helps make it available again in the same browser." },
+  { icon: "target", title: "Nothing appears unasked", body: "Calculated results wait for your confirmation. Worked examples are labelled as illustrations, and the market table provides reference information." },
+];
+
+const INFORMATION_TYPES = [
+  { icon: "globe" as IconName, title: "Currency reference values", text: "Indicative exchange-rate information and recent historical views. These are not transaction offers and may differ from rates available to you.", href: "/tools/currency" },
+  { icon: "coin" as IconName, title: "Digital-asset market information", text: "Prices, daily movement and market summaries. Figures can change quickly and differ across venues.", href: "/tools/crypto" },
+  { icon: "chart" as IconName, title: "Economic indicators", text: "Selected public statistics, many of which are published periodically and may be revised.", href: "/tools/economy" },
+];
 
 export default function Home() {
   return (
-    <div>
-      {/* HERO */}
-      <section className="mx-auto max-w-7xl px-5 pt-12 pb-8 md:pt-20 md:pb-12 grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <span className="chip mb-4">
-            <span className="live-dot" /> live data · 2026
-          </span>
-          <h1 className="h-title text-5xl md:text-6xl leading-[1.05] mt-3">
-            Calculate <span className="h-underline">anything</span>,<br />
-            from pocket change to planets.
-          </h1>
-          <p className="mt-5 text-lg text-slate-600 max-w-xl">
-            NumeriQ is a friendly toolkit with a scientific calculator, unit
-            converter, live FX &amp; crypto tickers, World Bank economic data,
-            and a custom formula engine that lets you write your own math.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/calculators" className="btn btn-primary">
-              Browse all tools
-            </Link>
-            <Link href="/tools/formula" className="btn btn-ink">
-              Write a custom formula
-            </Link>
+    <div className="relative z-[1]">
+      <SearchContext path="/" />
+      <section className="mx-auto max-w-7xl px-5 pb-10 pt-14 sm:pt-16">
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div>
+            <Reveal>
+              <h1 className="h-title text-[2.6rem] leading-[1.04] sm:text-[3.7rem]">
+                <span className="h-underline">Free online calculator</span><br />
+                &amp; unit converter<br />
+                for everyday numbers.
+              </h1>
+            </Reveal>
+            <Reveal delay={70}>
+              <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-slate-600">
+                {SITE.name} brings together a scientific calculator, unit conversion, currency and
+                digital-asset reference tools, selected economic indicators and a place to enter
+                your own formulas. Calculators prepare your answer while you type and show it only
+                when you press their confirmation button. No account is required.
+              </p>
+            </Reveal>
+            <Reveal delay={140}>
+              <div className="mt-8">
+                <Link href="/calculators" className="btn btn-primary">
+                  Browse the tools <Icon name="arrow-right" size={17} />
+                </Link>
+              </div>
+            </Reveal>
           </div>
-          <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            <span className="chip">mathjs powered</span>
-            <span className="chip">Frankfurter FX</span>
-            <span className="chip">CoinGecko</span>
-            <span className="chip">World Bank</span>
-            <span className="chip">no login</span>
-          </div>
-        </div>
-        <HeroIllustration />
-      </section>
-
-      {/* FEATURED TOOLS */}
-      <section className="mx-auto max-w-7xl px-5 py-10">
-        <h2 className="h-title text-3xl mb-6">
-          <span className="h-underline">Featured</span> tools
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <ToolCard
-            href="/tools/scientific"
-            title="Scientific calculator"
-            blurb="Trig, logs, roots, constants, custom variables. Type any expression and press Enter."
-            accent="#ff6b4a"
-            icon={<span className="text-xl font-black text-white">∑</span>}
-          />
-          <ToolCard
-            href="/tools/units"
-            title="Unit converter"
-            blurb="Length, mass, time, temperature, area, volume, speed and digital data."
-            accent="#5b8cff"
-            icon={<span className="text-xl font-black text-white">⇄</span>}
-          />
-          <ToolCard
-            href="/tools/currency"
-            title="Live FX converter"
-            blurb="Real-time ECB reference rates with 30-day history, auto-refreshing."
-            accent="#ffd23f"
-            icon={<span className="text-xl font-black">€</span>}
-            badge="live"
-          />
-          <ToolCard
-            href="/tools/crypto"
-            title="Crypto prices"
-            blurb="Spot prices and 24h change for the top coins. Updates every 30s."
-            accent="#4ade80"
-            icon={<span className="text-xl font-black">₿</span>}
-            badge="live"
-          />
-          <ToolCard
-            href="/tools/formula"
-            title="Custom formula"
-            blurb="Write your own expression, save it, re-use it. Feed it to the engine or simplify it."
-            accent="#b388ff"
-            icon={<span className="text-xl font-black text-white">ƒ</span>}
-          />
-          <ToolCard
-            href="/tools/economy"
-            title="Economy indicators"
-            blurb="Inflation, GDP per capita, unemployment and population from the World Bank."
-            accent="#22c55e"
-            icon={<span className="text-xl font-black text-white">📊</span>}
-            badge="live"
-          />
+          <Reveal delay={120}><HeroIllustration /></Reveal>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl px-5 py-10 grid md:grid-cols-3 gap-5">
-        {[
-          { t: "1. Pick a tool", d: "From the nav or the grid above." },
-          { t: "2. Type or select", d: "Expressions, amounts, or just a country." },
-          { t: "3. Get a real answer", d: "Formatted, cited, and saved if you like." },
-        ].map((s) => (
-          <div key={s.t} className="sketch-sm bg-white p-5">
-            <div className="font-bold text-lg">{s.t}</div>
-            <div className="text-slate-600 text-sm mt-1">{s.d}</div>
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="tools-heading">
+        <Reveal>
+          <h2 id="tools-heading" className="h-title text-3xl sm:text-4xl">Six tools, <span className="h-underline">many uses</span></h2>
+          <p className="mt-2 max-w-xl text-slate-600">Calculate, convert values or explore selected reference information.</p>
+        </Reveal>
+        <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {TOOLS.map((t, i) => <Reveal key={t.href} delay={i * 50}><ToolCard {...t} /></Reveal>)}
+        </div>
+      </section>
+
+      <GuideTeasers />
+
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="facts-heading">
+        <Reveal>
+          <h2 id="facts-heading" className="h-title text-3xl sm:text-4xl">What to <span className="h-underline">expect</span></h2>
+        </Reveal>
+        <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {FACTS.map((f) => (
+            <Reveal key={f.title}>
+              <div className="sketch h-full">
+                <span className="icon-tile"><Icon name={f.icon} size={21} strokeWidth={2.1} /></span>
+                <h3 className="mt-4 text-[1.05rem] font-extrabold tracking-tight">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{f.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="formula-heading">
+        <Reveal>
+          <div className="rounded-[24px] border-2 border-[color:var(--line)] bg-[#0b1020] p-8 shadow-[var(--shadow-ink-lg)] sm:p-12" data-tone="dark">
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <h2 id="formula-heading" className="text-3xl font-extrabold leading-tight text-white sm:text-4xl">Bring your own method.</h2>
+                <p className="mt-4 leading-relaxed text-slate-300">
+                  Enter a repayment expression, conversion factor or physics formula. Provide values
+                  for its variables, then press Evaluate to reveal the result. Simplification and
+                  derivative estimates can help with exploration; important calculations should be
+                  checked independently.
+                </p>
+                <ul className="mt-6 space-y-2.5">
+                  {[
+                    "Review a simplified form of the expression",
+                    "Estimate a derivative at a point you choose",
+                    "Use unit expressions and named values",
+                    "Save, export or remove your formulas",
+                  ].map((s) => <li key={s} className="flex items-start gap-2.5 text-sm text-slate-200"><Icon name="check" size={17} className="mt-0.5 shrink-0 text-[#4ade80]" />{s}</li>)}
+                </ul>
+                <div className="mt-8"><Link href="/tools/formula" className="btn btn-primary">Open custom formulas <Icon name="arrow-right" size={17} /></Link></div>
+              </div>
+              <div className="rounded-2xl border-2 border-white/15 bg-black/40 p-5 text-sm" aria-label="Illustrative formula example">
+                {[
+                  { k: "expression", v: "P * (1 + r/n)^(n*t)" },
+                  { k: "values", v: "P=1000, r=0.05, n=12, t=10" },
+                  { k: "illustrative result", v: "1647.0095" },
+                ].map((row) => <div key={row.k} className="flex items-baseline justify-between gap-4 border-b border-white/5 py-2.5 last:border-0"><span className="text-slate-400">{row.k}</span><span className="mono text-[#ffd23f]">{row.v}</span></div>)}
+                <p className="mt-3 text-xs text-slate-400">Illustration only; values and rounding depend on the expression entered.</p>
+              </div>
+            </div>
           </div>
-        ))}
+        </Reveal>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="library-heading">
+        <Reveal>
+          <h2 id="library-heading" className="h-title text-3xl sm:text-4xl">Example <span className="h-underline">formulas</span></h2>
+          <p className="mt-2 max-w-xl text-slate-600">Open an example in the formula tool and adapt it to your own inputs.</p>
+        </Reveal>
+        <div className="mt-8"><Reveal><FormulaLibrary /></Reveal></div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="reference-heading">
+        <Reveal>
+          <h2 id="reference-heading" className="h-title text-3xl sm:text-4xl">Reference <span className="h-underline">information</span></h2>
+          <p className="mt-2 max-w-2xl text-slate-600">Figures are supplied from external sources. Availability, coverage and update frequency vary by tool.</p>
+        </Reveal>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {INFORMATION_TYPES.map((item) => (
+            <Reveal key={item.title}>
+              <Link href={item.href} className="sketch card-hover block h-full">
+                <div className="flex items-center gap-2"><Icon name={item.icon} size={17} className="text-[color:var(--accent)]" /><span className="font-extrabold">{item.title}</span></div>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.text}</p>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+        <p className="mt-4 max-w-3xl text-xs text-slate-500">Reference figures are for general information, not advice. See the <Link href="/disclaimer" className="font-bold underline decoration-2 underline-offset-2">Disclaimer</Link>.</p>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-12 pb-20" aria-labelledby="faq-heading">
+        <Reveal><h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Frequently <span className="h-underline">asked</span></h2></Reveal>
+        <div className="mt-9"><Reveal><Faq /></Reveal></div>
       </section>
     </div>
   );

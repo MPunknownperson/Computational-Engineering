@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
+import { TIMING } from "@/lib/catalog";
 
-export const revalidate = 300; // 5 min
+// Must be a literal; keep equal to TIMING.fxCacheSeconds.
+export const revalidate = 300;
+
+function isoDaysAgo(days: number) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
 
 type FrankfurterLatest = {
   amount: number;
@@ -25,11 +33,11 @@ export async function GET(req: Request) {
 
   try {
     if (series) {
-      const url = `https://api.frankfurter.dev/v1/2024-01-01..?base=${encodeURIComponent(base)}${symbols ? `&symbols=${encodeURIComponent(symbols)}` : ""}`;
-      const res = await fetch(url, { next: { revalidate: 3600 } });
+      const url = `https://api.frankfurter.dev/v1/${isoDaysAgo(TIMING.fxSeriesDays)}..?base=${encodeURIComponent(base)}${symbols ? `&symbols=${encodeURIComponent(symbols)}` : ""}`;
+      const res = await fetch(url, { next: { revalidate: TIMING.fxSeriesCacheSeconds } });
       if (!res.ok) throw new Error(`frankfurter ${res.status}`);
       const data = (await res.json()) as FrankfurterSeries;
-      // Thin out to ~30 points to keep payload small
+      // A 30-day window has ~21 ECB business days; thin only if a caller asks for more.
       const entries = Object.entries(data.rates);
       const step = Math.max(1, Math.floor(entries.length / 30));
       const thinned = entries.filter((_, i) => i % step === 0 || i === entries.length - 1);
@@ -41,7 +49,7 @@ export async function GET(req: Request) {
       });
     }
     const url = `https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(base)}${symbols ? `&symbols=${encodeURIComponent(symbols)}` : ""}`;
-    const res = await fetch(url, { next: { revalidate: 300 } });
+    const res = await fetch(url, { next: { revalidate: TIMING.fxCacheSeconds } });
     if (!res.ok) throw new Error(`frankfurter ${res.status}`);
     const data = (await res.json()) as FrankfurterLatest;
     return NextResponse.json(data);
