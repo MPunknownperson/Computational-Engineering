@@ -19,6 +19,12 @@ const COLS = [
     { href: "/tools/crypto", label: "Digital-asset prices" },
     { href: "/tools/economy", label: "Economic indicators" },
   ] },
+  { title: "Engines", items: [
+    { href: "/studio", label: "Melody studio" },
+    { href: "/arena", label: "Rhythm arena" },
+    { href: "/arena?mode=tilt", label: "Play with motion" },
+    { href: "/studio?compose=1", label: "Generate a melody" },
+  ] },
   { title: "Learn", items: [
     { href: "/guides", label: "Worked guides" },
     { href: "/guides/voice-coach", label: "Voice learning paths" },
