@@ -1,10 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect x="8" y="8" width="52" height="52" rx="15" fill="#0b1020"/>
-  <rect x="4" y="4" width="52" height="52" rx="15" fill="#ffd23f" stroke="#0b1020" stroke-width="3"/>
-  <path d="M15 16h-4v32h4M49 16h4v32h-4" stroke="#0b1020" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M21 19v26M32 19v26M43 19v26M19 23h26M19 32h26M19 41h26" stroke="#0b1020" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M21 23l22 18M43 23 21 41" stroke="#ff6b4a" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="28" cy="31" r="1.6" fill="#0b1020"/><circle cx="36" cy="31" r="1.6" fill="#0b1020"/>
-  <path d="M29 37q3 2.5 6 0" stroke="#0b1020" stroke-width="1.8" stroke-linecap="round"/>
-  <circle cx="46" cy="45" r="4.2" fill="#5b8cff" stroke="#0b1020" stroke-width="2"/><circle cx="46" cy="45" r="1.2" fill="#fffdf5"/>
+  <rect x="8" y="8" width="52" height="52" rx="16" fill="#0b1020"/>
+  <rect x="4" y="4" width="52" height="52" rx="16" fill="#ffd23f" stroke="#0b1020" stroke-width="3"/>
+  <path d="M14 20V11h7M46 20v-9h-7" stroke="#0b1020" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 26c0-5 4-9 9-9h18c5 0 9 4 9 9v14c0 7-8 12-18 12S12 47 12 40V26Z" fill="#fffdf5" stroke="#0b1020" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="22.5" cy="31" r="7" fill="#fff" stroke="#0b1020" stroke-width="2.8"/>
+  <circle cx="37.5" cy="31" r="7" fill="#fff" stroke="#0b1020" stroke-width="2.8"/>
+  <path d="M17 31h11M22.5 25.5v11M32 31h11M37.5 25.5v11" stroke="#ff6b4a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+  <circle cx="22.5" cy="31" r="2.9" fill="#0b1020"/>
+  <circle cx="37.5" cy="31" r="2.9" fill="#0b1020"/>
+  <circle cx="23.6" cy="29.9" r="1" fill="#fffdf5"/>
+  <circle cx="38.6" cy="29.9" r="1" fill="#fffdf5"/>
+  <path d="M27 40l3 4 3-4" stroke="#0b1020" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="#ff9d3d"/>
+  <path d="M22 47h4M28 49h4M34 47h4" stroke="#5b8cff" stroke-width="2.2" stroke-linecap="round"/>
 </svg>

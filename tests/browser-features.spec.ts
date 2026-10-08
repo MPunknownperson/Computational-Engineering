@@ -2,7 +2,18 @@ import { expect, test, type Page } from "@playwright/test";
 
 const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "/tools/formula", "/guides", "/contact", "/terms"];
 
-/** WCAG 2.1 AA audit using axe-core (Deque Systems, free and open source). */
+/**
+ * WCAG 2.1 AA audit using axe-core (Deque Systems, free and open source).
+ *
+ * Colour contrast must be measured on elements at rest. The site's scroll-reveal
+ * animation transitions `.reveal` from opacity 0 to 1, so an audit that runs
+ * while that transition is in flight reads partially transparent text and
+ * blends the foreground with the background — turning a 7:1 pair into a
+ * spurious 4.2:1 "violation" that differs on every run. Requesting reduced
+ * motion makes the stylesheet pin `.reveal` to its final opacity (see the
+ * `prefers-reduced-motion` block in globals.css), so measurements are
+ * deterministic and reflect the state users actually end up reading.
+ */
 async function audit(page: Page, path: string) {
   await page.goto(path);
   await page.waitForLoadState("domcontentloaded");
@@ -16,7 +27,10 @@ async function audit(page: Page, path: string) {
   return (results.violations ?? []) as Array<{ id: string; impact?: string; nodes: unknown[] }>;
 }
 
-test("key pages meet WCAG 2.1 AA per axe-core", async ({ page }) => {
+test("key pages meet WCAG 2.1 AA per axe-core", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  try {
   for (const path of AUDIT_PATHS) {
     const violations = await audit(page, path);
     const serious = violations.filter((v) => ["critical", "serious"].includes(v.impact ?? ""));
@@ -28,6 +42,9 @@ test("key pages meet WCAG 2.1 AA per axe-core", async ({ page }) => {
     if (violations.length) {
       console.log(`[axe] ${path}: ${violations.map((v) => `${v.id}:${v.impact}`).join(", ")}`);
     }
+  }
+  } finally {
+    await context.close();
   }
 });
 
