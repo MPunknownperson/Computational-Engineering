@@ -33,7 +33,10 @@ export async function GET(req: Request) {
 
   try {
     if (series) {
-      const url = `https://api.frankfurter.dev/v1/${isoDaysAgo(TIMING.fxSeriesDays)}..?base=${encodeURIComponent(base)}${symbols ? `&symbols=${encodeURIComponent(symbols)}` : ""}`;
+      // A caller may pass an explicit start date; otherwise the default window applies.
+      const from = searchParams.get("from");
+      const start = from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? from : isoDaysAgo(TIMING.fxSeriesDays);
+      const url = `https://api.frankfurter.dev/v1/${start}..?base=${encodeURIComponent(base)}${symbols ? `&symbols=${encodeURIComponent(symbols)}` : ""}`;
       const res = await fetch(url, { next: { revalidate: TIMING.fxSeriesCacheSeconds } });
       if (!res.ok) throw new Error(`frankfurter ${res.status}`);
       const data = (await res.json()) as FrankfurterSeries;

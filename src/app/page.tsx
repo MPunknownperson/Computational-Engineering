@@ -3,13 +3,21 @@ import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
 import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
+import { VoiceIllustration } from "@/components/VoiceIllustration";
 import { ToolCard } from "@/components/ToolCard";
 import { Icon, type IconName } from "@/components/Icons";
-import { Reveal } from "@/components/Motion";
+import { Reveal, Parallax } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
 import { FormulaLibrary } from "@/components/home/Sections";
 import { SITE } from "@/lib/site";
 import { CURRENCIES, COUNTRIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, CRYPTO_IDS, INDICATORS } from "@/lib/catalog";
+
+const VOICE_POINTS: { icon: IconName; title: string; body: string }[] = [
+  { icon: "mic", title: "Say it in your own words", body: "“Convert 120 US dollars to euros,” “70 kilos in pounds,” “loan payment” — the matching tool opens with the amount and direction already filled in." },
+  { icon: "language", title: "Five languages, one grammar", body: "English, Spanish, French, German and Chinese are understood by the same engine, each with its own numbers, currencies and topic words." },
+  { icon: "shield", title: "Processed where it makes sense", body: "Phones use on-device recognition where it's offered; desktop browsers use their own speech service. Nothing is uploaded to this site." },
+  { icon: "refresh", title: "Gets better as you use it", body: "A quick “again” repeats your last command, and a follow-up amount reuses the direction you already set — no need to restate everything." },
+];
 
 export const generateMetadata = () => metadataFor("/");
 
@@ -23,7 +31,7 @@ const TOOLS: {
   { href: "/tools/currency", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies. Press Convert to reveal the amount and the recent trend.`, icon: "globe", tone: "sun", badge: "updates", meta: "press Convert" },
   { href: "/tools/crypto", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", tone: "mint", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
   { href: "/tools/formula", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", tone: "pink", meta: "press Evaluate" },
-  { href: "/tools/economy", title: "Economic indicators", blurb: `${INDICATORS.map((i) => i.label.toLowerCase()).join(", ")} for ${COUNTRIES.length} selected economies. Press Show to reveal the figures.`, icon: "chart", tone: "ink", badge: "updates", meta: "press Show" },
+  { href: "/tools/economy", title: "Economic indicators", blurb: `${INDICATORS.length} measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show to reveal the figures.`, icon: "chart", tone: "ink", badge: "updates", meta: "press Show" },
 ];
 
 const FACTS: { icon: IconName; title: string; body: string }[] = [
@@ -69,7 +77,53 @@ export default function Home() {
               </div>
             </Reveal>
           </div>
-          <Reveal delay={120}><HeroIllustration /></Reveal>
+          <Reveal delay={120}><Parallax range={14}><HeroIllustration /></Parallax></Reveal>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="voice-heading">
+        <div className="sketch overflow-hidden !p-0">
+          <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-2">
+            <div>
+              <Reveal>
+                <span className="chip"><Icon name="mic" size={13} /> Speak a calculation</span>
+                <h2 id="voice-heading" className="h-title mt-4 text-3xl sm:text-4xl">
+                  Say what you want to <span className="h-underline">calculate</span>
+                </h2>
+                <p className="mt-4 max-w-xl text-[1.05rem] leading-relaxed text-slate-600">
+                  Press the microphone on the calculators page and speak a conversion, a formula or
+                  a reference figure. The site understands the request and opens the right tool with
+                  your values already in place — no typing, no menus to search through.
+                </p>
+              </Reveal>
+              <Reveal delay={60}>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {VOICE_POINTS.map((point) => (
+                    <div key={point.title} className="flex items-start gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-2 border-[color:var(--line)] bg-white text-[color:var(--accent-2)] shadow-[2px_2px_0_0_var(--line)]">
+                        <Icon name={point.icon} size={16} />
+                      </span>
+                      <div>
+                        <div className="text-sm font-extrabold tracking-tight">{point.title}</div>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-600">{point.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+              <Reveal delay={110}>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Link href="/calculators" className="btn btn-primary">
+                    Try speaking a calculation <Icon name="arrow-right" size={17} />
+                  </Link>
+                  <Link href="/guides/voice-coach" className="btn">
+                    <Icon name="book" size={16} /> See the learning paths
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
+            <Reveal delay={90}><Parallax range={10}><VoiceIllustration /></Parallax></Reveal>
+          </div>
         </div>
       </section>
 
@@ -164,7 +218,10 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-12 pb-20" aria-labelledby="faq-heading">
-        <Reveal><h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Frequently <span className="h-underline">asked</span></h2></Reveal>
+        <Reveal>
+          <h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Frequently <span className="h-underline">asked</span></h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-600">Detailed answers for voice setup, processing messages, follow-up commands, saved formulas and reference figures.</p>
+        </Reveal>
         <div className="mt-9"><Reveal><Faq /></Reveal></div>
       </section>
     </div>

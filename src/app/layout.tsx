@@ -10,6 +10,8 @@ import { Nav, type NavItem } from "@/components/Nav";
 import { PwaInstall } from "@/components/tech/BrowserTools";
 import { SITE } from "@/lib/site";
 import { defaultMetadata } from "@/lib/seo";
+import { headers } from "next/headers";
+import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
 
 export const generateMetadata = defaultMetadata;
 export const viewport: Viewport = {
@@ -19,17 +21,19 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Home" },
-  { href: "/calculators", label: "Tools" },
-  { href: "/guides", label: "Guides" },
-  { href: "/tools/formula", label: "Formulas" },
-  { href: "/tools/currency", label: "Currency" },
-  { href: "/tools/crypto", label: "Assets" },
-  { href: "/tools/economy", label: "Economy" },
+const NAV: Array<{ href: string; key: UiKey }> = [
+  { href: "/", key: "nav.home" },
+  { href: "/calculators", key: "nav.tools" },
+  { href: "/guides", key: "nav.guides" },
+  { href: "/tools/formula", key: "nav.formulas" },
+  { href: "/tools/currency", key: "nav.currency" },
+  { href: "/tools/economy", key: "nav.economy" },
 ];
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Navigation labels come from the visitor's language pack.
+  const pack = selectPack(parseAcceptLanguage((await headers()).get("accept-language")));
+  const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
   return (
     <html lang="en">
       <body className="paper-bg flex min-h-screen flex-col text-[color:var(--ink)] antialiased">

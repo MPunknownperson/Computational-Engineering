@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { LANDING_PAGES, LANDING_SECTIONS, type LandingKind } from "@/lib/landing";
 import { SearchContext } from "@/components/search/SearchContext";
+import { GuideHero } from "@/components/GuideHero";
+import { Icon } from "@/components/Icons";
 
 const HUB_COPY: Record<LandingKind, {
   intro: string;
@@ -68,15 +70,23 @@ export function HubPage({ section }: { section: LandingKind }) {
           <h2 id="all-in-section" className="text-2xl font-extrabold">All {hub.title.toLowerCase()}</h2>
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {pages.map((page) => (
-              <article key={page.slug} className="sketch card-hover h-full">
-                {page.formula && <span className="mono rounded-lg border border-[color:var(--line)] bg-[#fffdf5] px-2.5 py-1 text-xs">{page.formula}</span>}
-                <h3 className="mt-3 text-lg font-extrabold leading-snug">
-                  <Link href={page.path}>{page.title}</Link>
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{page.description}</p>
-                <Link href={page.path} className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-[#923019] underline underline-offset-4">
-                  Open <span aria-hidden="true">→</span>
-                </Link>
+              <article key={page.slug} className="sketch card-hover h-full overflow-hidden !p-0">
+                <GuideHero
+                  path={page.path}
+                  alt={`${page.title} — ${page.formula ?? hub.title}`}
+                  sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+                  className="border-b-2 border-[color:var(--line)]"
+                />
+                <div className="p-4">
+                  {page.formula && <span className="mono rounded-lg border border-[color:var(--line)] bg-[#fffdf5] px-2.5 py-1 text-xs">{page.formula}</span>}
+                  <h3 className="mt-3 text-lg font-extrabold leading-snug">
+                    <Link href={page.path}>{page.title}</Link>
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{page.description}</p>
+                  <Link href={page.path} className="mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-[#923019] underline underline-offset-4">
+                    Open <Icon name="arrow-right" size={14} />
+                  </Link>
+                </div>
               </article>
             ))}
           </div>

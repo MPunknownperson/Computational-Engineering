@@ -71,12 +71,126 @@ export function PanelSwap({
 }
 
 /* ------------------------------------------------------------------ */
-/* Reveal — blur + lift on scroll, with stagger                          */
+/* Reveal — a one-shot fade + lift as a section enters the viewport      */
+/*                                                                        */
+/* Safe by construction: the very first render (server and first client   */
+/* paint) carries none of the "hidden" styling, so a visitor without       */
+/* JavaScript — or before hydration completes — always sees the final,     */
+/* fully visible content. Only once mounted does the component arm itself  */
+/* and fade the content in as it scrolls into view. Reduced-motion         */
+/* preferences skip the animation outright. Transform/opacity only, so the  */
+/* browser can run it entirely on the compositor thread.                   */
 /* ------------------------------------------------------------------ */
-export function Reveal({ children, className = "" }: {
+export function Reveal({ children, delay = 0, className = "", once = true }: {
   children: ReactNode; delay?: number; className?: string; once?: boolean;
 }) {
-  return <div className={className}>{children}</div>;
+  const ref = useRef<HTMLDivElement>(null);
+  const [armed, setArmed] = useState(false);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return; // stay fully visible, exactly as rendered on the server
+
+    // Arm on the next frame so the browser paints the base (visible) state at
+    // least once before the "hidden" class can apply — this is what makes the
+    // transition play instead of popping straight to the revealed state.
+    const armFrame = requestAnimationFrame(() => setArmed(true));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setShown(true);
+            if (once) observer.unobserve(entry.target);
+          } else if (!once) {
+            setShown(false);
+          }
+        }
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(node);
+    return () => {
+      cancelAnimationFrame(armFrame);
+      observer.disconnect();
+    };
+  }, [once]);
+
+  return (
+    <div
+      ref={ref}
+      className={`${armed ? (shown ? "reveal reveal-in" : "reveal") : ""} ${className}`}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Parallax — a few pixels of scroll-linked drift, nothing more          */
+/*                                                                        */
+/* A restrained alternative to scroll-hijacking "smooth scroll" libraries: */
+/* native scrolling is never touched, the browser stays in full control,   */
+/* and a single rAF-batched listener nudges decorative artwork by a few     */
+/* pixels while it is on screen. Disabled for reduced motion and for touch  */
+/* / coarse pointers, where the effect is least useful and costs the most.  */
+/* ------------------------------------------------------------------ */
+export function Parallax({
+  children,
+  range = 16,
+  className = "",
+}: {
+  children: ReactNode;
+  /** Maximum drift, in pixels, in either direction. */
+  range?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef(0);
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia?.("(pointer: coarse)").matches;
+    if (reduced || coarse) return;
+
+    const update = () => {
+      frame.current = 0;
+      const rect = node.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const viewportMid = window.innerHeight / 2;
+      // -1 at the very top of the screen, +1 at the very bottom; clamp so the
+      // drift never runs away for very tall pages or very short viewports.
+      const progress = Math.max(-1, Math.min(1, (mid - viewportMid) / (window.innerHeight / 2 + rect.height / 2)));
+      setOffset(-progress * range);
+    };
+
+    const onScroll = () => {
+      if (frame.current) return;
+      frame.current = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      if (frame.current) cancelAnimationFrame(frame.current);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [range]);
+
+  return (
+    <div ref={ref} className={className} style={{ transform: `translate3d(0, ${offset.toFixed(2)}px, 0)` }}>
+      {children}
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */

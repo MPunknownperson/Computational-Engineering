@@ -1,11 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { findGuide, guidePath } from "@/lib/guides";
-import { findSearchPage, imagePath } from "@/lib/search-pages";
 import { SITE } from "@/lib/site";
 import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
+import { GuideHero } from "@/components/GuideHero";
 
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props) {
@@ -31,7 +30,7 @@ export default async function GuidePage({ params }: Props) {
       <div className="mt-8 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-7">
           <figure className="sketch overflow-hidden !p-0">
-            <Image src={imagePath(findSearchPage(path)!)} width={1200} height={630} priority unoptimized alt={guide.imageAlt} className="h-auto w-full" />
+            <GuideHero path={path} alt={guide.imageAlt} priority />
             <figcaption className="border-t-2 border-[color:var(--line)] px-5 py-3 text-sm text-slate-600">{guide.takeaway}. Illustration, not a live result.</figcaption>
           </figure>
           {guide.sections.map((section, i) => <section key={section.heading} id={`step-${i + 1}`} className="scroll-mt-24">

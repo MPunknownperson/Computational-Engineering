@@ -26,7 +26,14 @@
   --snap: cubic-bezier(.2, .8, .2, 1);
 }
 
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
 body {
   background: var(--paper);
   color: var(--ink);
@@ -171,10 +178,10 @@ select.select {
 
 /* ---------- Route ---------- */
 @keyframes pageEnter {
-  from { opacity: 0; transform: translate3d(0, var(--enter-y, 14px), 0) scale(.99); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translate3d(0, var(--enter-y, 9px), 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-.page-enter { animation: pageEnter .45s var(--ease) both; }
+.page-enter { animation: pageEnter .32s var(--ease) both; will-change: transform, opacity; }
 
 @view-transition { navigation: auto; }
 ::view-transition-old(root) { animation: vtOut .18s ease both; }
@@ -184,10 +191,14 @@ select.select {
 
 /* ---------- Scroll reveal ---------- */
 .reveal {
-  opacity: 0; transform: translateY(20px) scale(.99);
-  transition: opacity .55s var(--ease), transform .55s var(--ease);
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity .42s var(--ease), transform .42s var(--ease);
+  will-change: transform, opacity;
 }
-.reveal.reveal-in { opacity: 1; transform: none; }
+.reveal.reveal-in { opacity: 1; transform: translate3d(0, 0, 0); }
+/* Avoid retaining compositing layers after the one-shot reveal settles. */
+.reveal.reveal-in { will-change: auto; }
 
 /* ---------- Values ---------- */
 @keyframes valueIn { from { opacity: 0; transform: translateY(8px) scale(.99); } }
@@ -384,6 +395,18 @@ textarea:focus-visible, [role="radio"]:focus-visible {
   outline: 3px solid var(--accent-2);
   outline-offset: 3px;
 }
+
+/* ---------- Layout containment (mobile overflow guard) ----------
+   CSS grid and flex items default to `min-width: auto`, so a single wide
+   descendant — a reference table, a `<select>` with a long option, a
+   scrollable segmented control — can silently widen its column past the
+   viewport. Giving every grid/flex child a zero minimum lets wide content
+   scroll inside its own box (`overflow-x: auto`) instead of pushing the page. */
+.grid > *, .flex > * { min-width: 0; }
+.segmented { max-width: 100%; }
+.select, .input, .textarea { max-width: 100%; }
+select.select { text-overflow: ellipsis; }
+table { max-width: 100%; }
 
 @media (max-width: 767px) {
   .sketch { padding: 1rem; border-radius: 16px; }

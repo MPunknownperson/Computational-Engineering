@@ -1,139 +1,72 @@
-// The original cartoon hero: Nova the owl helper plus floating math glyphs,
-// staged in a little paper valley with clouds, a turning sun and falling coins.
+// Homepage editorial artwork: a hand-drawn number workbench rather than a
+// repeating mascot loop. The scene tells the product story at a glance — a
+// quantity, a unit pair, a formula and a result arranged on a calm paper desk.
+// Scroll/parallax motion lives around this SVG; the illustration itself is
+// deliberately still so it remains clear, polished and inexpensive to render.
 export function HeroIllustration() {
   return (
     <div className="relative mx-auto w-full max-w-[540px] select-none">
       <svg viewBox="0 0 520 430" className="w-full" aria-hidden>
         <defs>
-          <radialGradient id="blob" cx="50%" cy="44%" r="55%">
-            <stop offset="0%" stopColor="#ffe8b0" />
-            <stop offset="100%" stopColor="#fff4d8" stopOpacity="0" />
+          <radialGradient id="studio-wash" cx="48%" cy="44%" r="62%">
+            <stop offset="0%" stopColor="#d8e6ff" stopOpacity=".85" />
+            <stop offset="100%" stopColor="#d8e6ff" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7ee0a3" />
-            <stop offset="100%" stopColor="#4ade80" />
+          <linearGradient id="studio-paper" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fffdf5" />
+            <stop offset="100%" stopColor="#f2efe5" />
           </linearGradient>
         </defs>
 
-        <ellipse cx="260" cy="215" rx="240" ry="180" fill="url(#blob)" />
+        <ellipse cx="260" cy="210" rx="235" ry="175" fill="url(#studio-wash)" />
+        <path d="M28 352c70-20 150-21 229-4s155 13 235-11v65H28Z" fill="#fff5dc" stroke="#0b1020" strokeWidth="3" />
 
-        {/* sun */}
-        <g transform="translate(455 60)">
-          <g>
-            <circle r="20" fill="#ffd23f" stroke="#0b1020" strokeWidth="3" />
-            {Array.from({ length: 8 }).map((_, i) => (
-              <line
-                key={i}
-                x1={0} y1={-30} x2={0} y2={-38}
-                stroke="#0b1020" strokeWidth="3" strokeLinecap="round"
-                transform={`rotate(${i * 45})`}
-              />
-            ))}
+        {/* background graph paper, deliberately faint */}
+        <g opacity=".18" stroke="#0b1020" strokeWidth="1">
+          {Array.from({ length: 8 }).map((_, i) => <path key={`v${i}`} d={`M${74 + i * 48} 54v238`} />)}
+          {Array.from({ length: 5 }).map((_, i) => <path key={`h${i}`} d={`M74 ${74 + i * 48}h336`} />)}
+        </g>
+
+        {/* formula sheet */}
+        <g transform="translate(78 82) rotate(-5 112 116)">
+          <rect width="224" height="232" rx="16" fill="url(#studio-paper)" stroke="#0b1020" strokeWidth="3" />
+          <path d="M25 47h110M25 66h164M25 85h139" stroke="#0b1020" strokeWidth="2.2" strokeLinecap="round" opacity=".35" />
+          <text x="26" y="125" fontSize="25" fontWeight="800" fill="#0b1020">120 USD</text>
+          <path d="M29 146h106" stroke="#0b1020" strokeWidth="2.4" strokeDasharray="3 6" strokeLinecap="round" />
+          <text x="26" y="178" fontSize="23" fontWeight="800" fill="#5b8cff">→ EUR</text>
+          <rect x="25" y="193" width="155" height="22" rx="7" fill="#ffd23f" stroke="#0b1020" strokeWidth="2" />
+          <text x="36" y="209" fontSize="11" fontWeight="800" fill="#0b1020">amount × reference rate</text>
+        </g>
+
+        {/* tilted calculator */}
+        <g transform="translate(290 72) rotate(7 80 116)">
+          <rect x="0" y="0" width="160" height="226" rx="21" fill="#0b1020" stroke="#0b1020" strokeWidth="3" />
+          <rect x="14" y="15" width="132" height="54" rx="9" fill="#d8e6ff" stroke="#fff" strokeOpacity=".3" strokeWidth="1.5" />
+          <text x="28" y="51" fontSize="24" fontWeight="800" fill="#0b1020">110.42</text>
+          <g fill="#fffdf5" stroke="#0b1020" strokeWidth="1.8">
+            {Array.from({ length: 3 }).map((_, row) => Array.from({ length: 3 }).map((__, col) => (
+              <rect key={`${row}-${col}`} x={16 + col * 41} y={86 + row * 34} width="31" height="24" rx="6" />
+            )))}
+            <rect x="16" y="188" width="72" height="23" rx="6" fill="#ffd23f" />
+            <rect x="97" y="188" width="47" height="23" rx="6" fill="#ff6b4a" />
           </g>
         </g>
 
-        {/* clouds */}
-        <g opacity=".95">
-          <ellipse cx="80" cy="66" rx="30" ry="16" fill="#fff" stroke="#0b1020" strokeWidth="2.6" />
-          <ellipse cx="104" cy="60" rx="20" ry="13" fill="#fff" stroke="#0b1020" strokeWidth="2.6" />
+        {/* measuring tab and line graph: joins tools to calculations */}
+        <g transform="translate(331 317)">
+          <path d="M0 42h142" stroke="#0b1020" strokeWidth="3" strokeLinecap="round" />
+          <path d="M13 40 35 25l28 8 31-24 31 9" fill="none" stroke="#4ade80" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          {[13, 35, 63, 94, 125].map((x, i) => <circle key={x} cx={x} cy={[40, 25, 33, 9, 18][i]} r="4" fill="#ffd23f" stroke="#0b1020" strokeWidth="2" />)}
         </g>
-        <g>
-          <ellipse cx="360" cy="42" rx="24" ry="13" fill="#fff" stroke="#0b1020" strokeWidth="2.4" />
-        </g>
-
-        {/* hills */}
-        <path d="M0 400 Q120 330 250 392 T520 380 L520 430 L0 430 Z" fill="url(#hill)" stroke="#0b1020" strokeWidth="3" />
-        <path d="M0 414 Q160 372 320 414 T520 404 L520 430 L0 430 Z" fill="#3fce7f" stroke="#0b1020" strokeWidth="3" />
-
-        {/* floating glyphs */}
-        <g>
-          <circle cx="74" cy="150" r="25" fill="#ff6b4a" stroke="#0b1020" strokeWidth="3" />
-          <text x="74" y="158" textAnchor="middle" fontSize="26" fontWeight="800" fill="#fff">+</text>
-        </g>
-        <g>
-          <rect x="416" y="126" width="48" height="48" rx="12" fill="#5b8cff" stroke="#0b1020" strokeWidth="3" />
-          <text x="440" y="160" textAnchor="middle" fontSize="26" fontWeight="800" fill="#fff">÷</text>
-        </g>
-        <g>
-          <text x="260" y="80" textAnchor="middle" fontSize="34" fontWeight="800" fill="#0b1020">∑</text>
-        </g>
-        <g>
-          <polygon points="120,274 148,320 92,320" fill="#ffd23f" stroke="#0b1020" strokeWidth="3" />
-        </g>
-        <g>
-          <circle cx="412" cy="300" r="21" fill="#4ade80" stroke="#0b1020" strokeWidth="3" />
-          <text x="412" y="308" textAnchor="middle" fontSize="21" fontWeight="800" fill="#0b1020">π</text>
+        <g transform="translate(48 320)">
+          <rect x="0" y="0" width="195" height="30" rx="7" fill="#fff" stroke="#0b1020" strokeWidth="2.4" />
+          {Array.from({ length: 13 }).map((_, i) => <path key={i} d={`M${13 + i * 14} 0v${i % 4 === 0 ? 17 : 10}`} stroke="#0b1020" strokeWidth="1.8" />)}
+          <text x="88" y="23" fontSize="11" fontWeight="800" fill="#5b8cff">m ↔ ft</text>
         </g>
 
-        {/* falling coins */}
-        <g style={{ animationDelay: "0s" }}>
-          <circle cx="200" cy="96" r="9" fill="#ffd23f" stroke="#0b1020" strokeWidth="2.4" />
-        </g>
-        <g style={{ animationDelay: "1.1s" }}>
-          <circle cx="330" cy="86" r="7" fill="#ffd23f" stroke="#0b1020" strokeWidth="2.2" />
-        </g>
-        <g style={{ animationDelay: "2.1s" }}>
-          <circle cx="272" cy="70" r="8" fill="#ffd23f" stroke="#0b1020" strokeWidth="2.2" />
-        </g>
-
-        {/* Nova the owl */}
-        <g transform="translate(196 186)"><g>
-          <ellipse cx="64" cy="150" rx="54" ry="10" fill="#0b1020" opacity=".12" />
-          <ellipse cx="64" cy="86" rx="56" ry="62" fill="#8b5a3c" stroke="#0b1020" strokeWidth="3" />
-          <ellipse cx="64" cy="102" rx="36" ry="40" fill="#f4d9b3" stroke="#0b1020" strokeWidth="2.5" />
-          <polygon points="22,36 38,8 48,46" fill="#8b5a3c" stroke="#0b1020" strokeWidth="3" />
-          <polygon points="106,36 90,8 80,46" fill="#8b5a3c" stroke="#0b1020" strokeWidth="3" />
-
-          <circle cx="45" cy="66" r="18" fill="#fff" stroke="#0b1020" strokeWidth="3" />
-          <circle cx="83" cy="66" r="18" fill="#fff" stroke="#0b1020" strokeWidth="3" />
-          <g className="brand-eye">
-            <circle cx="46" cy="68" r="7.5" fill="#0b1020" />
-            <circle cx="84" cy="68" r="7.5" fill="#0b1020" />
-            <circle cx="48.4" cy="65" r="2.3" fill="#fff" />
-            <circle cx="86.4" cy="65" r="2.3" fill="#fff" />
-          </g>
-          <polygon points="64,80 56,93 72,93" fill="#ff9d3d" stroke="#0b1020" strokeWidth="2.5" />
-
-          {/* wings */}
-          <g>
-            <ellipse cx="16" cy="100" rx="14" ry="28" fill="#6b4428" stroke="#0b1020" strokeWidth="3" />
-            <ellipse cx="112" cy="100" rx="14" ry="28" fill="#6b4428" stroke="#0b1020" strokeWidth="3" />
-          </g>
-          <path d="M48 142 l-7 11 M56 143 l0 12 M64 142 l7 11" stroke="#ff9d3d" strokeWidth="3.4" strokeLinecap="round" />
-
-          {/* graduation cap */}
-          <g transform="translate(64 16)">
-            <polygon points="0,-8 26,2 0,12 -26,2" fill="#0b1020" />
-            <path d="M0 12 v10" stroke="#ffd23f" strokeWidth="2.6" strokeLinecap="round" />
-            <circle cx="0" cy="23" r="3" fill="#ffd23f" stroke="#0b1020" strokeWidth="1.6" />
-          </g>
-
-          {/* thought bubble */}
-          <g transform="translate(112 -6)">
-            <circle cx="0" cy="34" r="5" fill="#fff" stroke="#0b1020" strokeWidth="2" />
-            <circle cx="12" cy="18" r="7" fill="#fff" stroke="#0b1020" strokeWidth="2" />
-            <ellipse cx="40" cy="-4" rx="34" ry="22" fill="#fff" stroke="#0b1020" strokeWidth="2.6" />
-            <text x="40" y="2" textAnchor="middle" fontSize="17" fontWeight="800" fill="#0b1020">x²</text>
-          </g>
-        </g></g>
-
-        {/* Pip the coin-cat */}
-        <g transform="translate(64 316)"><g style={{ animationDelay: ".8s" }}>
-          <ellipse cx="34" cy="56" rx="30" ry="7" fill="#0b1020" opacity=".12" />
-          <ellipse cx="34" cy="34" rx="27" ry="21" fill="#ffb26b" stroke="#0b1020" strokeWidth="2.8" />
-          <polygon points="14,20 10,2 26,14" fill="#ffb26b" stroke="#0b1020" strokeWidth="2.6" />
-          <polygon points="54,20 58,2 42,14" fill="#ffb26b" stroke="#0b1020" strokeWidth="2.6" />
-          <circle cx="25" cy="32" r="4.4" fill="#0b1020" />
-          <circle cx="43" cy="32" r="4.4" fill="#0b1020" />
-          <path d="M31 41 q3 3 6 0" stroke="#0b1020" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-          <g>
-            <path d="M8 40 q-16 -6 -10 -22" stroke="#0b1020" strokeWidth="3" fill="none" strokeLinecap="round" />
-          </g>
-          <g transform="translate(58 42)">
-            <circle r="11" fill="#ffd23f" stroke="#0b1020" strokeWidth="2.6" />
-            <text y="5" textAnchor="middle" fontSize="13" fontWeight="800" fill="#0b1020">¢</text>
-          </g>
-        </g></g>
+        {/* sparse handmade accents; no looping movement */}
+        <circle cx="51" cy="75" r="10" fill="#ff6b4a" stroke="#0b1020" strokeWidth="2.4" />
+        <path d="M454 64l8 14 14 8-14 8-8 14-8-14-14-8 14-8Z" fill="#ffd23f" stroke="#0b1020" strokeWidth="2.2" strokeLinejoin="round" />
       </svg>
     </div>
   );

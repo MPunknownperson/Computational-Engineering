@@ -5,7 +5,9 @@ import { Icon, type IconName } from "@/components/Icons";
 import { Owl } from "@/components/Mascots";
 import { CURRENCIES, COUNTRIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, CRYPTO_IDS } from "@/lib/catalog";
 import { CONVERSION_LINKS, FORMULA_LINKS, REFERENCE_LINKS } from "@/lib/deep-links";
+import { headers } from "next/headers";
 import { SpeakCalc } from "@/components/tech/BrowserTools";
+import { parseAcceptLanguage, selectPack } from "@/lib/i18n";
 
 type Tone = "coral" | "sky" | "sun" | "mint" | "pink" | "ink";
 const ALL: { href: string; title: string; blurb: string; icon: IconName; tone: Tone; badge?: string; meta: string }[] = [
@@ -24,7 +26,8 @@ const NOTES: { icon: IconName; title: string; body: string }[] = [
   { icon: "target", title: "Check important results", body: "Use independent confirmation for decisions involving money, health or safety." },
 ];
 
-export default function CalculatorsPage() {
+export default async function CalculatorsPage() {
+  const pack = selectPack(parseAcceptLanguage((await headers()).get("accept-language")));
   return (
     <div className="mx-auto max-w-7xl px-5 py-14">
       <Reveal>
@@ -48,7 +51,7 @@ export default function CalculatorsPage() {
         {ALL.map((tool) => <Reveal key={tool.href}><ToolCard {...tool} /></Reveal>)}
       </div>
 
-      <div className="mt-10"><SpeakCalc /></div>
+      <div className="mt-10"><SpeakCalc packId={pack.id} /></div>
 
       {/* Topic hubs group the related landing pages into browseable clusters.
           This keeps every spoke within three clicks of the homepage and gives

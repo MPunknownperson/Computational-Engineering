@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { LandingPage } from "@/lib/landing";
 import { LANDING_PAGES, LANDING_SECTIONS } from "@/lib/landing";
 import { SearchContext } from "@/components/search/SearchContext";
+import { GuideHero } from "@/components/GuideHero";
 import { ConvertWidget, CalculateWidget, ReferenceWidget } from "./widgets";
 
 export function LandingArticle({ page }: { page: LandingPage }) {
@@ -20,6 +21,14 @@ export function LandingArticle({ page }: { page: LandingPage }) {
 
         <div className="mt-8 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-7">
+            <figure className="sketch overflow-hidden !p-0">
+              <GuideHero
+                path={page.path}
+                alt={`${page.title} — ${page.formula ?? sectionTitle}`}
+                priority
+              />
+            </figure>
+
             {page.widget.type === "convert" && (
               <ConvertWidget widget={page.widget} toolHref={toolHrefFor(page)} />
             )}
@@ -83,9 +92,17 @@ export function LandingArticle({ page }: { page: LandingPage }) {
             <h2 id="more-heading" className="text-2xl font-extrabold">More {sectionTitle.toLowerCase()}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {siblings.map((item) => (
-                <Link key={item.slug} href={item.path} className="sketch card-hover block">
-                  <h3 className="font-extrabold">{item.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{item.description}</p>
+                <Link key={item.slug} href={item.path} className="sketch card-hover block overflow-hidden !p-0">
+                  <GuideHero
+                    path={item.path}
+                    alt={`${item.title} — ${item.formula ?? sectionTitle}`}
+                    sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+                    className="border-b-2 border-[color:var(--line)]"
+                  />
+                  <span className="block p-4">
+                    <span className="block font-extrabold">{item.title}</span>
+                    <span className="mt-2 block text-sm text-slate-600">{item.description}</span>
+                  </span>
                 </Link>
               ))}
             </div>

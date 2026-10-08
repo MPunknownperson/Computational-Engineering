@@ -1,174 +1,13 @@
 "use client";
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "@/components/Icons";
-import { resolveIntent, VOICE_EXAMPLES, type IntentMatch } from "@/lib/intent";
-import {
-  createRecognition,
-  type RecognitionInstance,
-  speechRecognitionAvailability,
-  hasWakeLock,
-  hasShare,
-  vibrate,
-  type WakeLockSentinelLike,
-} from "@/lib/browser-tokens";
+import { hasWakeLock, hasShare, vibrate, type WakeLockSentinelLike } from "@/lib/browser-tokens";
 
-/* --------------------------------------------------------------------- */
-/* Voice entry — Web Speech API (Chrome, Edge, Safari).                    */
-/* The site's intent-matching logic turns a spoken phrase into the right   */
-/* prefilled tool instead of a search results list.                        */
-/* --------------------------------------------------------------------- */
+/** Voice entry lives in its own module; re-exported for existing imports. */
+export { SpeakCalc } from "@/components/tech/SpeakCalc";
 
-/** No external store to subscribe to — this is a one-shot feature check. */
+/** No external store to subscribe to — these are one-shot feature checks. */
 function emptySubscribe() { return () => undefined; }
-
-export function SpeakCalc() {
-  const [state, setState] = useState<"idle" | "listening" | "matching">("idle");
-  const [transcript, setTranscript] = useState("");
-  const [match, setMatch] = useState<IntentMatch | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<RecognitionInstance | null>(null);
-  const availability = useSyncExternalStore(emptySubscribe, speechRecognitionAvailability, () => "unavailable" as const);
-  const supported = availability !== "unavailable";
-
-  useEffect(() => {
-    return () => {
-      try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
-    };
-  }, []);
-
-  const start = useCallback(() => {
-    setError(null);
-    setMatch(null);
-    setTranscript("");
-    if (!supported) {
-      setError("Voice input is not available in this browser. Chrome, Edge and Safari support it; the buttons below work everywhere.");
-      return;
-    }
-    const recognition = createRecognition();
-    if (!recognition) {
-      setError("Voice input could not be started. Try a different browser, or use the buttons below.");
-      return;
-    }
-    recognition.onresult = (event) => {
-      const text = Array.from(event.results).map((r) => r[0]?.transcript ?? "").join(" ").trim();
-      setTranscript(text);
-      if (text) {
-        const intent = resolveIntent(text);
-        setMatch(intent);
-        if (intent) {
-          vibrate([60, 30, 60]);
-          setState("matching");
-        }
-      }
-    };
-    recognition.onerror = (event) => {
-      setState("idle");
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setError("Microphone access was blocked. You can allow it in the browser address bar, or use the buttons below.");
-      } else {
-        setError("Voice input could not hear you. Try again, or use the buttons below.");
-      }
-    };
-    recognition.onend = () => setState("idle");
-    recognitionRef.current = recognition;
-    recognition.start();
-    setState("listening");
-  }, [supported]);
-
-  const stop = useCallback(() => {
-    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
-    setState("idle");
-  }, []);
-
-  return (
-    <section className="sketch" aria-labelledby="voice-heading">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[color:var(--line)] bg-[color:var(--accent-3)] shadow-[2px_2px_0_0_var(--line)]">
-          <Icon name="sparkle" size={18} />
-        </span>
-        <div>
-          <h2 id="voice-heading" className="text-base font-extrabold">Speak what you want to calculate</h2>
-          <p className="text-xs text-slate-500">
-            Available in Chrome, Edge and Safari.
-          </p>
-        </div>
-        <div className="ml-auto">
-          {state === "listening" ? (
-            <button type="button" className="btn btn-primary" onClick={stop}>
-              Stop listening
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={start}
-              aria-describedby="voice-status"
-              disabled={!supported}
-            >
-              <span aria-hidden="true">🎙</span>
-              {supported ? "Speak a calculation" : "Voice input unavailable"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Always-visible privacy note: users should know before they activate. */}
-      <p className="mt-3 rounded-xl border-2 border-dashed border-[color:var(--line)] bg-[#fffdf5] px-3.5 py-2.5 text-xs leading-relaxed text-slate-600">
-        <strong>How voice processing works.</strong>{" "}
-        The browser&apos;s built-in speech-recognition service listens to your microphone and
-        turns your words into text. In Chrome and Edge the audio is processed by the browser
-        vendor&apos;s cloud speech service; Safari uses Apple&apos;s service. Where the browser
-        supports a local on-device mode, this site requests it, but whether the audio
-        is processed locally or in the cloud depends on your browser and device.
-        {availability === "cloud" && <> In this browser the audio is likely processed by the browser vendor&apos;s cloud service, not on your device.</>}{" "}
-        Nothing is stored by this site and nothing is sent to anyone other than the
-        browser&apos;s recognition service. The resulting text is matched against
-        a short list of calculation intents on this page and, if it matches, the
-        relevant tool opens — no text is sent to a server. You can always decline
-        microphone permission; the buttons below work without voice input.
-        See the <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Privacy Notice</Link>{" "}
-        for the full picture.
-      </p>
-
-      <p id="voice-status" role="status" aria-live="polite" className="mt-3 min-h-10 text-sm">
-        {state === "listening" && (
-          <span className="inline-flex items-center gap-2 font-semibold text-[color:var(--accent)]">
-            <span className="confirm-dot" aria-hidden /> Listening… try &ldquo;{VOICE_EXAMPLES[0]}&rdquo;
-          </span>
-        )}
-        {transcript && state !== "listening" && (
-          <span className="text-slate-700">Heard: &ldquo;{transcript}&rdquo;</span>
-        )}
-        {!transcript && state === "idle" && !error && (
-          <span className="text-slate-500">
-            Try one of: {VOICE_EXAMPLES.map((e, i) => (
-              <span key={e}>{i > 0 ? ", " : ""}&ldquo;{e}&rdquo;</span>
-            ))}
-          </span>
-        )}
-        {error && <span role="alert" className="font-semibold text-rose-600">{error}</span>}
-      </p>
-
-      {match && (
-        <div className="mt-3 rounded-2xl border-2 border-[color:var(--line)] bg-[#fffdf5] p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-0">
-              <div className="text-sm font-extrabold">{match.label}</div>
-              <div className="text-xs text-slate-500">
-                {match.description} · {match.confidence} match
-              </div>
-            </div>
-            <Link href={match.href} className="btn btn-primary ml-auto !min-h-11">
-              Open {match.label} <Icon name="arrow-right" size={15} />
-            </Link>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
 
 /* --------------------------------------------------------------------- */
 /* Screen Wake Lock — keeps the display awake while you calculate.        */
@@ -232,7 +71,7 @@ export function WakeLockToggle() {
         aria-describedby="wake-status"
         disabled={!supported}
       >
-        <span aria-hidden="true">🔆</span>
+        <Icon name="sun" size={15} />
         {active ? "Display awake" : "Keep screen awake"}
       </button>
       <p id="wake-status" role="status" aria-live="polite" className="min-h-5 text-xs text-slate-600">
@@ -329,7 +168,7 @@ export function PwaInstall() {
         }
       }}
     >
-      <span aria-hidden="true">⬇</span>
+      <Icon name="download" size={15} />
       Add to home screen
     </button>
   );

@@ -54,8 +54,8 @@ export function LegalPage({
         </p>
       </Reveal>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[250px_1fr]">
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+      <div className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
           <nav aria-label="On this page" className="sketch-sm">
             <div className="text-[.62rem] font-extrabold uppercase tracking-[.18em] text-slate-500">On this page</div>
             <ol className="mt-2 space-y-0.5 text-sm">
@@ -72,7 +72,7 @@ export function LegalPage({
           </div>
         </aside>
 
-        <article className="legal-body space-y-5">
+        <article className="legal-body min-w-0 space-y-5">
           {sections.map((s, i) => (
             <Reveal key={s.id} delay={Math.min(i, 5) * 25}>
               <section id={s.id} className="sketch scroll-mt-24">
@@ -86,7 +86,7 @@ export function LegalPage({
                     <Icon name="check" size={17} strokeWidth={2.6} className="mt-1 shrink-0 text-[#146c3a]" /><span>{b}</span>
                   </li>)}
                 </ul>}
-                {s.table && <div className="mt-4 overflow-x-auto rounded-xl border-2 border-[color:var(--line)]">
+                {s.table && <div className="mt-4 max-w-full overflow-x-auto rounded-xl border-2 border-[color:var(--line)]" tabIndex={0} role="region" aria-label={`${s.title} table`}>
                   <table className="w-full min-w-[520px] text-left text-sm">
                     <thead className="bg-[color:var(--paper-2)]"><tr>{s.table.head.map((h) => <th key={h} className="border-b-2 border-[color:var(--line)] px-3 py-2 text-xs font-extrabold uppercase tracking-wider">{h}</th>)}</tr></thead>
                     <tbody>{s.table.rows.map((r, ri) => <tr key={ri} className="align-top odd:bg-white even:bg-[#fffdf5]">{r.map((c, ci) => <td key={ci} className={`border-t border-slate-200 px-3 py-2 text-slate-700 ${ci === 0 ? "font-bold text-[color:var(--ink)]" : ""}`}>{c}</td>)}</tr>)}</tbody>

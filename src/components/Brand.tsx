@@ -1,27 +1,41 @@
 import { SITE } from "@/lib/site";
 
 /**
- * Radix Loom mark — a cartoon mathematical loom. The bracketed grid evokes a
- * numeral radix; its woven paths cross a friendly central knot. Static SVG,
- * designed to remain clear from favicon size through the page header.
+ * Radix Loom mark — an owl, redrawn as a logo rather than lifted from the
+ * mascot illustrations. Where Nova the mascot is a soft, round character,
+ * the mark is a geometric emblem: the owl's face is a rounded square tile,
+ * its "ear tufts" are the radix brackets `[ ]` turned upward, and its eyes
+ * are two woven rings whose crossing strands nod to the loom. The beak is a
+ * single downward chevron. It stays legible from a 16px favicon up to the
+ * page header because every shape is a bold, closed primitive.
  */
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true" className="brand-static">
-      <rect x="8" y="8" width="52" height="52" rx="15" fill="#0b1020" />
-      <rect x="4" y="4" width="52" height="52" rx="15" fill="#ffd23f" stroke="#0b1020" strokeWidth="3" />
-      {/* radix brackets */}
-      <path d="M15 16h-4v32h4M49 16h4v32h-4" stroke="#0b1020" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      {/* loom grid */}
-      <path d="M21 19v26M32 19v26M43 19v26M19 23h26M19 32h26M19 41h26" stroke="#0b1020" strokeWidth="2.4" strokeLinecap="round" />
-      {/* interlaced strands */}
-      <path d="M21 23l22 18M43 23L21 41" stroke="#ff6b4a" strokeWidth="4" strokeLinecap="round" />
-      {/* friendly knot / eye pair */}
-      <circle cx="28" cy="31" r="1.6" fill="#0b1020" />
-      <circle cx="36" cy="31" r="1.6" fill="#0b1020" />
-      <path d="M29 37q3 2.5 6 0" stroke="#0b1020" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="46" cy="45" r="4.2" fill="#5b8cff" stroke="#0b1020" strokeWidth="2" />
-      <circle cx="46" cy="45" r="1.2" fill="#fffdf5" />
+      {/* offset ink shadow + sun tile */}
+      <rect x="8" y="8" width="52" height="52" rx="16" fill="#0b1020" />
+      <rect x="4" y="4" width="52" height="52" rx="16" fill="#ffd23f" stroke="#0b1020" strokeWidth="3" />
+
+      {/* ear tufts = radix brackets, pointing up */}
+      <path d="M14 20V11h7M46 20v-9h-7" stroke="#0b1020" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+
+      {/* face plate */}
+      <path d="M12 26c0-5 4-9 9-9h18c5 0 9 4 9 9v14c0 7-8 12-18 12S12 47 12 40V26Z" fill="#fffdf5" stroke="#0b1020" strokeWidth="3" strokeLinejoin="round" />
+
+      {/* woven eye rings */}
+      <circle cx="22.5" cy="31" r="7" fill="#fff" stroke="#0b1020" strokeWidth="2.8" />
+      <circle cx="37.5" cy="31" r="7" fill="#fff" stroke="#0b1020" strokeWidth="2.8" />
+      <path d="M17 31h11M22.5 25.5v11M32 31h11M37.5 25.5v11" stroke="#ff6b4a" strokeWidth="2" strokeLinecap="round" opacity=".85" />
+      <circle cx="22.5" cy="31" r="2.9" fill="#0b1020" />
+      <circle cx="37.5" cy="31" r="2.9" fill="#0b1020" />
+      <circle cx="23.6" cy="29.9" r="1" fill="#fffdf5" />
+      <circle cx="38.6" cy="29.9" r="1" fill="#fffdf5" />
+
+      {/* beak: a single chevron */}
+      <path d="M27 40l3 4 3-4" stroke="#0b1020" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="#ff9d3d" />
+
+      {/* breast feathers = three loom stitches */}
+      <path d="M22 47h4M28 49h4M34 47h4" stroke="#5b8cff" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }

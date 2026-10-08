@@ -21,6 +21,7 @@ const COLS = [
   ] },
   { title: "Learn", items: [
     { href: "/guides", label: "Worked guides" },
+    { href: "/guides/voice-coach", label: "Voice learning paths" },
     { href: "/guides/meters-to-feet", label: "Meters to feet" },
     { href: "/guides/quadratic-equation-positive-root", label: "Quadratic formula" },
     { href: "/guides/megabytes-vs-mebibytes", label: "MB vs MiB" },

@@ -4,6 +4,8 @@ import { LANDING_PAGES, LANDING_SECTIONS } from "@/lib/landing";
 import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
 import { GuideTeasers } from "@/components/search/GuideTeasers";
+import { Icon } from "@/components/Icons";
+import { GuideHero } from "@/components/GuideHero";
 
 export const generateMetadata = () => metadataFor("/guides");
 
@@ -23,13 +25,28 @@ export default function GuidesPage() {
         worked example and opens the matching tool with editable inputs.
       </p>
 
+      <section className="mt-10" aria-labelledby="voice-coach-heading">
+        <Link href="/guides/voice-coach" className="sketch card-hover flex flex-wrap items-center gap-5 !bg-[#eef3ff]">
+          <span className="icon-tile !bg-[color:var(--accent-2)] !text-white">
+            <Icon name="language" size={21} strokeWidth={2.1} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span id="voice-coach-heading" className="block text-lg font-extrabold tracking-tight">Voice learning paths — a path for every language, English included</span>
+            <span className="mt-1 block text-sm leading-relaxed text-slate-600">Five units per language with real phrases, a clear goal and the tool each one opens.</span>
+          </span>
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-[#923019]">Start learning <Icon name="arrow-right" size={15} /></span>
+        </Link>
+      </section>
+
       {CATEGORY_ORDER.map((category) => (
         <section key={category} className="mt-12" aria-labelledby={`category-${category.replace(/\s+/g, "-")}`}>
           <h2 id={`category-${category.replace(/\s+/g, "-")}`} className="text-2xl font-extrabold">{category}</h2>
           <p className="mt-2 text-sm text-slate-600">{categoryBlurb(category)}</p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {GUIDES.filter((guide) => guide.category === category).map((guide) => (
-              <article key={guide.slug} className="sketch card-hover h-full">
+              <article key={guide.slug} className="sketch card-hover h-full overflow-hidden !p-0">
+                <GuideHero path={`/guides/${guide.slug}`} alt={guide.imageAlt} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" className="border-b-2 border-[color:var(--line)]" />
+                <div className="p-4">
                 <span className="chip !text-[.66rem]">{guide.formula}</span>
                 <h3 className="mt-3 text-lg font-extrabold leading-snug">
                   <Link href={`/guides/${guide.slug}`}>{guide.title}</Link>
@@ -38,9 +55,10 @@ export default function GuidesPage() {
                 <p className="mt-3 rounded-lg border border-[color:var(--line)] bg-[#fffdf5] px-3 py-2 text-xs font-semibold text-slate-700">
                   {guide.takeaway}
                 </p>
-                <Link href={`/guides/${guide.slug}`} className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-[#923019] underline underline-offset-4">
-                  Read the guide <span aria-hidden="true">→</span>
+                <Link href={`/guides/${guide.slug}`} className="mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-[#923019] underline underline-offset-4">
+                  Read the guide <Icon name="arrow-right" size={14} />
                 </Link>
+                </div>
               </article>
             ))}
           </div>
