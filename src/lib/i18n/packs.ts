@@ -25,6 +25,7 @@ export type TopicId =
 
 export type UiKey =
   | "nav.home" | "nav.tools" | "nav.guides" | "nav.formulas" | "nav.finance" | "nav.currency" | "nav.assets" | "nav.economy"
+  | "nav.studio" | "nav.arena"
   | "voice.heading" | "voice.speak" | "voice.stop" | "voice.cancel" | "voice.unavailableButton"
   | "voice.listening" | "voice.preparing" | "voice.waitingMic" | "voice.heard" | "voice.opening"
   | "voice.understoodAs" | "voice.retryHint"
@@ -210,6 +211,7 @@ const en: LanguagePack = {
   ui: {
     "nav.home": "Home", "nav.tools": "Tools", "nav.guides": "Guides", "nav.formulas": "Formulas", "nav.finance": "Finance",
     "nav.currency": "Currency", "nav.assets": "Assets", "nav.economy": "Economy",
+    "nav.studio": "Studio", "nav.arena": "Arena",
     "voice.heading": "Speak what you want to calculate",
     "voice.speak": "Speak a calculation",
     "voice.stop": "Stop listening",
@@ -369,6 +371,7 @@ const es: LanguagePack = {
   ui: {
     "nav.home": "Inicio", "nav.tools": "Herramientas", "nav.guides": "Guías", "nav.formulas": "Fórmulas", "nav.finance": "Finanzas",
     "nav.currency": "Divisas", "nav.assets": "Activos", "nav.economy": "Economía",
+    "nav.studio": "Estudio", "nav.arena": "Arena",
     "voice.heading": "Di lo que quieres calcular",
     "voice.speak": "Dictar un cálculo",
     "voice.stop": "Dejar de escuchar",
@@ -523,6 +526,7 @@ const fr: LanguagePack = {
   ui: {
     "nav.home": "Accueil", "nav.tools": "Outils", "nav.guides": "Guides", "nav.formulas": "Formules", "nav.finance": "Finance",
     "nav.currency": "Devises", "nav.assets": "Actifs", "nav.economy": "Économie",
+    "nav.studio": "Studio", "nav.arena": "Arène",
     "voice.heading": "Dites ce que vous voulez calculer",
     "voice.speak": "Dicter un calcul",
     "voice.stop": "Arrêter l'écoute",
@@ -678,6 +682,7 @@ const de: LanguagePack = {
   ui: {
     "nav.home": "Start", "nav.tools": "Werkzeuge", "nav.guides": "Anleitungen", "nav.formulas": "Formeln", "nav.finance": "Finanzen",
     "nav.currency": "Währungen", "nav.assets": "Anlagen", "nav.economy": "Wirtschaft",
+    "nav.studio": "Studio", "nav.arena": "Arena",
     "voice.heading": "Sagen Sie, was Sie berechnen möchten",
     "voice.speak": "Rechnung sprechen",
     "voice.stop": "Zuhören beenden",
@@ -824,6 +829,7 @@ const zh: LanguagePack = {
   ui: {
     "nav.home": "首页", "nav.tools": "工具", "nav.guides": "指南", "nav.formulas": "公式", "nav.finance": "金融",
     "nav.currency": "汇率", "nav.assets": "资产", "nav.economy": "经济",
+    "nav.studio": "音乐工作室", "nav.arena": "节奏竞技场",
     "voice.heading": "说出你想计算的内容",
     "voice.speak": "语音计算",
     "voice.stop": "停止聆听",

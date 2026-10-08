@@ -55,6 +55,15 @@ const RULES: Rule[] = [
   { test: /\b(gbp|pounds sterling)\s*(to|in|into|as)?\s*(usd|dollars?)\b/i, href: internalHref("/tools/currency", { base: "GBP", to: "USD", amount: "100" }), label: "GBP to USD", description: "Currency converter, prefilled at 100 GBP", confidence: "high" },
   { test: /\b(currency|exchange rate|fx|euro|dollar)\b/i, href: "/tools/currency", label: "Currency converter", description: "Currency reference tool", confidence: "low" },
 
+  // Engine intents: spoken commands drive the music engine and the rhythm arena.
+  // Parameters travel in the query string, so a voice command can start a run,
+  // pick an instrument or begin composing without any extra round trip.
+  // More specific first: a motion request must not be shadowed by "play the game".
+  { test: /\b(motion|tilt|shake)\b.*\b(play|arena|game|run)\b|\b(play|arena|game|run)\b.*\b(motion|tilt|shake)\b/i, href: internalHref("/arena", { mode: "tilt" }), label: "Rhythm arena with motion", description: "Arena controlled by device tilt and shake", confidence: "high" },
+  { test: /\b(arena|rhythm game|play the game|start (a )?run|beat game)\b/i, href: internalHref("/arena", { start: "1" }), label: "Rhythm arena", description: "Play the adaptive rhythm arena", confidence: "high" },
+  { test: /\b(compose|composition|generate (a )?(melody|song|loop|music))\b/i, href: internalHref("/studio", { compose: "1" }), label: "Compose a melody", description: "Generate a loop with the music engine", confidence: "high" },
+  { test: /\b(guitar)\b/i, href: internalHref("/studio", { instrument: "guitar" }), label: "Guitar", description: "Studio with the guitar voice selected", confidence: "medium" },
+  { test: /\b(piano|keyboard|chord|melody|music|song|scale|progression)\b/i, href: "/studio", label: "Melody studio", description: "Play piano and guitar, loop chords, compose", confidence: "low" },
   { test: /\b(matrix|determinant|linear system|equations?)\b/i, href: presetHref("determinant", "scientific"), label: "Matrix operations", description: "Scientific calculator, matrix example", confidence: "medium" },
   { test: /\b(scientific|trig|sine|cosine|logarithm|square root|derivative|integral)\b/i, href: "/tools/scientific", label: "Scientific calculator", description: "Scientific expressions and analysis", confidence: "medium" },
   { test: /\b(convert|conversion|unit|units|weigh|height|distance|temperature)\b/i, href: "/tools/units", label: "Unit converter", description: "All unit conversions", confidence: "low" },

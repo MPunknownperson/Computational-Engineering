@@ -204,6 +204,41 @@ function quote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
+/**
+ * Environment handed to a sandboxed command.
+ *
+ * Deliberately an allowlist rather than a spread of `process.env`: even for an
+ * operator who has supplied the workbench API key, an arbitrary shell must not
+ * become a way to read the application's secrets (DATABASE_URL, signing keys,
+ * third-party tokens) and ship them off-host. A command that genuinely needs a
+ * variable gets it explicitly through `options.env`.
+ */
+const SAFE_ENV_KEYS = [
+  "HOME",
+  "LANG",
+  "LC_ALL",
+  "TZ",
+  "USER",
+  "SHELL",
+  "TMPDIR",
+] as const;
+
+function sandboxEnv(extra?: Record<string, string>): NodeJS.ProcessEnv {
+  const env: Record<string, string> = {};
+  for (const key of SAFE_ENV_KEYS) {
+    const value = process.env[key];
+    if (typeof value === "string") env[key] = value;
+  }
+  env.TERM = "xterm-256color";
+  env.CI = "1";
+  env.PATH = `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH ?? ""}`;
+  env.SANDBOX_ROOT = SANDBOX_ROOT;
+  env.WORKSPACE_ROOT = WORKSPACE_ROOT;
+  // Next.js types ProcessEnv with a required NODE_ENV; carry only that one
+  // framework variable across, never the rest of the host environment.
+  return { ...env, ...extra, NODE_ENV: process.env.NODE_ENV ?? "production" };
+}
+
 export interface ExecOptions {
   command: string;
   cwd?: string;
@@ -248,13 +283,7 @@ export async function execShell(options: ExecOptions): Promise<ExecResult> {
 
   const child = spawn("/bin/bash", [scriptPath], {
     cwd,
-    env: {
-      ...process.env,
-      ...options.env,
-      TERM: "xterm-256color",
-      CI: "1",
-      PATH: `/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH ?? ""}`,
-    },
+    env: sandboxEnv(options.env),
     stdio: ["ignore", "pipe", "pipe"],
   });
 

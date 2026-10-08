@@ -165,6 +165,22 @@ const BASE_PAGES: SearchPage[] = [
     formula: "rounding · timing · accuracy",
   },
   {
+    path: "/studio",
+    title: "Melody Studio: Play Piano & Guitar Online, Compose Loops",
+    label: "Melody studio",
+    description: "Play a synthesized piano and guitar with your keyboard or touch, loop chord progressions in any key and scale, and generate original melodies you can save and replay. No download needed.",
+    kind: "tool",
+    formula: "chords · scales · generative melody",
+  },
+  {
+    path: "/arena",
+    title: "Rhythm Arena: Adaptive Music Game with Motion Controls",
+    label: "Rhythm arena",
+    description: "A rhythm game whose chart is composed on the fly and whose rules rewrite themselves from your play history. Hit notes on the beat with keys, touch, or by tilting and shaking your phone.",
+    kind: "tool",
+    formula: "adaptive rules · tilt & shake · combo layers",
+  },
+  {
     path: "/accessibility",
     title: "Accessibility — Keyboard, Touch & Motion",
     label: "Accessibility",
