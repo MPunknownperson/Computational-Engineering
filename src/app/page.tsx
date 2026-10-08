@@ -32,6 +32,8 @@ const TOOLS: {
   { href: "/tools/crypto", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", tone: "mint", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
   { href: "/tools/formula", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", tone: "pink", meta: "press Evaluate" },
   { href: "/tools/economy", title: "Economic indicators", blurb: `${INDICATORS.length} measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show to reveal the figures.`, icon: "chart", tone: "ink", badge: "updates", meta: "press Show" },
+  { href: "/studio", title: "Melody studio", blurb: "Play a synthesized piano or guitar with keys and touch, loop chords in any key and scale, then generate and save an original melody.", icon: "waves", tone: "coral", badge: "audio", meta: "compose & save" },
+  { href: "/arena", title: "Rhythm arena", blurb: "A rhythm game charted from a freshly composed melody, judged on the music clock. Tilt and shake to play; the rules rewrite themselves from your history.", icon: "target", tone: "sky", badge: "adaptive", meta: "motion controls" },
 ];
 
 const FACTS: { icon: IconName; title: string; body: string }[] = [

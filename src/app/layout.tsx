@@ -24,6 +24,8 @@ export const viewport: Viewport = {
 const NAV: Array<{ href: string; key: UiKey }> = [
   { href: "/", key: "nav.home" },
   { href: "/calculators", key: "nav.tools" },
+  { href: "/studio", key: "nav.studio" },
+  { href: "/arena", key: "nav.arena" },
   { href: "/guides", key: "nav.guides" },
   { href: "/tools/formula", key: "nav.formulas" },
   { href: "/tools/currency", key: "nav.currency" },
