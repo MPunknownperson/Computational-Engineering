@@ -1,7 +1,7 @@
 import { SITE } from "./site";
 import { GUIDES, guidePath } from "./guides";
 import { LANDING_PAGES, LANDING_SECTIONS } from "./landing";
-import { CURRENCIES, COUNTRIES, CRYPTO_IDS, INDICATORS, UNIT_COUNT, UNIT_CATEGORY_COUNT } from "./catalog";
+import { CURRENCIES, COUNTRIES, CRYPTO_IDS, INDICATORS, UNIT_COUNT, UNIT_CATEGORY_COUNT, TOOL_COUNT } from "./catalog";
 
 export type SearchPage = {
   path: string;
@@ -34,7 +34,7 @@ const BASE_PAGES: SearchPage[] = [
     label: "Tools",
     description: `Browse every free calculator and converter: scientific maths, ${UNIT_COUNT} units across ${UNIT_CATEGORY_COUNT} categories, currency, digital assets and economic data. All tools are free and need no sign-up.`,
     kind: "directory",
-    formula: "6 tools · 54 units · 20 currencies",
+    formula: `${TOOL_COUNT} tools · ${UNIT_COUNT} units · ${CURRENCIES.length} currencies`,
   },
   {
     path: "/tools/scientific",
@@ -117,6 +117,14 @@ const BASE_PAGES: SearchPage[] = [
     formula: "formula · method · assumptions",
   },
   {
+    path: "/guides/voice-coach",
+    title: "Voice Learning Paths for Every Language",
+    label: "Voice learning paths",
+    description: "Five-unit voice command paths for English, Spanish, French, German and Chinese: real phrases, a clear goal per unit and the tool each one opens.",
+    kind: "article",
+    formula: "say it · hear it · open it",
+  },
+  {
     path: "/about",
     title: "About Our Calculator & Conversion Tools",
     label: "About",
@@ -164,6 +172,7 @@ const BASE_PAGES: SearchPage[] = [
     kind: "information",
     formula: "keyboard · touch · screen readers",
   },
+
 ];
 
 const LANDING_KIND: Record<string, SearchPage["kind"]> = { convert: "tool", calculate: "tool", reference: "tool" };

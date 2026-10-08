@@ -3,11 +3,29 @@
 // all read from here, so a published number can never drift from the code.
 import { FACTORS, TEMPERATURE_UNITS, CATEGORIES } from "./units";
 
-/** Currencies offered in the FX converter (all published by the ECB via Frankfurter). */
+/** Currencies offered in the FX converter — every currency the ECB publishes via Frankfurter. */
 export const CURRENCIES = [
   "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "CNY", "INR",
   "BRL", "MXN", "KRW", "SGD", "HKD", "SEK", "NOK", "DKK", "ZAR", "TRY",
+  "PLN", "CZK", "HUF", "RON", "ISK", "ILS", "IDR", "MYR", "PHP", "THB",
 ] as const;
+
+export type Currency = (typeof CURRENCIES)[number];
+
+/** Display names and region grouping for the currency tool and voice packs. */
+export const CURRENCY_INFO: Record<Currency, { name: string; region: "Americas" | "Europe" | "Asia-Pacific" | "Middle East & Africa" }> = {
+  USD: { name: "US dollar", region: "Americas" }, CAD: { name: "Canadian dollar", region: "Americas" },
+  MXN: { name: "Mexican peso", region: "Americas" }, BRL: { name: "Brazilian real", region: "Americas" },
+  EUR: { name: "Euro", region: "Europe" }, GBP: { name: "British pound", region: "Europe" }, CHF: { name: "Swiss franc", region: "Europe" },
+  SEK: { name: "Swedish krona", region: "Europe" }, NOK: { name: "Norwegian krone", region: "Europe" }, DKK: { name: "Danish krone", region: "Europe" },
+  PLN: { name: "Polish złoty", region: "Europe" }, CZK: { name: "Czech koruna", region: "Europe" }, HUF: { name: "Hungarian forint", region: "Europe" },
+  RON: { name: "Romanian leu", region: "Europe" }, ISK: { name: "Icelandic króna", region: "Europe" }, TRY: { name: "Turkish lira", region: "Europe" },
+  JPY: { name: "Japanese yen", region: "Asia-Pacific" }, CNY: { name: "Chinese yuan", region: "Asia-Pacific" }, INR: { name: "Indian rupee", region: "Asia-Pacific" },
+  KRW: { name: "South Korean won", region: "Asia-Pacific" }, SGD: { name: "Singapore dollar", region: "Asia-Pacific" }, HKD: { name: "Hong Kong dollar", region: "Asia-Pacific" },
+  AUD: { name: "Australian dollar", region: "Asia-Pacific" }, NZD: { name: "New Zealand dollar", region: "Asia-Pacific" }, IDR: { name: "Indonesian rupiah", region: "Asia-Pacific" },
+  MYR: { name: "Malaysian ringgit", region: "Asia-Pacific" }, PHP: { name: "Philippine peso", region: "Asia-Pacific" }, THB: { name: "Thai baht", region: "Asia-Pacific" },
+  ILS: { name: "Israeli new shekel", region: "Middle East & Africa" }, ZAR: { name: "South African rand", region: "Middle East & Africa" },
+};
 
 /** Economies offered in the World Bank indicator tool (ISO 3166-1 alpha-3). */
 export const COUNTRIES: { value: string; label: string }[] = [
@@ -43,19 +61,37 @@ export const COUNTRIES: { value: string; label: string }[] = [
   { value: "NZL", label: "New Zealand" },
 ];
 
-/** World Bank indicators exposed by /api/economy. */
+/** World Bank indicators exposed by /api/economy, grouped by theme for the tool's selector. */
 export const INDICATORS = [
-  { value: "inflation", label: "Inflation", name: "Inflation, consumer prices (annual %)", code: "FP.CPI.TOTL.ZG" },
-  { value: "gdp_per_capita", label: "GDP / capita", name: "GDP per capita (current US$)", code: "NY.GDP.PCAP.CD" },
-  { value: "unemployment", label: "Unemployment", name: "Unemployment, total (% of labour force, modelled ILO estimate)", code: "SL.UEM.TOTL.ZS" },
-  { value: "population", label: "Population", name: "Population, total", code: "SP.POP.TOTL" },
+  { value: "inflation", label: "Inflation", group: "Prices", name: "Inflation, consumer prices (annual %)", code: "FP.CPI.TOTL.ZG", unit: "%" },
+  { value: "gdp_per_capita", label: "GDP / capita", group: "Output", name: "GDP per capita (current US$)", code: "NY.GDP.PCAP.CD", unit: "US$" },
+  { value: "gdp_growth", label: "GDP growth", group: "Output", name: "GDP growth (annual %)", code: "NY.GDP.MKTP.KD.ZG", unit: "%" },
+  { value: "unemployment", label: "Unemployment", group: "Labour", name: "Unemployment, total (% of labour force, modelled ILO estimate)", code: "SL.UEM.TOTL.ZS", unit: "%" },
+  { value: "population", label: "Population", group: "People", name: "Population, total", code: "SP.POP.TOTL", unit: "" },
+  { value: "lending_rate", label: "Lending rate", group: "Money", name: "Lending interest rate (%)", code: "FR.INR.LEND", unit: "%" },
+  { value: "government_debt", label: "Gov. debt", group: "Public finance", name: "Central government debt, total (% of GDP)", code: "GC.DOD.TOTL.GD.ZS", unit: "% GDP" },
+  { value: "current_account", label: "Current account", group: "Trade", name: "Current account balance (% of GDP)", code: "BN.CAB.XOKA.GD.ZS", unit: "% GDP" },
 ] as const;
 
-/** Coins requested from CoinGecko by default. */
+export type IndicatorKey = (typeof INDICATORS)[number]["value"];
+export const INDICATOR_GROUPS = Array.from(new Set(INDICATORS.map((i) => i.group)));
+
+/** Coins requested from CoinGecko by default, with a category used for filtering. */
 export const CRYPTO_IDS = [
   "bitcoin", "ethereum", "tether", "binancecoin", "solana",
-  "ripple", "cardano", "dogecoin", "polkadot", "chainlink",
+  "ripple", "usd-coin", "cardano", "dogecoin", "tron",
+  "avalanche-2", "polkadot", "chainlink", "polygon-ecosystem-token", "litecoin",
+  "bitcoin-cash", "stellar", "uniswap", "monero", "cosmos",
 ] as const;
+
+export type CryptoCategory = "Layer 1" | "Stablecoin" | "Smart-contract platform" | "Payments" | "DeFi" | "Oracle" | "Privacy";
+export const CRYPTO_CATEGORY: Record<(typeof CRYPTO_IDS)[number], CryptoCategory> = {
+  bitcoin: "Layer 1", ethereum: "Smart-contract platform", tether: "Stablecoin", binancecoin: "Smart-contract platform",
+  solana: "Smart-contract platform", ripple: "Payments", "usd-coin": "Stablecoin", cardano: "Smart-contract platform",
+  dogecoin: "Payments", tron: "Smart-contract platform", "avalanche-2": "Smart-contract platform", polkadot: "Layer 1",
+  chainlink: "Oracle", "polygon-ecosystem-token": "Layer 1", litecoin: "Payments", "bitcoin-cash": "Payments",
+  stellar: "Payments", uniswap: "DeFi", monero: "Privacy", cosmos: "Layer 1",
+};
 
 export const UNIT_CATEGORY_COUNT = Object.keys(CATEGORIES).length;
 export const UNIT_COUNT =

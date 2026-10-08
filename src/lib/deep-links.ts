@@ -45,6 +45,16 @@ export const FORMULA_LINKS: DeepLink[] = [
   { title: "Fuel estimate", description: "Distance, consumption and price per litre combined.", href: presetHref("fuel-estimate"), formula: "d × u ⁄ 100 × p", group: "Everyday" },
   { title: "Tip split", description: "Split a bill and a proportional tip evenly.", href: presetHref("tip-split"), formula: "bill × (1 + tip) ⁄ people", group: "Everyday" },
   { title: "Pace", description: "Average minutes per unit of distance.", href: presetHref("pace"), formula: "minutes ⁄ distance", group: "Everyday" },
+  { title: "Mortgage total interest", description: "Interest paid over a full fixed-rate term, excluding fees.", href: presetHref("mortgage-total-interest"), formula: "payment × 12n − P", group: "Finance" },
+  { title: "Savings goal — monthly deposit", description: "Equal monthly deposits to reach a target at a fixed rate.", href: presetHref("savings-goal-monthly"), formula: "goal × (r⁄12) ⁄ ((1 + r⁄12)^(12t) − 1)", group: "Finance" },
+  { title: "Future value of deposits", description: "What regular monthly deposits grow to over t years.", href: presetHref("future-value-deposits"), formula: "d × ((1 + r⁄12)^(12t) − 1) ⁄ (r⁄12)", group: "Finance" },
+  { title: "Inflation-adjusted value", description: "A future amount expressed in today's purchasing power.", href: presetHref("inflation-adjusted"), formula: "amount ⁄ (1 + i)^t", group: "Finance" },
+  { title: "Real rate of return", description: "Nominal return with inflation removed (Fisher relation).", href: presetHref("real-return"), formula: "(1 + nominal) ⁄ (1 + inflation) − 1", group: "Finance" },
+  { title: "Effective annual rate", description: "Nominal rate compounded n times a year, as an annual equivalent.", href: presetHref("effective-annual-rate"), formula: "(1 + r⁄n)ⁿ − 1", group: "Finance" },
+  { title: "Currency spread cost", description: "What a conversion costs against the mid-market rate.", href: presetHref("currency-spread-cost"), formula: "amount × (mid − offered) + fee", group: "Markets" },
+  { title: "Percentage change", description: "Change between two prices, index values or balances.", href: presetHref("percentage-change"), formula: "(current − previous) ⁄ previous × 100", group: "Markets" },
+  { title: "Break-even units", description: "Units to sell before revenue covers all costs.", href: presetHref("break-even-units"), formula: "fixed ⁄ (price − variable)", group: "Business" },
+  { title: "Position size by risk", description: "Units to buy so a stop-loss caps the loss at a chosen fraction of capital.", href: presetHref("position-size"), formula: "capital × risk ⁄ (entry − stop)", group: "Markets" },
 ];
 
 export const REFERENCE_LINKS: DeepLink[] = [
@@ -55,6 +65,12 @@ export const REFERENCE_LINKS: DeepLink[] = [
   { title: "US dollar to euro", description: "Indicative reference conversion with its rate date and recent trend.", href: internalHref("/tools/currency", { base: "USD", to: "EUR", amount: "100" }), group: "Currency" },
   { title: "Pound to US dollar", description: "Reference conversion for GBP to USD.", href: internalHref("/tools/currency", { base: "GBP", to: "USD", amount: "100" }), group: "Currency" },
   { title: "Digital-asset prices", description: "Selected prices and daily movement, filterable by name or symbol.", href: "/tools/crypto", group: "Digital assets" },
+  { title: "Euro area GDP growth", description: "Annual GDP growth for Germany, the largest euro-area economy.", href: internalHref("/tools/economy", { country: "DEU", indicator: "gdp_growth" }), group: "Economy" },
+  { title: "Brazil lending rate", description: "Lending interest rate for Brazil, with history.", href: internalHref("/tools/economy", { country: "BRA", indicator: "lending_rate" }), group: "Economy" },
+  { title: "Japan government debt", description: "Central government debt as a share of GDP for Japan.", href: internalHref("/tools/economy", { country: "JPN", indicator: "government_debt" }), group: "Economy" },
+  { title: "US current account", description: "Current account balance as a share of GDP for the United States.", href: internalHref("/tools/economy", { country: "USA", indicator: "current_account" }), group: "Economy" },
+  { title: "Euro to Polish złoty", description: "Reference conversion for EUR to PLN.", href: internalHref("/tools/currency", { base: "EUR", to: "PLN", amount: "100" }), group: "Currency" },
+  { title: "Yen to Thai baht", description: "Reference conversion for JPY to THB.", href: internalHref("/tools/currency", { base: "JPY", to: "THB", amount: "10000" }), group: "Currency" },
 ];
 
 export const GUIDE_LINKS: DeepLink[] = GUIDES.map((guide) => ({
