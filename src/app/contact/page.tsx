@@ -4,17 +4,16 @@ import { Icon, type IconName } from "@/components/Icons";
 import { LegalLinks } from "@/components/LegalPage";
 import { ContactForm } from "@/components/ContactForm";
 import { Owl } from "@/components/Mascots";
-import { SITE } from "@/lib/site";
 
 const HELP: { icon: IconName; title: string; body: string }[] = [
   { icon: "target", title: "Which tool", body: "and the expression or values involved." },
   { icon: "sparkle", title: "What happened", body: "what you expected and what you saw." },
   { icon: "globe", title: "Reference information", body: "the date or displayed update time, if relevant." },
-  { icon: "layers", title: "Saved formulas", body: "the formula name, if possible. The Privacy Notice has controls to download or remove them." }
+  { icon: "layers", title: "Saved formulas", body: "the formula name, if possible. The Privacy Policy has controls to download or remove them." }
 ];
 
 const SELF_SERVICE = [
-  { href: "/privacy#your-data", title: "Manage saved formulas", detail: "Download or remove them using the controls in the Privacy Notice." },
+  { href: "/privacy#your-data", title: "Manage saved formulas", detail: "Download or remove them using the controls in the Privacy Policy." },
   { href: "/disclaimer", title: "Understand a result", detail: "Review the limits of reference figures and calculations." },
   { href: "/accessibility", title: "Accessibility information", detail: "Read current support and known limitations." },
 ];

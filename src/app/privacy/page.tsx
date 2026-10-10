@@ -1,157 +1,217 @@
 import { LegalPage, type LegalSection } from "@/components/LegalPage";
 import { DataControls } from "@/components/DataControls";
+import { GdprPolicy } from "@/components/legal/GdprPolicy";
+import { CcpaPolicy } from "@/components/legal/CcpaPolicy";
+import { RegionalPrivacyLinks } from "@/components/legal/RegionalPrivacyLinks";
+import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
+import { metadataFor } from "@/lib/seo";
+import { SearchContext } from "@/components/search/SearchContext";
 import { SITE } from "@/lib/site";
+
+export const dynamic = "force-dynamic";
+export const generateMetadata = () => metadataFor("/privacy");
 
 const N = SITE.name;
 
+/**
+ * Privacy Policy for Radix Loom.
+ *
+ * Structured after the disclosures a privacy policy is normally expected to
+ * contain — the controller and how to contact it, the categories of personal
+ * information collected, the purposes and legal bases for each, recipients,
+ * retention, transfers, individual rights (GDPR and CCPA-style), children,
+ * security, automated decision-making and how the policy changes — mapped onto
+ * what this site actually does: no accounts, no analytics or advertising, saved
+ * formulas tied to a random browser reference, an opt-in contact form, opt-in
+ * microphone capture and three server-side reference-data providers.
+ */
 const SECTIONS: LegalSection[] = [
   {
     id: "summary",
-    title: "Summary",
+    title: "At a glance",
     bullets: [
-      `${N} does not require an account and is not designed for advertising or cross-site profiling.`,
-      "When you save a formula, a random workspace reference connects that saved item with the browser workspace you use. You can download or delete saved formulas with the controls below.",
-      "When you use the contact form, the topic, message and any optional name or reply address you choose to provide are retained so the message can be handled.",
-      "Basic connection and security information may be processed to deliver and protect the site. External reference sources may receive the selections needed to provide requested figures; saved formulas and contact messages are not intentionally included in those requests.",
-      `${N} does not sell personal information or use it for targeted advertising.`,
+      `${N} has no sign-up, no accounts and no advertising or analytics trackers.`,
+      "Saved formulas are stored on our server under a random browser workspace reference. Blackboard notes and voice phrase memory stay on your device.",
+      "The contact form is optional; you choose whether to give a name or a reply address.",
+      "Microphone access only happens if you press the voice button and approve your browser's permission prompt.",
+      `${N} does not sell personal information and does not use it for cross-context behavioural advertising.`,
+    ],
+    note: "This policy should be read with the Terms of Service and the Disclaimer. Where local law gives you rights in addition to those described here, those rights apply as well.",
+  },
+  {
+    id: "controller",
+    title: "Who is responsible for your information",
+    paragraphs: [
+      `${N} operates this website (the "controller" or "we"). There is no registered office or data protection officer published at the time of writing.`,
+      "For any privacy question, access request or deletion request, use the contact form and choose the privacy topic. Please do not include sensitive identifiers in your message.",
     ],
   },
   {
-    id: "responsibility",
-    title: "About this notice",
+    id: "collection",
+    title: "Information we collect",
     paragraphs: [
-      `This notice describes information practices associated with ${N}. Privacy questions and requests can be submitted through the contact form on the site. Nothing in this notice limits rights or protections that apply under the law in your location.`,
-    ],
-  },
-  {
-    id: "categories",
-    title: "Information categories, purposes and legal grounds",
-    paragraphs: [
-      "The categories below describe information processed through the site's current features, including during the preceding 12 months. The applicable legal ground depends on the request and the law that applies. Where required, processing is limited to a lawful ground such as fulfilling a feature you request, responding to a message, protecting the service, consent for optional processing, or compliance with a legal duty.",
+      "The table describes the data used by the currently implemented features. Server-stored data is distinguished from information that stays in your browser.",
     ],
     table: {
-      head: ["Category", "Examples", "Purpose", "Ground where required"],
+      head: ["Category", "Examples", "Where it comes from"],
       rows: [
-        ["Workspace reference and saved content", "A random reference; formula name, expression, optional description or tags", "Save, display, export or remove expressions you choose to keep.", "Provide the requested feature."],
-        ["Contact information and message", "Optional name, optional reply address, selected topic and message text", "Receive, review and respond to a message.", "Respond to your request; other grounds may apply where permitted."],
-        ["Connection and security information", "Network address and basic request details associated with a visit or form submission", "Provide requested content, protect the site and discourage misuse.", "Legitimate interests or legal duties where applicable."],
-        ["Selected reference request", "The currency, asset, country or indicator selected in a tool", "Provide the information requested through that tool.", "Provide the requested feature; no contact details are intentionally included."],
-        ["Voice input and on-device phrase memory (optional)", "Microphone audio while voice is active; the recogniser's text hypotheses; and, for understood commands, normalised phrases with their internal tool destination kept in this browser", "Understand a spoken calculation, open the matching tool with its values filled in, and improve recognition of repeated phrases on the same device.", "Consent, given by starting voice input and granting the browser's microphone permission. Phrase memory can be cleared from the voice card or browser storage."],
-        ["Approximate country or region", "A two-letter country code supplied by the hosting network for the current request, or the region part of your browser language", "Decide whether voice input is offered where you are, and whether it must stay on the device.", "Legal obligations and legitimate interests; the code is evaluated per request and is not stored."],
+        ["Saved formulas", "Formula name, expression, optional description and tags", "Entered by you and saved in a browser workspace"],
+        ["Workspace reference", "A random string generated in your browser", "Created when you first save a formula"],
+        ["Contact message", "Chosen topic; optional name; optional reply address; message text", "Submitted by you through the contact form"],
+        ["Voice content", "Microphone audio while voice input is active; the text your browser recognises", "Captured by your browser after you allow the microphone"],
+        ["Device phrase memory", "Phrases the voice feature understood and the tool each opened", "Stored locally in your browser"],
+        ["Board content", "Chalk strokes and typed notes on the Calculator blackboard", "Stored locally in your browser"],
+        ["Connection details", "IP address, browser, device, time of request (server logs)", "Generated automatically when the site is visited"],
+        ["Region signal", "A country code from a configured trusted hosting gateway; browser language is used only as a voice-policy fallback", "Regional supplement access uses only the trusted country signal; it does not use language or precise GPS location. The code is not stored in the preference database."],
+        ["Privacy preference", "Opt-out flag, random receipt identifier, source and timestamps", "Remember an explicit opt-out or Global Privacy Control; no name, email, IP or country is stored with the receipt."],
+        ["Reference selections", "The currency, asset, economy or measure you select in a tool", "Entered by you in the tool"],
       ],
     },
-    note: "Please do not include passwords, payment-account information, health information or other sensitive personal information in formulas, spoken commands or messages unless it is necessary and lawful to do so. Where voice is recognised by a browser provider's cloud service, that provider — not this site — receives the microphone audio, as explained in the Voice input section below.",
+    note: "Please avoid putting passwords, payment details, health information or other sensitive personal data into formulas, board notes or messages.",
   },
   {
-    id: "sources",
-    title: "How information is obtained",
-    bullets: [
-      "Directly from you when you enter a formula, save content, or submit a contact message.",
-      "From the browser or device used to access the site, through ordinary connection and security information.",
-      "From external sources when a tool requests selected reference information."
+    id: "purposes",
+    title: "How and why we use information",
+    paragraphs: [
+      "The table links each purpose to the data it uses. Applicable legal bases and rights are explained in the GDPR and CCPA sections of this policy.",
     ],
+    table: {
+      head: ["Purpose", "What is used"],
+      rows: [
+        ["Provide the tool you asked for", "Your expression, values or reference selection"],
+        ["Save, show, export or remove formulas", "Saved formula fields and the workspace reference"],
+        ["Answer your message", "Contact fields"],
+        ["Operate and protect the site", "Server log data; transient rate-limiting keys"],
+        ["Optional voice input", "Microphone audio and recognition text"],
+        ["Voice availability by region", "Country signal for the current request"],
+      ],
+    },
+    note: "Where the law requires a stated legal basis for each purpose, the bases are listed in the GDPR section below, with the CCPA purposes in its own section.",
   },
   {
     id: "voice",
-    title: "Voice input",
+    title: "Voice input and microphone audio",
     paragraphs: [
-      `${N} offers optional voice input on the calculators page. It starts only when you press the voice button, and the browser asks for microphone permission before any audio is captured. You can refuse that permission; every tool keeps working without voice.`,
-      "Speech is turned into text by a speech recogniser, and the text is matched against the site's language packs — vocabularies of numbers, currencies, units and calculation topics in each supported language. If the sentence names a conversion, such as \u201cconvert 120 US dollars to euros\u201d, the matching tool opens with the amount and direction already filled in. If nothing matches, nothing happens. Unmatched speech is never executed or turned into an outside address.",
-      "Where speech is recognised is chosen automatically. Phones and tablets use an explicitly local browser path where exposed; otherwise a compatible on-page model is used if the device can run it, and voice is unavailable if neither works. Desktop browsers with a recognition service use the browser-managed path; a browser without that service can use the on-page model. The browser may download a local language model on first use. Native Android and iOS speech APIs are available to native apps, not directly to this website.",
-      "In browser-managed recognition, the browser may transmit microphone audio to its speech service while voice input is active. Chrome may use Google's service and Edge may use a Microsoft service. The site cannot verify or control where every browser processes audio; do not assume browser-managed recognition stays on-device unless the browser supports and accepts an explicit local-processing requirement. Any external service handles audio under its own terms. This site does not receive or store the audio. The site's explicitly local paths keep audio on your device.",
-      "Availability also depends on your country or region. Voice input is not offered where providing it is restricted, and in some places it is limited to on-device recognition (for example where cross-border transfer of audio is restricted or browser cloud speech is unavailable). To apply these rules, the site uses a two-letter country code supplied by its hosting network for the current request, or the region in your browser language when no code is available. The code is not stored.",
-      "To get better with use, the voice feature remembers, in this browser only, phrases it understood and the tool each one opened, including common mis-hearings by the recogniser (for example, when the recogniser's first guess was wrong but a later guess was understood). No audio is kept, nothing is uploaded, and you can clear this memory at any time with \u201cForget learned phrases\u201d on the voice card or by clearing site data in your browser.",
-      "When the browser has no usable speech engine, the site can run multilingual Whisper Base on the device in a web worker. This Apache-2.0 model is published by Xenova; Transformers.js fetches its quantized model, configuration and tokenizer assets as separate file requests from Hugging Face Hub and the browser caches them. The on-screen status identifies the publisher, host and file-by-file progress. These requests transfer model software, not microphone audio. Audio is transferred to the same-origin worker, transcribed locally and released; it is never sent to Hugging Face or this site's server. If the device cannot run the model or its files cannot be loaded, voice input is unavailable.",
-      "The page also reads device and browser characteristics locally — device type, operating system, browser, speech and microphone support — only to choose the processing path described above. They are not sent to the server by this site.",
+      `Voice input on the ${N} calculators page is entirely optional. It begins only when you press the voice button, and your browser asks for microphone permission before any audio is captured. Every tool works without voice.`,
+      "The recogniser is chosen automatically. Phones and tablets use an explicitly on-device path where the browser exposes one; other cases may use the browser's own speech service, which can involve the browser vendor (for example Google or Microsoft) processing your audio under that vendor's terms. English may fall back to a generative model built into your browser; this site hosts no model weights. If neither path is available, voice input is simply unavailable — no audio leaves the device in the explicitly on-device paths.",
+      "On this site's side we never receive or store microphone audio. Audio is released as soon as the utterance is transcribed, and only the recognised text is used.",
+      "Voice input is withheld where offering it is restricted, and limited to on-device processing where cross-border transfer of audio is restricted. This uses a country signal supplied by the hosting network, or the region of your browser language when no signal exists; that signal is evaluated per request and is not stored.",
+      "If a voice command is understood, this browser remembers the phrase and the tool it opened — including a later hypothesis that corrected a mis-recognition — so a follow-up such as “and 80” works. No audio is kept. Clear it any time with “Forget learned phrases” on the voice card, or by clearing site data in your browser.",
+      "Device and browser characteristics (device type, operating system, browser, whether speech and microphone APIs exist) are read locally to choose that path. This site does not send them to its server.",
     ],
   },
   {
-    id: "browser",
-    title: "Information kept with your browser",
+    id: "storage",
+    title: "Cookies, local storage and similar technologies",
     paragraphs: [
-      "A random workspace reference may be kept with the browser you use after you open the formula tool. It allows saved formulas to be associated with that workspace and shown again. It is not an account or password. You may disconnect the browser using the controls below; disconnecting does not itself remove saved formulas associated with it.",
-      "The site is not designed to track visitors across unrelated sites, create advertising profiles or tailor advertising. A limited browser-held reference supports the saved-formula feature you choose to use.",
+      `${N} does not include advertising or analytics trackers. Essential privacy-choice cookies remember a restrictive opt-out and a random receipt reference for up to one year. They are not advertising identifiers.`,
+      "Browser storage holds the random saved-formula workspace reference, remembered voice phrases and blackboard strokes/notes. The last voice command uses session storage. Saved formulas themselves are stored in the server database. Clearing browser storage does not delete server-side formulas; use the controls below before disconnecting your workspace.",
+      "Your browser's speech service may set its own storage or use its own account state. That is governed by your browser and its vendor, not by this site.",
     ],
   },
   {
     id: "recipients",
-    title: "Categories of recipients",
+    title: "Who receives information",
     paragraphs: [
-      "Information may be made available to service categories that support site availability, content, storage, security, communications or requested reference information. Information may also be disclosed where required by law or reasonably necessary to protect rights and safety.",
-      "Reference-information sources may receive the selected currency, asset, economy or measure needed to provide the requested figures. Saved formulas, contact messages, names and reply addresses are not intentionally included in those requests.",
+      "We do not operate advertising relationships and we do not disclose personal information to advertising networks. The following categories of recipient may receive information as needed:",
+    ],
+    bullets: [
+      "The hosting and infrastructure provider that runs this site — IP address and request details in ordinary server logs, needed to deliver the site and protect it.",
+      "Reference-data providers that supply figures when a tool requests them: Frankfurter (European Central Bank reference rates), CoinGecko (digital-asset prices) and the World Bank (economic indicators). Each request carries only the selected parameters (for example `USD/EUR` or an indicator code) — never your workspace, saved formulas or message.",
+      "The browser vendor's speech service, when your browser uses it for voice input — microphone audio, under that vendor's terms and only while voice input is active.",
+      "A bot-check provider (Cloudflare Turnstile) if it is enabled for the contact form; when it is not configured, no check and no third-party script is loaded.",
+      "Authorities or advisers, where disclosure is required by law or reasonably necessary to protect rights and safety.",
     ],
   },
   {
-    id: "sale",
-    title: "Sale, sharing and targeted advertising",
+    id: "transfers",
+    title: "Transfers across borders",
     paragraphs: [
-      "Radix Loom does not sell personal information and does not disclose it for cross-context behavioural advertising. If that practice changes, the notice and any legally required choice will be updated before the change takes effect.",
+      "Information may be processed in a country different from yours, because the hosting provider, the reference-data providers or a browser vendor operate internationally. Where a transfer needs a safeguard under applicable law, appropriate safeguards are intended to be used (for example adequacy decisions or standard contractual clauses). You may ask about the relevant safeguards through the contact form.",
     ],
   },
   {
     id: "retention",
-    title: "How long information is kept",
+    title: "How long we keep information",
     bullets: [
-      "Saved formulas remain until you delete them or request their removal. They do not currently expire automatically. The formula records may include the time they were saved.",
-      "Contact messages are retained for as long as reasonably needed to handle the enquiry and any appropriate follow-up, subject to legal obligations. A fixed expiry period is not currently specified; you may request deletion, subject to lawful exceptions.",
-      "Connection and security information is retained only as reasonably needed to provide and protect the site or as required by law. Retention may depend on services used to make the site available.",
-      "The browser-held workspace reference remains until you clear or disconnect it.",
+      "Saved formulas: until you delete them or ask us to delete them. They do not expire automatically.",
+      "Contact messages: the application has no automatic expiry. You may request deletion through the privacy contact route, subject to lawful exceptions; the operator must review retention for enquiries and follow-up.",
+      "Infrastructure log retention is controlled by the hosting provider; this application does not set a fixed log-retention period. Contact us for the applicable deployment details.",
+      "Browser-held workspace references, voice phrases and board notes: until cleared in the relevant feature or browser storage. The formula controls below manage server-side formulas, not all browser-held data.",
+      "Privacy opt-out cookies expire after one year. Anonymous server receipts carry a matching one-year expiry and are removed on the next preference-save operation after expiry. No IP address or location is saved with them.",
+      "The transient rate-limit counter for the contact form is held in server memory only and resets when the service restarts.",
     ],
   },
   {
-    id: "rights",
-    title: "Choices and privacy rights",
+    id: "sale",
+    title: "Selling, sharing and targeted advertising",
     paragraphs: [
-      "Depending on where you live and which law applies, you may have rights to know about, access, correct, delete or receive a copy of personal information; to object to or restrict some uses; to withdraw consent where processing relies on consent; and to opt out of sale, sharing or targeted advertising. Some laws also provide an appeal process or protection against discrimination for exercising privacy rights.",
-      "Use the self-service controls below for saved formulas. For other requests, use the contact form and select the privacy topic. Information may be requested to locate relevant material and reasonably verify a request. Responses are provided within applicable legal time limits. You may contact a competent privacy authority where the law allows.",
+      `${N} does not currently sell personal information or share it for cross-context behavioral advertising. Our Do Not Sell or Share My Personal Information page lets you record a restrictive browser preference, and we honor Global Privacy Control when received. No account or identity verification is required for the browser opt-out.`,
     ],
   },
   {
     id: "security",
     title: "Security",
     paragraphs: [
-      "Radix Loom uses reasonable measures intended to protect information from unauthorised access, loss or misuse. No online service can guarantee absolute security. A workspace reference is a convenience, not a password; anyone who obtains it may be able to access associated saved formulas.",
-    ],
-  },
-  {
-    id: "transfers",
-    title: "Information handled across locations",
-    paragraphs: [
-      "Information may be handled in locations different from yours by services used to make Radix Loom and its reference content available. Where applicable law requires safeguards for a transfer, appropriate safeguards are intended to be used. Details may be requested through the contact form.",
+      "We use reasonable technical and organisational measures intended to protect information against unauthorised access, loss or misuse — for example by limiting what the public can submit, validating input and keeping the public surface small. No online service can guarantee absolute security.",
+      "A workspace reference is a convenience, not a password: anyone who obtains it may be able to read or delete the formulas associated with it.",
     ],
   },
   {
     id: "children",
     title: "Children",
     paragraphs: [
-      `${N} is a general-audience tool and is not directed to children under 13. The site does not ask for age. If you believe a child has submitted personal information through a formula or message, use the contact form so it can be reviewed.`,
+      `${N} is a general-audience tool. It is not directed at children under 13 (and under 16 where a higher age applies for consent), and we do not knowingly collect personal information from them. We do not ask for age.`,
+      "If you believe a child has submitted personal information through a formula, a board note or a message, use the contact form so it can be reviewed and removed.",
     ],
   },
   {
     id: "automated",
-    title: "Automated decisions",
+    title: "Automated decisions and profiling",
     paragraphs: [
-      "The site does not use personal information to make solely automated decisions that produce legal or similarly significant effects about a person.",
+      `${N} does not use personal information to make solely automated decisions that produce legal or similarly significant effects about a person. Optional voice recognition turns speech into text; it does not profile you, and nothing is scored, ranked or used to infer anything about you.`,
     ],
   },
   {
     id: "changes",
-    title: "Changes to this notice",
+    title: "Changes to this policy",
     paragraphs: [
-      "This notice may be revised when the site's information practices change. The version and date above identify the current text. Material changes will be indicated on the site where appropriate.",
+      "This policy is reviewed when the site's information practices change. The version and date at the top identify the current text; material changes will be indicated on the site where appropriate.",
     ],
   },
 ];
 
 export default function PrivacyPage() {
   return (
+    <>
+    <SearchContext path="/privacy" />
     <LegalPage
       path="/privacy"
-      eyebrow="Legal · Privacy Notice"
-      title="Privacy notice and saved-formula controls"
-      intro={`${N} is designed to request little information. This notice describes the general categories associated with the site's tools, how they are used and the choices available to visitors.`}
+      eyebrow="Legal · Privacy"
+      title="Privacy Policy"
+      intro={`${N} asks for very little. This Privacy Policy explains what information is collected when you use the calculators, conversions, reference tools and optional voice input; why it is used; who receives it; and how long it is kept. GDPR and CCPA provisions are consolidated into distinct sections of this single policy. Other regional clauses are on dedicated location-restricted pages that expressly form part of this policy.`}
       sections={SECTIONS}
-      extra={<DataControls />}
+      tocExtra={[
+        { href: "#gdpr", label: "GDPR — your rights in the EEA and UK" },
+        { href: "#ccpa", label: "CCPA / CPRA — California" },
+        { href: "#regional-supplements", label: "Regional supplements" },
+        { href: "#privacy-choices", label: "Do Not Sell or Share" },
+        { href: "#your-data", label: "Manage saved formulas" },
+      ]}
+      extra={
+        <>
+          <GdprPolicy />
+          <CcpaPolicy />
+          <RegionalPrivacyLinks />
+          <section id="privacy-choices" className="sketch scroll-mt-24" aria-labelledby="privacy-choices-title">
+            <h2 id="privacy-choices-title" className="text-xl font-bold">Your privacy choices</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">The California opt-out page is available everywhere. A privacy request is not limited by your current location.</p>
+            <PrivacyChoicesLink className="mt-4 text-sm text-[#194eb0]" />
+          </section>
+          <DataControls />
+        </>
+      }
     />
+    </>
   );
 }

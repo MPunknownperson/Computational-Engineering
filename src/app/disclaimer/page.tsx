@@ -54,7 +54,7 @@ const SECTIONS: LegalSection[] = [
     id: "responsibility",
     title: "Responsibility and rights",
     paragraphs: [
-      "The Terms of Use describe the limits that may apply to use of the Service. Nothing in this Disclaimer excludes or limits a right or responsibility that cannot lawfully be excluded or limited.",
+      "The Terms of Service describe the limits that may apply to use of the Service. Nothing in this Disclaimer excludes or limits a right or responsibility that cannot lawfully be excluded or limited.",
     ],
   },
 ];
@@ -64,7 +64,7 @@ export default function DisclaimerPage() {
     <LegalPage
       path="/disclaimer"
       eyebrow="Legal · Disclaimer"
-      title="Calculator and data limitations"
+      title="Disclaimer & limitation of liability"
       intro={`A plain statement of what ${SITE.name} results are, where their limits lie, and why important figures deserve independent verification.`}
       sections={SECTIONS}
     />

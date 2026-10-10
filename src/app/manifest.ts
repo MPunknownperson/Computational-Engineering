@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/site";
-import { SEARCH_PAGES } from "@/lib/search-pages";
 
 // App shortcuts surface individual tools from the browser/OS level, so a
 // visitor can jump straight to the calculation they need.
 const SHORTCUTS = [
   { name: "Unit converter", url: "/tools/units?category=length&from=m&to=ft&value=5" },
+  { name: "Calculator", url: "/tools/calculator" },
   { name: "Scientific calculator", url: "/tools/scientific" },
   { name: "Custom formula", url: "/tools/formula?preset=compound-interest" },
   { name: "Currency reference", url: "/tools/currency?base=USD&to=EUR&amount=100" },

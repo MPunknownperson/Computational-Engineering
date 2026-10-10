@@ -63,6 +63,7 @@ export default function AboutPage() {
           <div className="sketch-sm"><strong>{CURRENCIES.length} currencies</strong> in the currency tool</div>
           <div className="sketch-sm"><strong>{COUNTRIES.length} economies</strong> with {INDICATORS.length} indicators</div>
           <div className="sketch-sm"><strong>Custom expressions</strong> with user-provided values</div>
+          <div className="sketch-sm"><strong>A blackboard calculator</strong> for sketches, notes and expressions</div>
         </div>
       </Reveal>
 

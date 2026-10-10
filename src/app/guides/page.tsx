@@ -3,7 +3,6 @@ import { GUIDES } from "@/lib/guides";
 import { LANDING_PAGES, LANDING_SECTIONS } from "@/lib/landing";
 import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
-import { GuideTeasers } from "@/components/search/GuideTeasers";
 import { Icon } from "@/components/Icons";
 import { GuideHero } from "@/components/GuideHero";
 
@@ -43,9 +42,9 @@ export default function GuidesPage() {
           <h2 id={`category-${category.replace(/\s+/g, "-")}`} className="text-2xl font-extrabold">{category}</h2>
           <p className="mt-2 text-sm text-slate-600">{categoryBlurb(category)}</p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {GUIDES.filter((guide) => guide.category === category).map((guide) => (
+            {GUIDES.filter((guide) => guide.category === category).map((guide, index) => (
               <article key={guide.slug} className="sketch card-hover h-full overflow-hidden !p-0">
-                <GuideHero path={`/guides/${guide.slug}`} alt={guide.imageAlt} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" className="border-b-2 border-[color:var(--line)]" />
+                <GuideHero priority={category === "Conversions" && index === 0} path={`/guides/${guide.slug}`} alt={guide.imageAlt} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" className="border-b-2 border-[color:var(--line)]" />
                 <div className="p-4">
                 <span className="chip !text-[.66rem]">{guide.formula}</span>
                 <h3 className="mt-3 text-lg font-extrabold leading-snug">

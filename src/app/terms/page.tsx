@@ -18,7 +18,7 @@ const SECTIONS: LegalSection[] = [
     id: "scope",
     title: "About these terms",
     paragraphs: [
-      `These Terms of Use (“Terms”) form an agreement between you and ${N} and apply whenever you visit or use ${N} and the calculation, conversion, reference and voice tools available on it (the “Service”). They should be read together with the Privacy Notice, the Disclaimer and the Accessibility statement, which are incorporated into these Terms by reference.`,
+      `These Terms of Service (“Terms”) form an agreement between you and ${N} and apply whenever you visit or use ${N} and the calculation, conversion, reference and voice tools available on it (the “Service”). They should be read together with the Privacy Policy, the Disclaimer and the Accessibility statement, which are incorporated into these Terms by reference.`,
       "By visiting or using the Service you accept these Terms. If you do not agree with them, do not use the Service. Nothing here removes a right that applicable law does not allow to be excluded or restricted, including consumer-protection rights in your country or state of residence.",
       `In these Terms, “you” means the person using the Service, and “${N}”, “we” or “us” means the operator of the Service. Section headings are for convenience only and do not limit a section's meaning.`,
     ],
@@ -36,6 +36,7 @@ const SECTIONS: LegalSection[] = [
     title: "What the Service offers",
     paragraphs: ["At the date of this version, the free Service offers:"],
     bullets: [
+      "A calculator with a blackboard workspace for sketching, notes and expressions.",
       "A scientific calculator for mathematical expressions, named values and unit expressions.",
       `A unit converter with ${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories.`,
       `A currency reference tool covering ${CURRENCIES.length} currencies, with a recent historical view. Figures are indicative and may not match a price offered by a financial institution or exchange.`,
@@ -50,7 +51,7 @@ const SECTIONS: LegalSection[] = [
     id: "voice-input",
     title: "Voice input and language processing",
     paragraphs: [
-      "The voice feature is optional, starts only when you activate it, and is described in full in the Privacy Notice. These Terms cover the conditions of using it.",
+      "The voice feature is optional, starts only when you activate it, and is described in full in the Privacy Policy. These Terms cover the conditions of using it.",
       "Depending on your device, browser and region, a spoken request may be processed entirely on your device, by your browser vendor's own speech service, or by a small on-page model — the Service selects the path automatically and does not let you route audio through a path your browser does not actually support. You accept that recognition accuracy varies by accent, background noise, device and language, and that a misrecognised phrase can open the wrong tool or no tool at all; always check the amount, units and direction shown before relying on a result.",
       "Where voice processing uses a browser vendor's own speech service or a third-party, openly licensed speech model, that provider or model is not operated by us, and its own terms and privacy practices govern its part of the processing. We do not warrant the availability, accuracy or continued free provision of any such third-party service or model.",
       "Voice input may be unavailable in some countries or regions, or limited to on-device processing only, where we have assessed that to be appropriate for legal, data-transfer or service-availability reasons. This is not a guarantee that voice input is lawful or appropriate for every use in every location, and you remain responsible for complying with local law when you use the feature.",
@@ -96,7 +97,7 @@ const SECTIONS: LegalSection[] = [
     bullets: [
       "Anyone who obtains the workspace reference may be able to access or remove formulas associated with it. Do not include passwords, confidential information or personal details in a formula.",
       "You retain the rights you have in your own expression. You allow Radix Loom to keep and display it only as needed to provide the saving feature and respond to lawful requests.",
-      "You may download or delete saved formulas from the Privacy Notice controls. Saved formulas do not currently expire automatically.",
+      "You may download or delete saved formulas from the Privacy Policy controls. Saved formulas do not currently expire automatically.",
     ],
   },
   {
@@ -160,7 +161,7 @@ const SECTIONS: LegalSection[] = [
     id: "ending-use",
     title: "Ending or restricting use",
     paragraphs: [
-      "You may stop using the Service at any time. Access or saved content may be restricted, suspended or removed where reasonably necessary to protect the Service or other visitors, comply with law or a legal request, investigate suspected misuse, or address a material breach of these Terms, with or without prior notice where circumstances make that appropriate. You can delete saved formulas using the controls in the Privacy Notice at any time, including before ending your use of the Service.",
+      "You may stop using the Service at any time. Access or saved content may be restricted, suspended or removed where reasonably necessary to protect the Service or other visitors, comply with law or a legal request, investigate suspected misuse, or address a material breach of these Terms, with or without prior notice where circumstances make that appropriate. You can delete saved formulas using the controls in the Privacy Policy at any time, including before ending your use of the Service.",
       "Sections that by their nature are intended to survive the end of your use of the Service — including Intellectual property, Disclaimer of warranties, Limitation of liability, Indemnification, Governing law and dispute resolution, and General provisions — continue to apply after you stop using it.",
     ],
   },
@@ -168,7 +169,7 @@ const SECTIONS: LegalSection[] = [
     id: "export-control",
     title: "Export control and sanctions",
     paragraphs: [
-      "The Service, including any software, speech-recognition model or on-device technology it uses, may be subject to export-control and economic-sanctions laws. You confirm that you are not located in, or a resident of, a country or region subject to a comprehensive embargo under the law that applies to us, and that you are not on a restricted-party list under such law. Voice processing is automatically withheld or limited in some regions for related legal reasons, as described in the Privacy Notice.",
+      "The Service, including any software, speech-recognition model or on-device technology it uses, may be subject to export-control and economic-sanctions laws. You confirm that you are not located in, or a resident of, a country or region subject to a comprehensive embargo under the law that applies to us, and that you are not on a restricted-party list under such law. Voice processing is automatically withheld or limited in some regions for related legal reasons, as described in the Privacy Policy.",
     ],
   },
   {
@@ -211,7 +212,7 @@ const SECTIONS: LegalSection[] = [
     id: "general",
     title: "General provisions",
     paragraphs: [
-      "These Terms, together with the Privacy Notice, Disclaimer and Accessibility statement, are the entire agreement between you and us about use of the Service, and supersede any earlier understanding on that subject.",
+      "These Terms, together with the Privacy Policy, Disclaimer and Accessibility statement, are the entire agreement between you and us about use of the Service, and supersede any earlier understanding on that subject.",
     ],
     bullets: [
       "Severability: if any part of these Terms cannot be enforced, the rest remains in effect to the extent permitted by law, and the unenforceable part is read as narrowly as needed to make it enforceable.",
@@ -240,8 +241,8 @@ export default function TermsPage() {
   return (
     <LegalPage
       path="/terms"
-      eyebrow="Legal · Terms of Use"
-      title="Terms of use for the calculator tools"
+      eyebrow="Legal · Terms"
+      title="Terms of Service"
       intro={`These Terms describe how ${N} may be used, including its voice and language features. They use the service name and neutral language; applicable law determines the rights and responsibilities that cannot be varied by a website notice.`}
       sections={SECTIONS}
     />

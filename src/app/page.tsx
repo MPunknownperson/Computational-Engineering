@@ -4,9 +4,9 @@ import { SearchContext } from "@/components/search/SearchContext";
 import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
 import { VoiceIllustration } from "@/components/VoiceIllustration";
-import { ToolCard } from "@/components/ToolCard";
+import { ToolCard, type ToolTone } from "@/components/ToolCard";
 import { Icon, type IconName } from "@/components/Icons";
-import { Reveal, Parallax } from "@/components/Motion";
+import { Reveal } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
 import { FormulaLibrary } from "@/components/home/Sections";
 import { SITE } from "@/lib/site";
@@ -21,17 +21,16 @@ const VOICE_POINTS: { icon: IconName; title: string; body: string }[] = [
 
 export const generateMetadata = () => metadataFor("/");
 
-type Tone = "coral" | "sky" | "sun" | "mint" | "pink" | "ink";
-
 const TOOLS: {
-  href: string; title: string; blurb: string; icon: IconName; tone: Tone; badge?: string; meta: string;
+  href: string; title: string; blurb: string; icon: IconName; tone: ToolTone; badge?: string; meta: string;
 }[] = [
-  { href: "/tools/scientific", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", tone: "coral", meta: "press Calculate" },
-  { href: "/tools/units", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories. Press Convert to reveal the answer and every other unit at once.`, icon: "swap", tone: "sky", meta: "press Convert" },
-  { href: "/tools/currency", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies. Press Convert to reveal the amount and the recent trend.`, icon: "globe", tone: "sun", badge: "updates", meta: "press Convert" },
-  { href: "/tools/crypto", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", tone: "mint", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
-  { href: "/tools/formula", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", tone: "pink", meta: "press Evaluate" },
-  { href: "/tools/economy", title: "Economic indicators", blurb: `${INDICATORS.length} measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show to reveal the figures.`, icon: "chart", tone: "ink", badge: "updates", meta: "press Show" },
+  { href: "/tools/calculator", tone: "ink", title: "Calculator", blurb: "A blackboard workspace: sketch the idea, jot the principle, then press Calculate. Not a replica of a plastic keypad.", icon: "calculator", meta: "press Calculate" },
+  { href: "/tools/scientific", tone: "coral", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", meta: "press Calculate" },
+  { href: "/tools/units", tone: "sky", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories. Press Convert to reveal the answer and every other unit at once.`, icon: "swap", meta: "press Convert" },
+  { href: "/tools/currency", tone: "terra", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies. Press Convert to reveal the amount and the recent trend.`, icon: "globe", badge: "updates", meta: "press Convert" },
+  { href: "/tools/crypto", tone: "violet", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
+  { href: "/tools/formula", tone: "pink", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", meta: "press Evaluate" },
+  { href: "/tools/economy", tone: "mint", title: "Economic indicators", blurb: `${INDICATORS.length} measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show to reveal the figures.`, icon: "chart", badge: "updates", meta: "press Show" },
 ];
 
 const FACTS: { icon: IconName; title: string; body: string }[] = [
@@ -44,7 +43,7 @@ const FACTS: { icon: IconName; title: string; body: string }[] = [
 const INFORMATION_TYPES = [
   { icon: "globe" as IconName, title: "Currency reference values", text: "Indicative exchange-rate information and recent historical views. These are not transaction offers and may differ from rates available to you.", href: "/tools/currency" },
   { icon: "coin" as IconName, title: "Digital-asset market information", text: "Prices, daily movement and market summaries. Figures can change quickly and differ across venues.", href: "/tools/crypto" },
-  { icon: "chart" as IconName, title: "Economic indicators", text: "Selected public statistics, many of which are published periodically and may be revised.", href: "/tools/economy" },
+  { icon: "chart" as IconName, title: "Economic indicators", text: "Selected public statistics, many of which are published periodically and may be revised.", href: "/tools/economy", tone: "mint" },
 ];
 
 export default function Home() {
@@ -77,7 +76,7 @@ export default function Home() {
               </div>
             </Reveal>
           </div>
-          <Reveal delay={120}><Parallax range={14}><HeroIllustration /></Parallax></Reveal>
+          <Reveal delay={120}><HeroIllustration /></Reveal>
         </div>
       </section>
 
@@ -122,14 +121,14 @@ export default function Home() {
                 </div>
               </Reveal>
             </div>
-            <Reveal delay={90}><Parallax range={10}><VoiceIllustration /></Parallax></Reveal>
+            <Reveal delay={90}><VoiceIllustration /></Reveal>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="tools-heading">
         <Reveal>
-          <h2 id="tools-heading" className="h-title text-3xl sm:text-4xl">Six tools, <span className="h-underline">many uses</span></h2>
+          <h2 id="tools-heading" className="h-title text-3xl sm:text-4xl">Seven tools, <span className="h-underline">many uses</span></h2>
           <p className="mt-2 max-w-xl text-slate-600">Calculate, convert values or explore selected reference information.</p>
         </Reveal>
         <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -139,7 +138,7 @@ export default function Home() {
 
       <GuideTeasers />
 
-      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="facts-heading">
+      <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="facts-heading">
         <Reveal>
           <h2 id="facts-heading" className="h-title text-3xl sm:text-4xl">What to <span className="h-underline">expect</span></h2>
         </Reveal>
@@ -156,7 +155,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="formula-heading">
+      <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="formula-heading">
         <Reveal>
           <div className="rounded-[24px] border-2 border-[color:var(--line)] bg-[#0b1020] p-8 shadow-[var(--shadow-ink-lg)] sm:p-12" data-tone="dark">
             <div className="grid items-center gap-10 lg:grid-cols-2">
@@ -191,7 +190,7 @@ export default function Home() {
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="library-heading">
+      <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="library-heading">
         <Reveal>
           <h2 id="library-heading" className="h-title text-3xl sm:text-4xl">Example <span className="h-underline">formulas</span></h2>
           <p className="mt-2 max-w-xl text-slate-600">Open an example in the formula tool and adapt it to your own inputs.</p>
@@ -199,7 +198,7 @@ export default function Home() {
         <div className="mt-8"><Reveal><FormulaLibrary /></Reveal></div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="reference-heading">
+      <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="reference-heading">
         <Reveal>
           <h2 id="reference-heading" className="h-title text-3xl sm:text-4xl">Reference <span className="h-underline">information</span></h2>
           <p className="mt-2 max-w-2xl text-slate-600">Figures are supplied from external sources. Availability, coverage and update frequency vary by tool.</p>
@@ -217,7 +216,7 @@ export default function Home() {
         <p className="mt-4 max-w-3xl text-xs text-slate-500">Reference figures are for general information, not advice. See the <Link href="/disclaimer" className="font-bold underline decoration-2 underline-offset-2">Disclaimer</Link>.</p>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-12 pb-20" aria-labelledby="faq-heading">
+      <section className="defer-paint mx-auto max-w-7xl px-5 py-12 pb-20" aria-labelledby="faq-heading">
         <Reveal>
           <h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Frequently <span className="h-underline">asked</span></h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-600">Detailed answers for voice setup, processing messages, follow-up commands, saved formulas and reference figures.</p>

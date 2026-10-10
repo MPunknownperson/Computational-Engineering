@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ToolCard } from "@/components/ToolCard";
+import { ToolCard, type ToolTone } from "@/components/ToolCard";
 import { Reveal } from "@/components/Motion";
 import { Icon, type IconName } from "@/components/Icons";
 import { Owl } from "@/components/Mascots";
@@ -9,14 +9,14 @@ import { headers } from "next/headers";
 import { SpeakCalc } from "@/components/tech/BrowserTools";
 import { parseAcceptLanguage, selectPack } from "@/lib/i18n";
 
-type Tone = "coral" | "sky" | "sun" | "mint" | "pink" | "ink";
-const ALL: { href: string; title: string; blurb: string; icon: IconName; tone: Tone; badge?: string; meta: string }[] = [
-  { href: "/tools/scientific", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", tone: "coral", meta: "press Calculate" },
-  { href: "/tools/units", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories, with conversions shown together.`, icon: "swap", tone: "sky", meta: `${UNIT_COUNT} units` },
-  { href: "/tools/currency", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies, with a recent historical view.`, icon: "globe", tone: "sun", badge: "updates", meta: `${CURRENCIES.length} currencies` },
-  { href: "/tools/crypto", title: "Digital-asset prices", blurb: `${CRYPTO_IDS.length} assets with price, daily movement and market summaries.`, icon: "coin", tone: "mint", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
-  { href: "/tools/formula", title: "Custom formulas", blurb: "Enter expressions, set values, review results and choose to save them.", icon: "function", tone: "pink", meta: "save · download · remove" },
-  { href: "/tools/economy", title: "Economic indicators", blurb: `Selected periodic public indicators across ${COUNTRIES.length} economies.`, icon: "chart", tone: "ink", badge: "updates", meta: `${COUNTRIES.length} economies` },
+const ALL: { href: string; title: string; blurb: string; icon: IconName; tone: ToolTone; badge?: string; meta: string }[] = [
+  { href: "/tools/calculator", tone: "ink", title: "Calculator", blurb: "A blackboard workspace: sketch, take notes, then press Calculate.", icon: "calculator", meta: "press Calculate" },
+  { href: "/tools/scientific", tone: "coral", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", meta: "press Calculate" },
+  { href: "/tools/units", tone: "sky", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories, with conversions shown together.`, icon: "swap", meta: `${UNIT_COUNT} units` },
+  { href: "/tools/currency", tone: "terra", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies, with a recent historical view.`, icon: "globe", badge: "updates", meta: `${CURRENCIES.length} currencies` },
+  { href: "/tools/crypto", tone: "violet", title: "Digital-asset prices", blurb: `${CRYPTO_IDS.length} assets with price, daily movement and market summaries.`, icon: "coin", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
+  { href: "/tools/formula", tone: "pink", title: "Custom formulas", blurb: "Enter expressions, set values, review results and choose to save them.", icon: "function", meta: "save · download · remove" },
+  { href: "/tools/economy", tone: "mint", title: "Economic indicators", blurb: `Selected periodic public indicators across ${COUNTRIES.length} economies.`, icon: "chart", badge: "updates", meta: `${COUNTRIES.length} economies` },
 ];
 
 const NOTES: { icon: IconName; title: string; body: string }[] = [

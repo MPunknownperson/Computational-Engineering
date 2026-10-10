@@ -118,7 +118,7 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
         <p className="mt-3 max-w-3xl text-slate-600">
           Enter an expression and values for its variables, then review the result. The tool can show
           a simplified form and estimate a derivative. Saving is optional; saved expressions can be
-          downloaded or removed from the Privacy Notice.
+          downloaded or removed from the Privacy Policy.
         </p>
       </Reveal>
 
@@ -259,14 +259,3 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
   );
 }
 
-function parseScope(text: string): Record<string, number> {
-  const out: Record<string, number> = {};
-  text.split(",").forEach((p) => {
-    const [k, v] = p.split("=").map((s) => s.trim());
-    if (k && v) {
-      const n = Number(v);
-      if (!Number.isNaN(n)) out[k] = n;
-    }
-  });
-  return out;
-}

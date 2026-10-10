@@ -115,7 +115,7 @@ function CurrencyWorkspace({ initial }: { initial: { base: string; target: strin
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-5 sm:py-12">
       <Reveal>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="h-title text-4xl sm:text-5xl">Exchange <span className="h-underline">rates</span></h1>
+          <h1 className="h-title text-4xl sm:text-5xl">Currency converter <span className="h-underline">&amp; exchange rates</span></h1>
           <span className="chip">Reference information</span>
         </div>
         <p className="mt-3 max-w-2xl text-slate-600">

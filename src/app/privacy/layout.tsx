@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import { metadataFor } from "@/lib/seo";
-import { SearchContext } from "@/components/search/SearchContext";
 
-export const generateMetadata = () => metadataFor("/privacy");
-export default function PageLayout({ children }: { children: ReactNode }) {
-  return <><SearchContext path="/privacy" />{children}</>;
+/** Each policy route owns its metadata; restricted supplements inherit no public schema. */
+export default function PrivacyLayout({ children }: { children: ReactNode }) {
+  return children;
 }

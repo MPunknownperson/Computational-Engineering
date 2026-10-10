@@ -3,7 +3,6 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Reveal, Skeleton, PanelSwap, AnimatedNumber } from "@/components/Motion";
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
-import { Icon } from "@/components/Icons";
 import { COUNTRIES, INDICATORS, INDICATOR_GROUPS } from "@/lib/catalog";
 
 type Point = { year: string; value: number };
@@ -34,11 +33,12 @@ function EconomyWorkspace({ initialCountry, initialIndicator }: { initialCountry
   const [country, setCountry] = useState(initialCountry);
   const [indicator, setIndicator] = useState(initialIndicator);
   const [picks, setPicks] = useState<string[]>(() => [initialCountry, "DEU", "JPN"].filter((iso) => COUNTRIES.some((c) => c.value === iso)));
-  const [data, setData] = useState<EconomyData | null>(null);
-  const [compare, setCompare] = useState<CompareData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [asOf, setAsOf] = useState<Date | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [responseState, setResponseState] = useState<{
+    query: string;
+    payload: EconomyData | CompareData | null;
+    error: string | null;
+    fetchedAt: Date | null;
+  }>({ query: "", payload: null, error: null, fetchedAt: null });
 
   const query = useMemo(() => {
     if (mode === "compare") return `country=${encodeURIComponent(picks.join(","))}&indicator=${encodeURIComponent(indicator)}`;
@@ -46,24 +46,35 @@ function EconomyWorkspace({ initialCountry, initialIndicator }: { initialCountry
     return `country=${encodeURIComponent(country)}&indicator=${encodeURIComponent(indicator)}`;
   }, [mode, picks, country, indicator]);
 
-  const refresh = useCallback(async () => {
-    setError(null);
-    try {
-      const response = await fetch(`/api/economy?${query}`);
-      if (!response.ok) throw new Error("unavailable");
-      const payload = await response.json();
-      // Comparison and ranking share the multi-economy payload shape.
-      if (mode === "single") { setData(payload as EconomyData); setCompare(null); }
-      else { setCompare(payload as CompareData); setData(null); }
-      setAsOf(new Date());
-    } catch {
-      setError("This economic information is temporarily unavailable.");
-    } finally {
-      setLoading(false);
-    }
-  }, [mode, query]);
+  // Readiness belongs to this exact query, not the last completed request.
+  // Switching modes therefore disables Show synchronously on the next render.
+  const matchingResponse = responseState.query === query;
+  const loading = !matchingResponse;
+  const error = matchingResponse ? responseState.error : null;
+  const asOf = matchingResponse ? responseState.fetchedAt : null;
+  const loaded = matchingResponse ? responseState.payload : null;
+  const data = loaded && "country" in loaded ? loaded : null;
+  const compare = loaded && "compare" in loaded ? loaded : null;
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]);
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/economy?${query}`, { signal });
+        if (!response.ok) throw new Error("unavailable");
+        const payload = await response.json() as EconomyData | CompareData;
+        if (controller.signal.aborted) return;
+        setResponseState({ query, payload, error: null, fetchedAt: new Date() });
+      } catch {
+        if (!controller.signal.aborted) {
+          setResponseState({ query, payload: null, error: "This economic information is temporarily unavailable.", fetchedAt: null });
+        }
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [query]);
 
   const countryName = useCallback(
     (iso: string) => COUNTRIES.find((item) => item.value === iso)?.label ?? iso,
@@ -92,7 +103,7 @@ function EconomyWorkspace({ initialCountry, initialIndicator }: { initialCountry
         ? `ranking|${indicator}`
         : `${country}|${indicator}`;
   const gate = useConfirmGate(signature, !loading && !error && payload !== null);
-  const state = error ? "invalid" : loading ? "invalid" : gate.revealed ? "revealed" : "awaiting";
+  const state = error || loading ? "invalid" : gate.needsInput ? "needs-input" : gate.revealed ? "revealed" : "awaiting";
 
   function togglePick(iso: string) {
     setPicks((current) => {
@@ -109,7 +120,7 @@ function EconomyWorkspace({ initialCountry, initialIndicator }: { initialCountry
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-5 sm:py-12">
       <Reveal>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="h-title text-4xl sm:text-5xl">Economic <span className="h-underline">indicators</span></h1>
+          <h1 className="h-title text-4xl sm:text-5xl">Economic indicators: <span className="h-underline">inflation, GDP &amp; population</span></h1>
           <span className="chip">Public reference information</span>
         </div>
         <p className="mt-3 max-w-2xl text-slate-600">
@@ -212,7 +223,7 @@ function EconomyWorkspace({ initialCountry, initialIndicator }: { initialCountry
               onConfirm={gate.confirm}
               onReset={gate.reset}
               readyText={loading ? "Retrieving the figures — the button becomes available shortly." : "Figures ready — press Show."}
-              errorText={error ?? "Waiting for figures."}
+              errorText={error ?? "Retrieving figures for this selection…"}
               shownText={mode === "compare" ? `${picks.length} economies · ${indicatorName} shown.` : mode === "ranking" ? `${indicatorName} ranking shown.` : `${countryName(country)} · ${indicatorName} shown.`}
             />
           </ConfirmForm>

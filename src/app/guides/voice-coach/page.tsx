@@ -119,7 +119,7 @@ export default function VoiceCoachPage() {
         </Reveal>
         <p className="mt-6 text-sm text-slate-600">
           Want the technical detail behind recognition and processing? Read the{" "}
-          <Link href="/privacy#voice" className="font-bold underline underline-offset-4">voice section of the Privacy Notice</Link>.
+          <Link href="/privacy#voice" className="font-bold underline underline-offset-4">voice section of the Privacy Policy</Link>.
         </p>
       </div>
     </>
