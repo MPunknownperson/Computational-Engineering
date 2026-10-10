@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
 import { safeEvaluate, parseVariableAssignments } from "@/lib/math";
-import { convertPrecise, convertTemperaturePrecise, FACTORS, TEMPERATURE_UNITS } from "@/lib/units";
+import { convertPrecise, convertTemperaturePrecise, FACTORS } from "@/lib/units";
 import type { LandingPage } from "@/lib/landing";
 
 type ConvertWidget = Extract<LandingPage["widget"], { type: "convert" }>;

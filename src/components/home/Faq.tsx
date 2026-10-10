@@ -21,7 +21,7 @@ const ITEMS: Item[] = [
   },
   {
     q: "What does “Preparing voice recognition…” mean?",
-    a: "The feature is selecting the processing path for your browser, device and region. A browser-provided on-device language pack may need preparing. If this browser lacks a usable speech engine, the page loads multilingual Whisper Base, an Apache-2.0 model published by Xenova and fetched as separate quantized assets from Hugging Face Hub. The voice card identifies the publisher and host and shows the current file and download progress; the browser caches each asset for later use. This prepares software only—the microphone is requested afterwards, and audio is not sent to the model host.",
+    a: "The feature is selecting the processing path for your browser, device and region. A browser-provided on-device language pack may need preparing. If this browser lacks a usable speech engine, English can use the browser's built-in audio model. Other languages use supported browser speech engines. The browser may download its own model or language pack after you press Speak; this site hosts no model weights. This prepares software only: the microphone is requested afterwards, and audio never leaves the device.",
   },
   {
     q: "Why does it say “Waiting for microphone permission…”?",
@@ -34,7 +34,7 @@ const ITEMS: Item[] = [
   {
     q: "Where is my audio processed?",
     a: <>
-      The page chooses a processing route automatically. An explicit local route keeps audio on the device. A desktop browser may use its own managed speech service; the site does not receive or store that audio. If the browser has no usable speech engine, Xenova Whisper Base can run in a page worker after its quantized files download from Hugging Face Hub. Read the full details in the <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Voice input section of the Privacy Notice</Link>.
+      The page chooses a processing route automatically. An explicit local route keeps audio on the device. A desktop browser may use its own managed speech service; the site does not receive or store that audio. If the browser has no usable speech engine, English may use its built-in on-device audio model; other languages are not sent to an English-only model. The browser may prepare its own model on first use. Read the full details in the <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Voice input section of the Privacy Policy</Link>.
     </>,
   },
   {
@@ -43,7 +43,7 @@ const ITEMS: Item[] = [
   },
   {
     q: "Why can speech recognition still get a number or word wrong?",
-    a: "Recognition is best-effort: accents, background sound, microphone quality and a browser's language model all affect the transcript. On the in-page fallback, multilingual Whisper Base runs in a worker with beam-search decoding; French, Chinese and other configured languages are passed using their model language names rather than short locale codes. The page shows both the transcript and the tool interpretation before it opens, and repeated recogniser mishearings can be corrected by a later hypothesis and remembered on this device. Check the amount, currency/unit and direction in the opened tool before confirming.",
+    a: "Recognition is best-effort: accents, background sound, microphone quality and a browser's language model all affect the transcript. On the English-only built-in-model fallback, your browser's own on-device model transcribes the recording and may also be asked to restate a misheard sentence as a command; any such suggestion still has to pass the same checks as anything you type. The page shows both the transcript and the tool interpretation before it opens, and repeated recogniser mishearings can be corrected by a later hypothesis and remembered on this device. Check the amount, currency/unit and direction in the opened tool before confirming.",
   },
   {
     q: "Will the voice feature learn from me?",
@@ -59,7 +59,7 @@ const ITEMS: Item[] = [
   },
   {
     q: "Do I need an account?",
-    a: "No account is required. If you choose to save formulas, a random workspace reference helps show them again in the same browser. You can download or remove saved formulas in the Privacy Notice.",
+    a: "No account is required. If you choose to save formulas, a random workspace reference helps show them again in the same browser. You can download or remove saved formulas in the Privacy Policy.",
   },
   {
     q: "Are the figures advice or guaranteed current?",

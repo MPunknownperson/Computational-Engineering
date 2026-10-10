@@ -14,7 +14,7 @@ const HELP: Record<string, { title: string; steps: string[]; note: string }> = {
   },
   "/tools/formula": {
     title: "Building a reusable formula",
-    steps: ["Name the expression and enter its mathematical terms, for example P*(1+r/n)^(n*t).", "Assign values with consistent units. A rate of 5% is 0.05 when the formula expects a decimal rate.", "Press Evaluate. Save only expressions you want to revisit, and use the Privacy Notice controls to download or remove saved formulas."],
+    steps: ["Name the expression and enter its mathematical terms, for example P*(1+r/n)^(n*t).", "Assign values with consistent units. A rate of 5% is 0.05 when the formula expects a decimal rate.", "Press Evaluate. Save only expressions you want to revisit, and use the Privacy Policy controls to download or remove saved formulas."],
     note: "Saving does not certify a formula. Review its assumptions, inputs and output before making an important decision. Avoid sensitive information in saved content.",
   },
   "/tools/currency": {

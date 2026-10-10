@@ -1,24 +1,16 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { Icon, type IconName } from "./Icons";
+import { Icon, IconSticker, type IconName } from "./Icons";
+
+export type ToolTone = "coral" | "sky" | "mint" | "violet" | "pink" | "terra" | "ink";
 
 export type ToolCardProps = {
   href: string;
   title: string;
   blurb: string;
   icon: IconName;
-  tone?: "coral" | "sky" | "sun" | "mint" | "pink" | "ink";
+  tone: ToolTone;
   badge?: string;
   meta?: string;
-};
-
-const TONES: Record<NonNullable<ToolCardProps["tone"]>, { bg: string; fg: string; hover: string }> = {
-  coral: { bg: "#ff6b4a", fg: "#fff", hover: "#ff7d60" },
-  sky: { bg: "#5b8cff", fg: "#fff", hover: "#729cff" },
-  sun: { bg: "#ffd23f", fg: "#0b1020", hover: "#ffdd6b" },
-  mint: { bg: "#4ade80", fg: "#0b1020", hover: "#6ee79b" },
-  pink: { bg: "#f9a8d4", fg: "#0b1020", hover: "#fbc4e1" },
-  ink: { bg: "#0b1020", fg: "#ffd23f", hover: "#121a33" },
 };
 
 export function ToolCard({
@@ -26,26 +18,18 @@ export function ToolCard({
   title,
   blurb,
   icon,
-  tone = "sun",
+  tone,
   badge,
   meta,
 }: ToolCardProps) {
-  const t = TONES[tone];
-  const tileStyle = {
-    background: t.bg,
-    color: t.fg,
-  } as CSSProperties;
-
+  const stickerStroke = tone === "ink" ? "#ffd23f" : "#0b1020";
   return (
     <Link
         href={href}
         className="group sketch card-hover flex h-full flex-col"
-        style={{ ["--tile" as string]: t.hover }}
       >
         <div className="flex items-start gap-3.5">
-          <span className="icon-tile" style={tileStyle}>
-            <Icon name={icon} size={21} strokeWidth={2.1} />
-          </span>
+          <IconSticker name={icon} tone={tone} size={21} strokeWidth={2.1} stroke={stickerStroke} />
 
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-2">
@@ -64,7 +48,7 @@ export function ToolCard({
           <span className="text-xs font-semibold text-slate-500">{meta ?? "Open tool"}</span>
           <span className="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 font-bold">
             Open
-            <Icon name="arrow-right" size={16} />
+            <Icon name="arrow-right" size={16} className="card-arrow" />
           </span>
         </span>
       </Link>

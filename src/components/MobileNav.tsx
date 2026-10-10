@@ -46,7 +46,7 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
       <nav
         id={menuId}
         aria-label="Mobile navigation"
-        className={`absolute left-0 right-0 top-16 origin-top border-b-2 border-[color:var(--line)] bg-[color:var(--paper)] shadow-[0_4px_0_var(--line)] transition-all duration-200 ${
+        className={`absolute left-0 right-0 top-16 origin-top border-b-2 border-[color:var(--line)] bg-[color:var(--nav-bg)] shadow-[0_4px_0_var(--line)] transition-all duration-200 ${
           open ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
         }`}
         hidden={!open}
@@ -57,7 +57,7 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
               key={item.href}
               href={item.href}
               className={`rounded-xl px-3 py-3 font-semibold transition-colors duration-200 ${
-                pathname === item.href ? "bg-[color:var(--accent-3)] text-[color:var(--ink)]" : "text-slate-700 hover:bg-[#fff4d0]"
+                pathname === item.href ? "bg-[color:var(--nav-active)] text-[color:var(--ink)]" : "text-slate-700 hover:bg-[color:var(--nav-hover)]"
               }`}
             >
               {item.label}

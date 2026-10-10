@@ -122,7 +122,7 @@ export function ContactForm() {
         <p className="max-w-sm text-xs text-slate-500">
           The topic, message and any optional contact details are used to handle your enquiry. See the{" "}
           <Link href="/privacy#categories" className="font-bold underline decoration-2 underline-offset-2">
-            Privacy Notice
+            Privacy Policy
           </Link>{" "}
           for how long they are kept and how to ask for removal.
         </p>

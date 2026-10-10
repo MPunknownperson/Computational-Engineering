@@ -17,14 +17,14 @@ import {
   type MicrophoneStatus,
   type RecognitionInstance,
 } from "@/lib/browser-tokens";
-import { canRunLocalModel, createLocalModelEngine, type LocalModelEngine, type ModelAssetProgress } from "@/lib/voice/local-model";
-import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type WeightedHypothesis } from "@/lib/command-engine";
+import { localModelReady, createLocalModelEngine, type LocalModelEngine, type ModelAssetProgress } from "@/lib/voice/local-model";
+import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type CommandRoute, type WeightedHypothesis } from "@/lib/command-engine";
+import { repairCommandOnDevice } from "@/lib/ai/on-device";
 import { LANGUAGE_PACKS, packOrder, recognitionLocale, t, type PackId, type UiKey } from "@/lib/i18n";
 import { withSystemVocabulary } from "@/lib/i18n/system-lexicon";
 import { detectPlatformProfile } from "@/lib/platform";
 import {
   decideVoiceProcessing,
-  isMobile,
   regionFromLocale,
   regionRule,
   type RegionRule,
@@ -36,7 +36,7 @@ import { clearVoiceSession, loadVoiceSession, saveVoiceSession } from "@/lib/voi
 
 type Phase = "checking" | "ready" | "unavailable" | "preparing" | "requesting" | "listening" | "opening";
 
-const OPEN_DELAY_MS = 900;
+const OPEN_DELAY_MS = 400;
 
 const UNAVAILABLE_KEY: Record<UnavailableReason, UiKey> = {
   "no-api": "unavailable.noApi",
@@ -94,6 +94,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const runtimeRef = useRef(runtime);
   const recognitionRef = useRef<RecognitionInstance | null>(null);
   const modelRef = useRef<LocalModelEngine | null>(null);
+  const repairRef = useRef<AbortController | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const openTimer = useRef<number | null>(null);
   const phaseRef = useRef<Phase>("checking");
@@ -119,20 +120,16 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       const region = geo?.country ?? regionFromLocale(navigator.language);
       const rule = regionRule(region, geo?.overrides ?? {});
 
-      // Probe on-device support only when the policy could actually use it.
-      // Some Chromium builds crash on that probe, so it must not be speculative.
-      const needsLocal =
-        rule === "local-only" ||
-        (rule !== "cloud-only" && (isMobile(profile.os, profile.device) || !speechApi));
-      const wantsCloud = rule === "any" && !isMobile(profile.os, profile.device) && speechApi;
-
-      const [local, browserCloud] = await Promise.all([
-        speechApi && needsLocal && supportsOnDeviceSpeech()
+      // Probe the selected language for each permitted path. Model presence
+      // alone is not proof of audio support, especially outside English.
+      const [local, browserCloud, modelReady] = await Promise.all([
+        speechApi && rule !== "none" && rule !== "cloud-only" && supportsOnDeviceSpeech()
           ? localSpeechAvailability(lang)
           : Promise.resolve("unavailable" as const),
-        speechApi && (wantsCloud || rule === "cloud-only")
+        speechApi && (rule === "any" || rule === "cloud-only")
           ? browserSupportsCloudSpeech(lang)
           : Promise.resolve(false),
+        rule !== "none" && rule !== "cloud-only" ? localModelReady(lang) : Promise.resolve(false),
       ]);
 
       const next = decideVoiceProcessing({
@@ -144,7 +141,8 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         local,
         region,
         overrides: geo?.overrides ?? {},
-        canRunLocalModel: canRunLocalModel(),
+        canRunLocalModel: modelReady,
+        language: lang,
       });
       if (!active) return;
       const previous = loadVoiceSession();
@@ -169,6 +167,8 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       try { recognition.abort?.(); } catch { /* already stopped */ }
       try { recognition.stop(); } catch { /* already stopped */ }
     }
+    repairRef.current?.abort();
+    repairRef.current = null;
     modelRef.current?.cancel();
     modelRef.current?.dispose();
     modelRef.current = null;
@@ -191,16 +191,19 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     [pack, setPhaseBoth, teardown],
   );
 
-  /** Shared by the browser engine and the on-page model. */
-  const handleTranscript = useCallback(
-    (hypotheses: Array<string | WeightedHypothesis>) => {
-      const route = routeHypotheses(hypotheses, runtimeRef.current);
-      setHeard(route.heard);
-      if (!route.action || !route.program) {
-        setError(t(pack, "voice.noMatch", { example: pack.examples[0] }));
-        setPhaseBoth("ready");
-        return;
-      }
+  /**
+   * Shared by every recognition path (browser on-device, cloud, generative).
+   *
+   * A routed command must always pass the deterministic grammar. When the
+   * grammar rejects every hypothesis we give the browser's built-in model one
+   * chance to restate the sentence as a literal command, then run that
+   * proposal back through the same grammar. The model can therefore only
+   * suggest text — it can never decide an outcome, and when no built-in model
+   * exists the call resolves to null and behaviour is unchanged.
+   */
+  const commitRoute = useCallback(
+    (route: CommandRoute) => {
+      if (!route.action || !route.program) return;
       saveVoiceSession(route.program);
       setNavigateTo(route.action.href);
       setError(null);
@@ -214,12 +217,45 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         router.push(href);
       }, OPEN_DELAY_MS);
     },
-    [pack, router, setPhaseBoth],
+    [router, setPhaseBoth],
+  );
+
+  const handleTranscript = useCallback(
+    (hypotheses: Array<string | WeightedHypothesis>) => {
+      const route = routeHypotheses(hypotheses, runtimeRef.current);
+      setHeard(route.heard);
+
+      if (route.action && route.program) {
+        commitRoute(route);
+        return;
+      }
+
+      repairRef.current?.abort();
+      const repair = new AbortController();
+      repairRef.current = repair;
+      setPhaseBoth("preparing");
+      const heard = route.heard;
+      void (async () => {
+        const repaired = await repairCommandOnDevice(heard, { language: langRef.current, signal: repair.signal }).catch(() => null);
+        if (repair.signal.aborted) return;
+        repairRef.current = null;
+        if (repaired) {
+          const retry = routeHypotheses([repaired], runtimeRef.current);
+          if (retry.action && retry.program) {
+            commitRoute(retry);
+            return;
+          }
+        }
+        setError(t(pack, "voice.noMatch", { example: pack.examples[0] }));
+        setPhaseBoth("ready");
+      })();
+    },
+    [commitRoute, pack, setPhaseBoth],
   );
 
   const listen = useCallback(
     (mode: "local" | "cloud") => {
-      const launch = (locale: string, retry: boolean) => {
+      const launch = (locale: string) => {
         const recognition = createRecognition(locale, { preferOnDevice: mode === "local" });
         if (!recognition) {
           fail("speech.generic");
@@ -237,16 +273,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         };
         recognition.onerror = (event) => {
           if (recognitionRef.current !== recognition || event.error === "aborted") return;
-          if (mode === "cloud" && !retry && locale.toLowerCase() !== "en-us" && event.error === "language-not-supported") {
-            // The browser may not support the system locale even though its
-            // default cloud speech service works. Try a known locale once;
-            // keep the same pack set for semantic understanding.
-            recognition.onend = null;
-            recognition.onerror = null;
-            recognitionRef.current = null;
-            launch("en-US", true);
-            return;
-          }
           fail(speechErrorKey(event.error, mode));
         };
         recognition.onend = () => {
@@ -264,7 +290,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           fail("speech.busy");
         }
       };
-      launch(langRef.current, false);
+      launch(langRef.current);
     },
     [fail, handleTranscript, setPhaseBoth],
   );
@@ -278,11 +304,10 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     setModelProgress(null);
 
     if (decision.mode === "local-model") {
-      // On-demand WASM/WebGPU model; press Stop to finish a short utterance.
+      // English-only browser-provided audio model; press Stop to finish.
       setPhaseBoth("preparing");
       try {
-        // Retain the worker/model for this page session so later short voice
-        // commands skip model initialisation. Browser-cached weights persist.
+        // Prepare the browser-managed model before opening the microphone.
         if (!modelRef.current) {
           modelRef.current = createLocalModelEngine({
             language: langRef.current,
@@ -418,22 +443,21 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       {decision?.available && decision.mode === "local-model" && phase === "preparing" && (
         <div className="mt-2 rounded-xl border border-[color:var(--line)] bg-[#fffdf5] px-3.5 py-3 text-xs leading-relaxed text-slate-600" role="status" aria-live="polite">
           <p className="font-semibold text-slate-800">
-            {t(pack, "voice.modelProvider", { publisher: "Xenova", host: "Hugging Face Hub", license: "Apache-2.0" })}
+            English speech · browser&rsquo;s built-in on-device model
           </p>
           <p className="mt-1.5">
-            {modelProgress
-              ? t(pack, "voice.modelFileProgress", {
-                  file: modelProgress.file,
-                  percent: modelProgress.percent === null ? "…" : modelProgress.percent,
-                  completed: modelProgress.completed,
-                  assets: Math.max(modelProgress.assetCount, modelProgress.completed),
-                })
+            {modelProgress?.percent !== null && modelProgress?.percent !== undefined
+              ? `Your browser is preparing its built-in model — ${modelProgress.percent}%.`
               : t(pack, "voice.preparing")}
           </p>
           {modelProgress?.percent !== null && modelProgress?.percent !== undefined && (
-            <progress className="mt-2 h-1.5 w-full overflow-hidden rounded-full accent-[color:var(--accent)]" max={100} value={modelProgress.percent} aria-label={`Downloading ${modelProgress.file}`} />
+            <progress className="mt-2 h-1.5 w-full overflow-hidden rounded-full accent-[color:var(--accent)]" max={100} value={modelProgress.percent} aria-label="Browser is preparing its built-in model" />
           )}
-          <p className="mt-1.5">Model files are downloaded individually and cached by this browser. Microphone audio stays on this device; it is not uploaded to the model host.</p>
+          <p className="mt-1.5">
+            The generative speech path supports English only. Your browser may need
+            to download its model on first use; this site hosts no model weights.
+            Recordings stay on this device.
+          </p>
         </div>
       )}
 
@@ -449,6 +473,8 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           </div>
         </div>
       )}
+
+      <p className="mt-3 text-xs leading-relaxed text-slate-600">{t(pack, "voice.modelLanguageNote")}</p>
 
       {disclosureKey && (
         <p className="mt-3 text-xs leading-relaxed text-slate-500">

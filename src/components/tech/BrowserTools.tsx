@@ -3,8 +3,12 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { Icon } from "@/components/Icons";
 import { hasWakeLock, hasShare, vibrate, type WakeLockSentinelLike } from "@/lib/browser-tokens";
 
-/** Voice entry lives in its own module; re-exported for existing imports. */
-export { SpeakCalc } from "@/components/tech/SpeakCalc";
+/**
+ * Voice entry lives in its own module and is loaded on demand.
+ * Re-exporting the lazy wrapper keeps the heavy grammar/AI code out of every
+ * bundle that merely imports a wake-lock or share button from here.
+ */
+export { SpeakCalc } from "@/components/tech/SpeakCalcLazy";
 
 /** No external store to subscribe to — these are one-shot feature checks. */
 function emptySubscribe() { return () => undefined; }
@@ -125,51 +129,5 @@ export function ShareCopy({ title, text, href }: { title: string; text: string; 
       </button>
       <p role="status" aria-live="polite" className="min-h-5 text-xs text-slate-600">{status}</p>
     </div>
-  );
-}
-
-/* --------------------------------------------------------------------- */
-/* PWA install prompt — captures the browser's native install offer.      */
-/* --------------------------------------------------------------------- */
-
-export function PwaInstall() {
-  const [prompt, setPrompt] = useState<{ prompt(): Promise<{ outcome: string }> } | null>(null);
-  const [installed, setInstalled] = useState(false);
-
-  useEffect(() => {
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as unknown as { prompt(): Promise<{ outcome: string }> });
-    };
-    const onAppInstalled = () => {
-      setInstalled(true);
-      setPrompt(null);
-    };
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onAppInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onAppInstalled);
-    };
-  }, []);
-
-  if (installed || !prompt) return null;
-
-  return (
-    <button
-      type="button"
-      className="btn btn-ghost !min-h-11 text-sm"
-      onClick={async () => {
-        const result = await prompt.prompt();
-        if (result.outcome === "accepted") {
-          vibrate([40, 20, 40]);
-          setInstalled(true);
-          setPrompt(null);
-        }
-      }}
-    >
-      <Icon name="download" size={15} />
-      Add to home screen
-    </button>
   );
 }

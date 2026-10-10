@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { BrandMark, Wordmark } from "./Brand";
 import { SITE } from "@/lib/site";
+import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
 
 const COLS = [
   { title: "Calculate", items: [
+    { href: "/tools/calculator", label: "Calculator" },
     { href: "/tools/scientific", label: "Scientific calculator" },
     { href: "/tools/units", label: "Unit converter" },
     { href: "/tools/formula", label: "Custom formulas" },
@@ -32,8 +34,8 @@ const COLS = [
     { href: "/contact", label: "Contact" },
   ] },
   { title: "Information", items: [
-    { href: "/terms", label: "Terms of Use" },
-    { href: "/privacy", label: "Privacy Notice" },
+    { href: "/terms", label: "Terms of Service" },
+    { href: "/privacy", label: "Privacy Policy" },
     { href: "/disclaimer", label: "Disclaimer" },
     { href: "/accessibility", label: "Accessibility" },
   ] },
@@ -41,7 +43,7 @@ const COLS = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative z-[1] mt-20 border-t-2 border-[color:var(--line)] bg-[color:var(--paper-2)]">
+    <footer className="relative z-[1] mt-20 border-t-2 border-[color:var(--line)] bg-[color:var(--nav-bg)]">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_repeat(5,1fr)]">
         <div>
           <Link href="/" className="inline-flex items-center gap-2.5"><BrandMark size={32} /><Wordmark className="text-lg" /></Link>
@@ -54,6 +56,7 @@ export function SiteFooter() {
           </nav>
         ))}
       </div>
+      <div className="mx-auto max-w-7xl px-5 pb-6 text-sm text-[color:var(--ink)]"><PrivacyChoicesLink /></div>
       <div className="border-t-2 border-[color:var(--line)] px-5 py-5 text-center text-xs font-semibold text-slate-500">
         © {new Date().getFullYear()} {SITE.name}. External reference information may be delayed, revised or unavailable.
       </div>

@@ -281,30 +281,36 @@ const GLYPHS: Record<IconName, (p: { fill: string }) => React.ReactNode> = {
   ),
 };
 
-export function Icon({
-  name,
-  size = 20,
-  strokeWidth = 1.9,
-  className = "",
-  ...rest
-}: { name: IconName; size?: number; strokeWidth?: number } & SVGProps<SVGSVGElement>) {
-  const draw = GLYPHS[name];
-  const fill = (rest.color as string) ?? "currentColor";
+type IconTone = "coral" | "sky" | "mint" | "violet" | "pink" | "terra" | "ink";
+
+/** Resolution-independent SVG geometry; no unused gradient ids or gloss layers. */
+export function Icon({ name, size = 20, strokeWidth = 1.9, className = "", ...rest }: {
+  name: IconName;
+  size?: number;
+  strokeWidth?: number;
+} & SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`shrink-0 ${className}`}
-      aria-hidden
-      {...rest}
-    >
-      {draw({ fill })}
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      shapeRendering="geometricPrecision" focusable="false" className={`shrink-0 ${className}`} aria-hidden {...rest}>
+      {GLYPHS[name]({ fill: rest.color ?? "currentColor" })}
     </svg>
+  );
+}
+
+/** Matte icon tile with crisp ink geometry and a static offset shadow. */
+export function IconSticker({ name, tone = "coral", size = 22, strokeWidth = 1.9, className = "", title, stroke = "#0b1020" }: {
+  name: IconName;
+  tone?: IconTone;
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+  title?: string;
+  stroke?: string;
+}) {
+  return (
+    <span className={`icon-tile icon-tile--${tone} ${className}`} aria-hidden={title ? undefined : true} role={title ? "img" : undefined} aria-label={title}>
+      <Icon name={name} size={size} strokeWidth={strokeWidth} color={stroke} className="icon-tile__glyph" />
+    </span>
   );
 }

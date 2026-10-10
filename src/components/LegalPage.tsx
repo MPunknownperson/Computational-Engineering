@@ -14,8 +14,8 @@ export type LegalSection = {
 };
 
 export const LEGAL_LINKS: { href: string; label: string; icon: IconName }[] = [
-  { href: "/terms", label: "Terms of Use", icon: "shield" },
-  { href: "/privacy", label: "Privacy Notice", icon: "layers" },
+  { href: "/terms", label: "Terms of Service", icon: "shield" },
+  { href: "/privacy", label: "Privacy Policy", icon: "layers" },
   { href: "/disclaimer", label: "Disclaimer", icon: "bolt" },
   { href: "/accessibility", label: "Accessibility", icon: "target" },
   { href: "/contact", label: "Contact", icon: "sparkle" },
@@ -38,10 +38,13 @@ export function LegalLinks({ current }: { current?: string }) {
 }
 
 export function LegalPage({
-  path, eyebrow, title, intro, updated = SITE.legalUpdated, sections, extra,
+  path, eyebrow, title, intro, updated = SITE.legalUpdated, sections, extra, tocExtra,
 }: {
-  path: string; eyebrow: string; title: string; intro: string; updated?: string;
+  path: string; eyebrow: string; title: string;
+  intro: string; updated?: string;
   sections: LegalSection[]; extra?: ReactNode;
+  /** Anchors for component-based sections (e.g. jurisdiction policies). */
+  tocExtra?: Array<{ href: string; label: string }>;
 }) {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -64,6 +67,11 @@ export function LegalPage({
                   <span className="mono mr-1.5 text-xs text-slate-400">{String(i + 1).padStart(2, "0")}</span>{s.title}
                 </a></li>
               ))}
+              {tocExtra?.map((item) => (
+                <li key={item.href}><a href={item.href} className="row-hover block rounded-lg px-2 py-1 font-semibold text-slate-600 hover:text-[color:var(--ink)]">
+                  <span className="mono mr-1.5 text-xs text-slate-400">§</span>{item.label}
+                </a></li>
+              ))}
             </ol>
           </nav>
           <div className="sketch-sm">
@@ -77,7 +85,7 @@ export function LegalPage({
             <Reveal key={s.id} delay={Math.min(i, 5) * 25}>
               <section id={s.id} className="sketch scroll-mt-24">
                 <h2 className="flex items-start gap-3 text-xl font-extrabold tracking-tight">
-                  <span className="mt-0.5 inline-grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 border-[color:var(--line)] bg-[color:var(--accent-3)] text-xs shadow-[2px_2px_0_0_var(--line)]">{i + 1}</span>
+                  <span className="mt-0.5 inline-grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 border-[color:var(--line)] bg-[color:var(--nav-active)] text-xs text-[color:var(--ink)] shadow-[2px_2px_0_0_var(--line)]">{i + 1}</span>
                   {s.title}
                 </h2>
                 {s.paragraphs?.map((p, j) => <p key={j} className="mt-3 text-[.95rem] leading-relaxed text-slate-700">{p}</p>)}

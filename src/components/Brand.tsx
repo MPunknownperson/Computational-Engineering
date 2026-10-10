@@ -1,41 +1,67 @@
 import { SITE } from "@/lib/site";
 
 /**
- * Radix Loom mark — an owl, redrawn as a logo rather than lifted from the
- * mascot illustrations. Where Nova the mascot is a soft, round character,
- * the mark is a geometric emblem: the owl's face is a rounded square tile,
- * its "ear tufts" are the radix brackets `[ ]` turned upward, and its eyes
- * are two woven rings whose crossing strands nod to the loom. The beak is a
- * single downward chevron. It stays legible from a 16px favicon up to the
- * page header because every shape is a bold, closed primitive.
+ * Radix Loom mark — a simple cartoon owl, drawn on its own with no tile or
+ * background plate. Soft off-white plumage, two very large ink eyes with a
+ * single highlight, a coral beak, blush circles, wing creases and two stubby
+ * feet. Bold closed shapes keep the character readable from a 16px favicon up
+ * to the page header.
  */
 export function BrandMark({ size = 34 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true" className="brand-static">
-      {/* offset ink shadow + sun tile */}
-      <rect x="8" y="8" width="52" height="52" rx="16" fill="#0b1020" />
-      <rect x="4" y="4" width="52" height="52" rx="16" fill="#ffd23f" stroke="#0b1020" strokeWidth="3" />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      aria-hidden="true"
+      shapeRendering="geometricPrecision"
+      className="brand-static"
+    >
+      <defs>
+        <linearGradient id="owl-body" x1=".18" y1="0" x2=".8" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#f2f4f8" />
+          <stop offset="100%" stopColor="#dde4ee" />
+        </linearGradient>
+        <radialGradient id="owl-beak" cx=".35" cy=".25" r=".9">
+          <stop offset="0%" stopColor="#ff9b80" />
+          <stop offset="100%" stopColor="#e8562f" />
+        </radialGradient>
+      </defs>
 
-      {/* ear tufts = radix brackets, pointing up */}
-      <path d="M14 20V11h7M46 20v-9h-7" stroke="#0b1020" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* ear tufts */}
+      <path d="M20.5 27C19.4 19.6 20.8 14.6 24 11.4c3.1 3.2 4.3 8.7 3.8 15.6Z" fill="url(#owl-body)" stroke="#0b1020" strokeWidth="2.6" strokeLinejoin="round" />
+      <path d="M43.5 27C44.6 19.6 43.2 14.6 40 11.4c-3.1 3.2-4.3 8.7-3.8 15.6Z" fill="url(#owl-body)" stroke="#0b1020" strokeWidth="2.6" strokeLinejoin="round" />
 
-      {/* face plate */}
-      <path d="M12 26c0-5 4-9 9-9h18c5 0 9 4 9 9v14c0 7-8 12-18 12S12 47 12 40V26Z" fill="#fffdf5" stroke="#0b1020" strokeWidth="3" strokeLinejoin="round" />
+      {/* body */}
+      <path d="M32 18c8.3 0 14.7 6.7 14.7 15v7c0 6.4-6.6 11.4-14.7 11.4S17.3 46.4 17.3 40v-7C17.3 24.7 23.7 18 32 18Z" fill="url(#owl-body)" stroke="#0b1020" strokeWidth="2.8" strokeLinejoin="round" />
+      <path d="M23.5 40.5c2.2 5.4 5.7 8.4 8.5 8.4s6.3-3 8.5-8.4c-.7 5.6-4.4 9.3-8.5 9.3s-7.8-3.7-8.5-9.3Z" fill="#0b1020" opacity=".06" />
 
-      {/* woven eye rings */}
-      <circle cx="22.5" cy="31" r="7" fill="#fff" stroke="#0b1020" strokeWidth="2.8" />
-      <circle cx="37.5" cy="31" r="7" fill="#fff" stroke="#0b1020" strokeWidth="2.8" />
-      <path d="M17 31h11M22.5 25.5v11M32 31h11M37.5 25.5v11" stroke="#ff6b4a" strokeWidth="2" strokeLinecap="round" opacity=".85" />
-      <circle cx="22.5" cy="31" r="2.9" fill="#0b1020" />
-      <circle cx="37.5" cy="31" r="2.9" fill="#0b1020" />
-      <circle cx="23.6" cy="29.9" r="1" fill="#fffdf5" />
-      <circle cx="38.6" cy="29.9" r="1" fill="#fffdf5" />
+      {/* blush */}
+      <circle cx="21.5" cy="39" r="3.4" fill="#ff6b4a" opacity=".42" />
+      <circle cx="42.5" cy="39" r="3.4" fill="#ff6b4a" opacity=".42" />
 
-      {/* beak: a single chevron */}
-      <path d="M27 40l3 4 3-4" stroke="#0b1020" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="#ff9d3d" />
+      {/* wings */}
+      <path d="M20.4 34.5c-1.7 4.8-1 9.8 2 13.4" stroke="#0b1020" strokeWidth="2.3" strokeLinecap="round" />
+      <path d="M43.6 34.5c1.7 4.8 1 9.8-2 13.4" stroke="#0b1020" strokeWidth="2.3" strokeLinecap="round" />
 
-      {/* breast feathers = three loom stitches */}
-      <path d="M22 47h4M28 49h4M34 47h4" stroke="#5b8cff" strokeWidth="2.2" strokeLinecap="round" />
+      {/* eyes */}
+      <circle cx="25" cy="31" r="8.2" fill="#ffffff" stroke="#0b1020" strokeWidth="2.6" />
+      <circle cx="39" cy="31" r="8.2" fill="#ffffff" stroke="#0b1020" strokeWidth="2.6" />
+      <circle cx="25.7" cy="31.6" r="4.3" fill="#0b1020" />
+      <circle cx="38.3" cy="31.6" r="4.3" fill="#0b1020" />
+      <circle cx="23.8" cy="29.4" r="1.7" fill="#ffffff" />
+      <circle cx="37.1" cy="29.4" r="1.7" fill="#ffffff" />
+
+      {/* beak */}
+      <path d="M32 35.4l3.7 5.6-3.7 5.2-3.7-5.2Z" fill="url(#owl-beak)" stroke="#0b1020" strokeWidth="2.1" strokeLinejoin="round" />
+
+      {/* feet */}
+      <g stroke="#0b1020" strokeWidth="2.4" strokeLinecap="round">
+        <path d="M27 51.2v3.1M27 54.3l-2.4-1.6M27 54.3l2.4-1.6" />
+        <path d="M37 51.2v3.1M37 54.3l-2.4-1.6M37 54.3l2.4-1.6" />
+      </g>
     </svg>
   );
 }
