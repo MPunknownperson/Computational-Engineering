@@ -1,7 +1,8 @@
 import { SITE } from "./site";
+import { mediaAssets } from "./media/assets";
 import { GUIDES, guidePath } from "./guides";
 import { LANDING_PAGES, LANDING_SECTIONS } from "./landing";
-import { CURRENCIES, COUNTRIES, CRYPTO_IDS, INDICATORS, UNIT_COUNT, UNIT_CATEGORY_COUNT, TOOL_COUNT } from "./catalog";
+import { CURRENCIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, TOOL_COUNT } from "./catalog";
 
 export type SearchPage = {
   path: string;
@@ -35,6 +36,14 @@ const BASE_PAGES: SearchPage[] = [
     description: `Browse every free calculator and converter: scientific maths, ${UNIT_COUNT} units across ${UNIT_CATEGORY_COUNT} categories, currency, digital assets and economic data. All tools are free and need no sign-up.`,
     kind: "directory",
     formula: `${TOOL_COUNT} tools · ${UNIT_COUNT} units · ${CURRENCIES.length} currencies`,
+  },
+  {
+    path: "/tools/calculator",
+    title: "Calculator: Blackboard Workspace for Thinking Through Maths",
+    label: "Calculator",
+    description: "A blank blackboard for working a calculation by hand: sketch, type notes in chalk, then press Calculate. Functions, history and the board stay in this browser.",
+    kind: "tool",
+    formula: "think · sketch · calculate",
   },
   {
     path: "/tools/scientific",
@@ -142,23 +151,23 @@ const BASE_PAGES: SearchPage[] = [
   },
   {
     path: "/terms",
-    title: "Terms of Use for the Calculator Tools",
-    label: "Terms of Use",
+    title: "Terms of Service for the Calculator Tools",
+    label: "Terms of Service",
     description: "The terms covering use of the calculators, conversions and reference information, how saved formulas work, and the limits of what a result can be relied on for.",
     kind: "information",
     formula: "use · results · saved formulas",
   },
   {
     path: "/privacy",
-    title: "Privacy Notice & Saved-Formula Controls",
-    label: "Privacy Notice",
-    description: "What information is collected, how saved formulas are stored, your privacy choices, and controls to download or remove the formulas associated with your browser.",
+    title: "Privacy Policy for the Calculator Tools",
+    label: "Privacy Policy",
+    description: "Read our privacy practices and consolidated GDPR and CCPA rights, use opt-out controls, and find location-restricted regional supplements that form part of this policy.",
     kind: "information",
-    formula: "what we store · your choices",
+    formula: "GDPR · CCPA · other laws · your choices",
   },
   {
     path: "/disclaimer",
-    title: "Calculator & Data Limitations — Disclaimer",
+    title: "Disclaimer & Limitation of Liability",
     label: "Disclaimer",
     description: "Rounding, unit conventions, measurement uncertainty and data timing mean a calculation result is not professional advice. Read what to check before relying on a figure.",
     kind: "information",
@@ -188,7 +197,17 @@ export const SEARCH_PAGES: SearchPage[] = [
     kind: LANDING_KIND[page.section] ?? "tool",
     formula: page.formula,
   })),
+  {
+    path: "/do-not-sell-or-share",
+    title: "Do Not Sell or Share My Personal Information",
+    label: "Do Not Sell or Share My Personal Information",
+    description: "Record your sale and sharing opt-out, check Global Privacy Control, and read California privacy rights. No account or identity check is needed for this browser choice.",
+    kind: "information",
+    formula: "your choice · no account required",
+  },
 ];
 export function findSearchPage(path: string) { return SEARCH_PAGES.find((page) => page.path === path); }
 export function imageId(page: SearchPage) { return page.path === "/" ? "home" : page.path.slice(1).replaceAll("/", "--"); }
-export function imagePath(page: SearchPage) { return `/media/${imageId(page)}.png`; }
+export function imagePath(page: SearchPage) {
+  return mediaAssets(imageId(page))?.png ?? `/media/${imageId(page)}.png`;
+}

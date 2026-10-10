@@ -144,7 +144,7 @@ export const CONTACT_TOPICS = [
   { value: "legal", label: "Legal notice" },
 ] as const;
 
-export const TOOL_COUNT = 6;
+export const TOOL_COUNT = 7;
 export const SOURCE_COUNT = 3;
 
 export function minutes(seconds: number) {

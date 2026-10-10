@@ -25,12 +25,13 @@ export type TopicId =
 
 export type UiKey =
   | "nav.home" | "nav.tools" | "nav.guides" | "nav.formulas" | "nav.finance" | "nav.currency" | "nav.assets" | "nav.economy"
+  | "nav.about" | "nav.contact"
   | "voice.heading" | "voice.speak" | "voice.stop" | "voice.cancel" | "voice.unavailableButton"
   | "voice.listening" | "voice.preparing" | "voice.waitingMic" | "voice.heard" | "voice.opening"
   | "voice.understoodAs" | "voice.retryHint"
   | "voice.open" | "voice.noMatch" | "voice.tryOne" | "voice.learned" | "voice.forget"
   | "voice.disclosureLocal" | "voice.disclosureCloud" | "voice.disclosureOnDeviceModel"
-  | "voice.modelProvider" | "voice.modelFileProgress"
+  | "voice.modelLanguageNote"
   | "voice.privacyLink" | "unavailable.noModel"
   | "unavailable.noApi" | "unavailable.region" | "unavailable.noLocal" | "unavailable.noCloud"
   | "mic.denied" | "mic.noDevice" | "mic.inUse" | "mic.insecure" | "mic.unsupported"
@@ -209,7 +210,7 @@ const en: LanguagePack = {
   examples: ["Convert 120 US dollars to euros", "5 miles to kilometers", "70 kilos in pounds", "20 Celsius to Fahrenheit", "Split the bill"],
   ui: {
     "nav.home": "Home", "nav.tools": "Tools", "nav.guides": "Guides", "nav.formulas": "Formulas", "nav.finance": "Finance",
-    "nav.currency": "Currency", "nav.assets": "Assets", "nav.economy": "Economy",
+    "nav.currency": "Currency", "nav.assets": "Assets", "nav.economy": "Economy", "nav.about": "About", "nav.contact": "Contact",
     "voice.heading": "Speak what you want to calculate",
     "voice.speak": "Speak a calculation",
     "voice.stop": "Stop listening",
@@ -218,7 +219,7 @@ const en: LanguagePack = {
     "voice.listening": "Listening… try “{example}”",
     "voice.preparing": "Preparing voice recognition…",
     "voice.waitingMic": "Waiting for microphone permission…",
-    "voice.heard": "Heard: “{text}”", "voice.understoodAs": "understood as", "voice.modelProvider": 'The multilingual Whisper Base model is published by {publisher} and downloaded from {host} as separate model files. License: {license}. The browser caches these files; microphone audio is only processed on this device.', "voice.modelFileProgress": 'Downloading {file} · {percent}% · {completed} of {assets} files', "voice.retryHint": "Not what you said? Press the microphone and try again, or open the tool and type the values.",
+    "voice.heard": "Heard: “{text}”", "voice.understoodAs": "understood as", "voice.retryHint": "Not what you said? Press the microphone and try again, or open the tool and type the values.",
     "voice.opening": "Opening {label}…",
     "voice.open": "Open {label}",
     "voice.noMatch": "That didn't match a calculator. Try “{example}”.",
@@ -227,7 +228,7 @@ const en: LanguagePack = {
     "voice.forget": "Forget learned phrases",
     "voice.disclosureLocal": "Speech is recognised on this device; audio is not sent to a server.",
     "voice.disclosureCloud": "Speech is recognised by your browser provider's speech service (Google for Chrome). This site does not receive or store audio.",
-    "voice.privacyLink": "Privacy Notice",
+    "voice.privacyLink": "Privacy Policy",
     "unavailable.noApi": "Voice input is not available in this browser.",
     "unavailable.region": "Voice input is not available in your country or region.",
     "unavailable.noLocal": "Voice input is not available on this device.",
@@ -249,7 +250,8 @@ const en: LanguagePack = {
     "topic.formula": "Formula tool", "topic.inflation": "Inflation rate", "topic.gdp": "GDP per person",
     "topic.bitcoin": "Bitcoin price", "topic.crypto": "Digital-asset prices", "topic.currency": "Currency converter",
     "topic.units": "Unit converter",
-    "voice.disclosureOnDeviceModel": "When browser speech is unavailable, multilingual Whisper runs on this device; audio stays local.",
+    "voice.disclosureOnDeviceModel": "English speech can use the browser’s built-in on-device model; recordings stay on this device.",
+    "voice.modelLanguageNote": "Generative speech supports English only. Other languages use browser speech recognition when supported and permitted.",
     "unavailable.noModel": "Voice input could not be prepared on this device.",
     "label.currency": "Currency converter: {amount} {from} → {to}",
     "label.units": "Unit converter: {amount} {from} → {to}",
@@ -368,7 +370,7 @@ const es: LanguagePack = {
   examples: ["Convierte 120 dólares a euros", "5 millas a kilómetros", "70 kilos en libras", "Dividir la cuenta"],
   ui: {
     "nav.home": "Inicio", "nav.tools": "Herramientas", "nav.guides": "Guías", "nav.formulas": "Fórmulas", "nav.finance": "Finanzas",
-    "nav.currency": "Divisas", "nav.assets": "Activos", "nav.economy": "Economía",
+    "nav.currency": "Divisas", "nav.assets": "Activos", "nav.economy": "Economía", "nav.about": "Acerca de", "nav.contact": "Contacto",
     "voice.heading": "Di lo que quieres calcular",
     "voice.speak": "Dictar un cálculo",
     "voice.stop": "Dejar de escuchar",
@@ -377,7 +379,7 @@ const es: LanguagePack = {
     "voice.listening": "Escuchando… prueba «{example}»",
     "voice.preparing": "Preparando el reconocimiento de voz…",
     "voice.waitingMic": "Esperando permiso del micrófono…",
-    "voice.heard": "Se oyó: «{text}»", "voice.understoodAs": "interpretado como", "voice.modelProvider": 'El modelo multilingüe Whisper Base lo publica {publisher} y se descarga desde {host} en varios archivos. Licencia: {license}. El navegador los guarda en caché; el audio del micrófono solo se procesa en este dispositivo.', "voice.modelFileProgress": 'Descargando {file} · {percent}% · {completed} de {assets} archivos', "voice.retryHint": "¿No es lo que dijiste? Pulsa el micrófono e inténtalo de nuevo, o abre la herramienta y escribe los valores.",
+    "voice.heard": "Se oyó: «{text}»", "voice.understoodAs": "interpretado como", "voice.retryHint": "¿No es lo que dijiste? Pulsa el micrófono e inténtalo de nuevo, o abre la herramienta y escribe los valores.",
     "voice.opening": "Abriendo {label}…",
     "voice.open": "Abrir {label}",
     "voice.noMatch": "No coincide con ninguna calculadora. Prueba «{example}».",
@@ -386,7 +388,7 @@ const es: LanguagePack = {
     "voice.forget": "Olvidar frases aprendidas",
     "voice.disclosureLocal": "La voz se reconoce en este dispositivo; el audio no se envía a ningún servidor.",
     "voice.disclosureCloud": "La voz la reconoce el servicio de tu navegador (Google en Chrome). Este sitio no recibe ni guarda audio.",
-    "voice.privacyLink": "Aviso de privacidad",
+    "voice.privacyLink": "Política de privacidad",
     "unavailable.noApi": "La entrada de voz no está disponible en este navegador.",
     "unavailable.region": "La entrada de voz no está disponible en tu país o región.",
     "unavailable.noLocal": "La entrada de voz no está disponible en este dispositivo.",
@@ -408,7 +410,8 @@ const es: LanguagePack = {
     "topic.formula": "Herramienta de fórmulas", "topic.inflation": "Tasa de inflación", "topic.gdp": "PIB per cápita",
     "topic.bitcoin": "Precio de bitcoin", "topic.crypto": "Precios de criptoactivos", "topic.currency": "Conversor de divisas",
     "topic.units": "Conversor de unidades",
-    "voice.disclosureOnDeviceModel": "Si no hay reconocimiento del navegador, Whisper multilingüe se ejecuta en este dispositivo; el audio permanece local.",
+    "voice.disclosureOnDeviceModel": "El habla en inglés puede usar el modelo integrado del navegador; las grabaciones permanecen en este dispositivo.",
+    "voice.modelLanguageNote": "El reconocimiento generativo solo admite inglés. Otros idiomas usan el reconocimiento del navegador cuando está disponible y permitido.",
     "unavailable.noModel": "No se pudo preparar la entrada de voz en este dispositivo.",
     "label.currency": "Conversor de divisas: {amount} {from} → {to}",
     "label.units": "Conversor de unidades: {amount} {from} → {to}",
@@ -522,7 +525,7 @@ const fr: LanguagePack = {
   examples: ["Convertir 120 dollars en euros", "5 miles en kilomètres", "70 kilos en livres", "Partager l'addition"],
   ui: {
     "nav.home": "Accueil", "nav.tools": "Outils", "nav.guides": "Guides", "nav.formulas": "Formules", "nav.finance": "Finance",
-    "nav.currency": "Devises", "nav.assets": "Actifs", "nav.economy": "Économie",
+    "nav.currency": "Devises", "nav.assets": "Actifs", "nav.economy": "Économie", "nav.about": "À propos", "nav.contact": "Contact",
     "voice.heading": "Dites ce que vous voulez calculer",
     "voice.speak": "Dicter un calcul",
     "voice.stop": "Arrêter l'écoute",
@@ -531,7 +534,7 @@ const fr: LanguagePack = {
     "voice.listening": "Écoute… essayez « {example} »",
     "voice.preparing": "Préparation de la reconnaissance vocale…",
     "voice.waitingMic": "En attente de l'autorisation du micro…",
-    "voice.heard": "Entendu : « {text} »", "voice.understoodAs": "interprété comme", "voice.modelProvider": 'Le modèle multilingue Whisper Base est publié par {publisher} et téléchargé depuis {host} en plusieurs fichiers. Licence : {license}. Le navigateur les met en cache ; l’audio du micro reste traité sur cet appareil.', "voice.modelFileProgress": 'Téléchargement de {file} · {percent}% · {completed} sur {assets} fichiers', "voice.retryHint": "Ce n’est pas ce que vous avez dit ? Appuyez sur le micro et réessayez, ou ouvrez l’outil et saisissez les valeurs.",
+    "voice.heard": "Entendu : « {text} »", "voice.understoodAs": "interprété comme", "voice.retryHint": "Ce n’est pas ce que vous avez dit ? Appuyez sur le micro et réessayez, ou ouvrez l’outil et saisissez les valeurs.",
     "voice.opening": "Ouverture de {label}…",
     "voice.open": "Ouvrir {label}",
     "voice.noMatch": "Aucun calculateur ne correspond. Essayez « {example} ».",
@@ -562,7 +565,8 @@ const fr: LanguagePack = {
     "topic.formula": "Outil de formules", "topic.inflation": "Taux d'inflation", "topic.gdp": "PIB par habitant",
     "topic.bitcoin": "Cours du bitcoin", "topic.crypto": "Cours des cryptoactifs", "topic.currency": "Convertisseur de devises",
     "topic.units": "Convertisseur d'unités",
-    "voice.disclosureOnDeviceModel": "Si la reconnaissance du navigateur est indisponible, Whisper multilingue s'exécute sur cet appareil ; l'audio reste local.",
+    "voice.disclosureOnDeviceModel": "La parole anglaise peut utiliser le modèle intégré du navigateur ; les enregistrements restent sur cet appareil.",
+    "voice.modelLanguageNote": "La reconnaissance générative est réservée à l’anglais. Les autres langues utilisent celle du navigateur si elle est disponible et autorisée.",
     "unavailable.noModel": "La saisie vocale n'a pas pu etre preparee sur cet appareil.",
     "label.currency": "Convertisseur de devises : {amount} {from} → {to}",
     "label.units": "Convertisseur d'unités : {amount} {from} → {to}",
@@ -677,7 +681,7 @@ const de: LanguagePack = {
   examples: ["Rechne 120 Dollar in Euro um", "5 Meilen in Kilometer", "70 Kilo in Pfund", "Rechnung teilen"],
   ui: {
     "nav.home": "Start", "nav.tools": "Werkzeuge", "nav.guides": "Anleitungen", "nav.formulas": "Formeln", "nav.finance": "Finanzen",
-    "nav.currency": "Währungen", "nav.assets": "Anlagen", "nav.economy": "Wirtschaft",
+    "nav.currency": "Währungen", "nav.assets": "Anlagen", "nav.economy": "Wirtschaft", "nav.about": "Über uns", "nav.contact": "Kontakt",
     "voice.heading": "Sagen Sie, was Sie berechnen möchten",
     "voice.speak": "Rechnung sprechen",
     "voice.stop": "Zuhören beenden",
@@ -686,7 +690,7 @@ const de: LanguagePack = {
     "voice.listening": "Hört zu… versuchen Sie „{example}“",
     "voice.preparing": "Spracherkennung wird vorbereitet…",
     "voice.waitingMic": "Warte auf Mikrofonfreigabe…",
-    "voice.heard": "Gehört: „{text}“", "voice.understoodAs": "verstanden als", "voice.modelProvider": 'Das mehrsprachige Whisper-Base-Modell wird von {publisher} veröffentlicht und als mehrere Modelldateien von {host} heruntergeladen. Lizenz: {license}. Der Browser speichert die Dateien im Cache; Mikrofon-Audio wird nur auf diesem Gerät verarbeitet.', "voice.modelFileProgress": 'Lade {file} herunter · {percent}% · {completed} von {assets} Dateien', "voice.retryHint": "Nicht das, was Sie gesagt haben? Drücken Sie erneut auf das Mikrofon oder öffnen Sie das Werkzeug und geben Sie die Werte ein.",
+    "voice.heard": "Gehört: „{text}“", "voice.understoodAs": "verstanden als", "voice.retryHint": "Nicht das, was Sie gesagt haben? Drücken Sie erneut auf das Mikrofon oder öffnen Sie das Werkzeug und geben Sie die Werte ein.",
     "voice.opening": "{label} wird geöffnet…",
     "voice.open": "{label} öffnen",
     "voice.noMatch": "Das passt zu keinem Rechner. Versuchen Sie „{example}“.",
@@ -695,7 +699,7 @@ const de: LanguagePack = {
     "voice.forget": "Gelernte Formulierungen vergessen",
     "voice.disclosureLocal": "Sprache wird auf diesem Gerät erkannt; Audio wird an keinen Server gesendet.",
     "voice.disclosureCloud": "Sprache wird vom Sprachdienst Ihres Browsers erkannt (bei Chrome: Google). Diese Website empfängt und speichert kein Audio.",
-    "voice.privacyLink": "Datenschutzhinweis",
+    "voice.privacyLink": "Datenschutzerklärung",
     "unavailable.noApi": "Spracheingabe ist in diesem Browser nicht verfügbar.",
     "unavailable.region": "Spracheingabe ist in Ihrem Land oder Ihrer Region nicht verfügbar.",
     "unavailable.noLocal": "Spracheingabe ist auf diesem Gerät nicht verfügbar.",
@@ -717,7 +721,8 @@ const de: LanguagePack = {
     "topic.formula": "Formelwerkzeug", "topic.inflation": "Inflationsrate", "topic.gdp": "BIP pro Kopf",
     "topic.bitcoin": "Bitcoin-Kurs", "topic.crypto": "Kurse digitaler Vermögenswerte", "topic.currency": "Währungsrechner",
     "topic.units": "Einheitenrechner",
-    "voice.disclosureOnDeviceModel": "Wenn die Browser-Spracherkennung fehlt, läuft mehrsprachiges Whisper auf diesem Gerät; Audio bleibt lokal.",
+    "voice.disclosureOnDeviceModel": "Englische Sprache kann das integrierte Modell des Browsers nutzen; Aufnahmen bleiben auf diesem Gerät.",
+    "voice.modelLanguageNote": "Generative Spracherkennung unterstützt nur Englisch. Andere Sprachen verwenden die Browser-Erkennung, sofern verfügbar und erlaubt.",
     "unavailable.noModel": "Spracheingabe konnte auf diesem Gerat nicht vorbereitet werden.",
     "label.currency": "Währungsrechner: {amount} {from} → {to}",
     "label.units": "Einheitenrechner: {amount} {from} → {to}",
@@ -823,7 +828,7 @@ const zh: LanguagePack = {
   examples: ["把120美元换成欧元", "5英里换成公里", "70公斤是多少磅", "分摊账单"],
   ui: {
     "nav.home": "首页", "nav.tools": "工具", "nav.guides": "指南", "nav.formulas": "公式", "nav.finance": "金融",
-    "nav.currency": "汇率", "nav.assets": "资产", "nav.economy": "经济",
+    "nav.currency": "汇率", "nav.assets": "资产", "nav.economy": "经济", "nav.about": "关于", "nav.contact": "联系我们",
     "voice.heading": "说出你想计算的内容",
     "voice.speak": "语音计算",
     "voice.stop": "停止聆听",
@@ -832,7 +837,7 @@ const zh: LanguagePack = {
     "voice.listening": "正在聆听…试试“{example}”",
     "voice.preparing": "正在准备语音识别…",
     "voice.waitingMic": "等待麦克风权限…",
-    "voice.heard": "听到：“{text}”", "voice.understoodAs": "理解为", "voice.modelProvider": '多语言 Whisper Base 模型由 {publisher} 发布，并从 {host} 分别下载多个模型文件。许可证：{license}。浏览器会缓存这些文件；麦克风音频仅在本设备上处理。', "voice.modelFileProgress": '正在下载 {file} · {percent}% · 已完成 {completed}/{assets} 个文件', "voice.retryHint": "说的不对？请再次按下麦克风重试，或打开工具手动输入数值。",
+    "voice.heard": "听到：“{text}”", "voice.understoodAs": "理解为", "voice.retryHint": "说的不对？请再次按下麦克风重试，或打开工具手动输入数值。",
     "voice.opening": "正在打开{label}…",
     "voice.open": "打开{label}",
     "voice.noMatch": "没有匹配的计算器。试试“{example}”。",
@@ -841,7 +846,7 @@ const zh: LanguagePack = {
     "voice.forget": "清除已学习的说法",
     "voice.disclosureLocal": "语音在本设备上识别，音频不会发送到服务器。",
     "voice.disclosureCloud": "语音由你的浏览器提供商的语音服务识别（Chrome 为 Google）。本网站不接收也不存储音频。",
-    "voice.privacyLink": "隐私声明",
+    "voice.privacyLink": "隐私政策",
     "unavailable.noApi": "此浏览器不支持语音输入。",
     "unavailable.region": "你所在的国家或地区不提供语音输入。",
     "unavailable.noLocal": "此设备不支持语音输入。",
@@ -863,7 +868,8 @@ const zh: LanguagePack = {
     "topic.formula": "公式工具", "topic.inflation": "通胀率", "topic.gdp": "人均GDP",
     "topic.bitcoin": "比特币价格", "topic.crypto": "数字资产价格", "topic.currency": "汇率换算",
     "topic.units": "单位换算",
-    "voice.disclosureOnDeviceModel": "浏览器语音不可用时，多语言 Whisper 在本设备运行；音频保留在本地。",
+    "voice.disclosureOnDeviceModel": "英语语音可使用浏览器内置的设备端模型；录音不会离开本机。",
+    "voice.modelLanguageNote": "生成式语音识别仅支持英语。其他语言在可用且允许时使用浏览器语音识别。",
     "unavailable.noModel": "无法在此设备上准备语音输入。",
     "label.currency": "汇率换算：{amount} {from} → {to}",
     "label.units": "单位换算：{amount} {from} → {to}",

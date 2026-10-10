@@ -7,7 +7,6 @@ import {
   pairMentions,
   scoreAnalysis,
   type Analysis,
-  type Entity,
 } from "@/lib/voice/parser";
 import {
   IR_VERSION,
@@ -87,24 +86,12 @@ export function previousConvert(program: Program | null | undefined): Slots | nu
   return null;
 }
 
-function slotsFor(entity: Entity, slots: Slots): Slots {
-  const next: Slots = { ...slots };
-  if (entity.type === "currency") {
-    next.from = entity.code;
-  } else {
-    next.category = entity.category;
-    next.from = entity.id;
-  }
-  return next;
-}
-
 /** Build a program from an analysis, using `previous` for ellipsis and repeat. */
 export function buildProgram(
   analysis: Analysis,
   previous: Program | null,
 ): BuildResult | BuildFailure {
   const pack = analysis.pack;
-  const amount = analysis.amount ? formatAmount(analysis.amount.value) : null;
   const amountSlot = analysis.amount ? Number(formatAmount(analysis.amount.value)) : undefined;
   const prior = previousConvert(previous);
 

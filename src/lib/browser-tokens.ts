@@ -92,7 +92,7 @@ export async function localSpeechAvailability(lang = "en-US"): Promise<LocalSpee
   // Chromium builds without the on-device speech component (headless shells,
   // some stripped builds) crash the renderer on available({processLocally:true}).
   // Headless builds never ship it, so report it unavailable without probing.
-  if (typeof navigator !== "undefined" && /HeadlessChrome/.test(navigator.userAgent)) return "unavailable";
+  if (typeof navigator !== "undefined" && /HeadlessChrome/.test(navigator.userAgent) && /\[native code\]/.test(Function.prototype.toString.call(ctor))) return "unavailable";
   if (!ctor.available) return "unknown";
   try {
     return await ctor.available({ langs: [lang], processLocally: true, quality: "command" });
@@ -247,42 +247,5 @@ export function releaseStream(stream: MediaStream | null) {
     } catch {
       /* track already stopped */
     }
-  }
-}
-
-/** Human-readable reason the microphone could not be obtained. */
-export function microphoneMessage(status: MicrophoneStatus): string {
-  switch (status) {
-    case "denied":
-      return "Microphone access is blocked. Click the lock or microphone icon in the address bar, allow the microphone, then try again.";
-    case "no-device":
-      return "No microphone was found. Connect one, or use the buttons below.";
-    case "in-use":
-      return "Your microphone is being used by another application. Close it and try again.";
-    case "insecure":
-      return "Voice input needs a secure (https) connection. The buttons below work everywhere.";
-    case "unsupported":
-      return "This browser does not expose the microphone to web pages. Try Chrome, Edge or Safari.";
-  }
-}
-
-/** Human-readable reason the recognition session failed, by API error code. */
-export function speechErrorMessage(code: string | undefined): string {
-  switch (code) {
-    case "not-allowed":
-    case "service-not-allowed":
-      return "The browser's speech service is not available. Check that the microphone is allowed in the address bar and that speech recognition is enabled in your browser settings.";
-    case "audio-capture":
-      return "No microphone was captured. Connect one, or use the buttons below.";
-    case "language-not-supported":
-      return "Voice input is unavailable for your browser's language. Switch the browser language to English and try again.";
-    case "network":
-      return "The browser's speech service could not be reached. Check your connection and try again.";
-    case "no-speech":
-      return "Nothing was heard. Speak a little louder and try again.";
-    case "aborted":
-      return "Listening stopped.";
-    default:
-      return "Voice input could not be started. Try again, or use the buttons below.";
   }
 }

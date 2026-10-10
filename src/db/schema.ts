@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   integer,
   jsonb,
   pgTable,
@@ -94,3 +95,13 @@ export const contactMessages = pgTable("contact_messages", {
 export type FormulaRow = typeof formulas.$inferSelect;
 export type NewFormula = typeof formulas.$inferInsert;
 export type ContactMessageRow = typeof contactMessages.$inferSelect;
+
+/** Anonymous opt-out receipts. No IP, country, name, email or user agent. */
+export const privacyChoices = pgTable("privacy_choices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  saleSharingOptOut: boolean("sale_sharing_opt_out").notNull().default(true),
+  source: text("source").notNull(), // manual | gpc
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});

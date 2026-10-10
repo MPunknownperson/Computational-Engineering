@@ -1,21 +1,11 @@
+import { supportsGenerativeSpeechLanguage } from "./languages";
 import type { BrowserFamily, DeviceKind, OperatingSystem } from "@/lib/platform";
 
 /**
- * Automatic voice-processing assignment.
- *
- * There is no user-facing local/cloud choice. The mode is derived from:
- *   1. the country/region rule (legal availability),
- *   2. the device class (mobile prefers on-device, desktop prefers cloud),
- *   3. what the browser and device can actually do.
- *
- * Rules, in order:
- *   - No speech API                       → unavailable
- *   - Region rule "none"                  → unavailable
- *   - Region rule "local-only"            → local if supported, else unavailable
- *   - Region rule "cloud-only"            → cloud if supported, else unavailable
- *   - Mobile (Android, iOS, iPadOS)       → local if supported, else unavailable
- *   - Desktop                             → cloud; if the browser has no cloud
- *                                           service, local; if neither, unavailable
+ * Region policy is always enforced first. Browser language packs and permitted
+ * browser speech services handle multilingual input. Generative AUDIO is an
+ * English-only fallback, and only when its exact capabilities were probed.
+ * Mobile prefers on-device; desktop keeps its browser service when allowed.
  */
 
 export type RegionRule = "any" | "local-only" | "cloud-only" | "none";
@@ -101,7 +91,8 @@ export interface PolicyInput {
   browserCloud: boolean;
   /** On-device recognition state for the recognition language. */
   local: LocalSupport;
-  /** Can the page run a small model itself (WebGPU/WebAssembly)? */
+  /** Probed audio capability of the browser-provided model. */
+  language?: string;
   canRunLocalModel?: boolean;
   region: string | null;
   overrides?: Record<string, RegionRule>;
@@ -114,13 +105,13 @@ function localUsable(local: LocalSupport): boolean {
 export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const region = input.region;
   const rule = regionRule(region, input.overrides);
+  const canModel = !!input.canRunLocalModel && supportsGenerativeSpeechLanguage(input.language ?? "en-US");
   if (rule === "none") return { available: false, reason: "region", region, rule };
 
-  // No browser engine: the page can still run a model itself, unless the
-  // region forbids that or the runtime is too weak.
+  // No browser engine: use a probed English audio model only if policy permits.
   if (!input.speechApi) {
     if (rule === "cloud-only") return { available: false, reason: "no-cloud", region, rule };
-    if (input.canRunLocalModel) {
+    if (canModel) {
       return { available: true, mode: "local-model", prepareLocal: true, region, rule };
     }
     return { available: false, reason: "no-api", region, rule };
@@ -138,13 +129,13 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const cloud = (): VoiceDecision => ({ available: true, mode: "cloud", prepareLocal: false, region, rule });
 
   const model = (): VoiceDecision =>
-    input.canRunLocalModel
+    canModel
       ? { available: true, mode: "local-model", prepareLocal: true, region, rule }
       : { available: false, reason: "no-cloud", region, rule };
 
   if (rule === "local-only") {
     if (canLocal) return local();
-    return input.canRunLocalModel
+    return canModel
       ? { available: true, mode: "local-model", prepareLocal: true, region, rule }
       : { available: false, reason: "no-local", region, rule };
   }
@@ -152,9 +143,9 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
 
   if (isMobile(input.os, input.device)) {
     if (canLocal) return local();
-    return input.canRunLocalModel
-      ? { available: true, mode: "local-model", prepareLocal: true, region, rule }
-      : { available: false, reason: "no-local", region, rule };
+    if (canModel) return { available: true, mode: "local-model", prepareLocal: true, region, rule };
+    if (canCloud) return cloud();
+    return { available: false, reason: "no-local", region, rule };
   }
   if (canCloud) return cloud();
   if (canLocal) return local();
