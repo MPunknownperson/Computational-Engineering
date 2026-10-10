@@ -1,6 +1,5 @@
 import { internalHref } from "./urls";
 import { presetHref } from "./presets";
-import { CONVERSION_LINKS, FORMULA_LINKS, REFERENCE_LINKS, type DeepLink } from "./deep-links";
 
 /**
  * Intent router: turns a spoken or typed phrase into the right prefilled tool.

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { trustedPrivacyCountry, PRIVACY_GEO_VARY } from "@/lib/privacy/geo";
-import { privacyRegion, REGIONAL_PRIVACY_PREFIX } from "@/lib/privacy/regions";
+import { missingPageResponse } from "@/lib/not-found-response";
+import { pageDisposition } from "@/lib/public-routes";
 import { PRIVACY_COOKIE_SECONDS, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
 
 const PRIVATE_API_PREFIX = "/api/workbench/";
@@ -19,21 +19,6 @@ function toneForPathname(pathname: string): string {
   return PAGE_TONES.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`))?.[1] ?? "home";
 }
 
-/** Denied responses contain no regional clauses, including for RSC/prefetch/HEAD. */
-function regionalDenial(status: 403 | 404): NextResponse {
-  const title = status === 403 ? "Regional privacy supplement unavailable" : "Privacy supplement not found";
-  return new NextResponse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title} | Radix Loom</title></head><body style="margin:0;background:#f2f3f6;color:#172033;font:16px/1.65 system-ui,sans-serif"><main style="max-width:680px;margin:12vh auto;padding:28px"><p>Radix Loom · Privacy</p><h1>${title}</h1><p>This regional page is available only when our trusted hosting connection identifies the corresponding country. Your location may be unknown or affected by a VPN or proxy. We do not request precise device location.</p><p>This restriction does not determine your legal rights. The full Privacy Policy, its GDPR and CCPA sections, and the opt-out controls remain available to everyone. Contact us if you need a regional copy or want to exercise your rights while travelling.</p><p><a href="/privacy">Read the Privacy Policy</a> · <a href="/do-not-sell-or-share">Do Not Sell or Share My Personal Information</a> · <a href="/contact">Contact us</a></p></main></body></html>`, {
-    status,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "private, no-store",
-      "x-robots-tag": "noindex, nofollow, noarchive",
-      "x-content-type-options": "nosniff",
-      vary: PRIVACY_GEO_VARY,
-    },
-  });
-}
-
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith(PRIVATE_API_PREFIX)) {
@@ -46,12 +31,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith(REGIONAL_PRIVACY_PREFIX)) {
-    const slug = pathname.slice(REGIONAL_PRIVACY_PREFIX.length).replace(/\/$/, "");
-    const region = privacyRegion(slug);
-    if (!region) return regionalDenial(404);
-    if (trustedPrivacyCountry(request.headers) !== region.country) return regionalDenial(403);
-  }
+  // Unknown pages must be HTTP 404 before the App Router streams a 200
+  // not-found shell. A non-flight 404 also forces the client router into a
+  // real document navigation instead of a soft "page not found" on status 200.
+  if (pageDisposition(pathname) === "missing") return missingPageResponse();
 
   // Supply this to the server layout as a REQUEST header, overriding spoofed input.
   const requestHeaders = new Headers(request.headers);
@@ -60,10 +43,9 @@ export function proxy(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("x-page-tone", tone);
 
-  if (pathname === "/privacy" || pathname.startsWith(REGIONAL_PRIVACY_PREFIX) || pathname === "/do-not-sell-or-share") {
+  if (pathname === "/privacy" || pathname === "/do-not-sell-or-share") {
     response.headers.set("cache-control", "private, no-store");
-    response.headers.append("vary", `${PRIVACY_GEO_VARY}, Cookie, Sec-GPC`);
-    if (pathname.startsWith(REGIONAL_PRIVACY_PREFIX)) response.headers.set("x-robots-tag", "noindex, nofollow, noarchive");
+    response.headers.append("vary", "Cookie, Sec-GPC");
   }
 
   // A non-identifying, restrictive preference. No login, location check or

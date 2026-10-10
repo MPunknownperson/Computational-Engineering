@@ -6,8 +6,8 @@ export const SITE = {
   // with the phrases people actually type rather than the brand name.
   description:
     "Free online calculator and unit converter. Solve scientific expressions, convert length, weight, temperature and data, and write your own formulas — no sign-up.",
-  legalUpdated: "9 October 2026",
-  legalVersion: "6.0",
+  legalUpdated: "10 October 2026",
+  legalVersion: "7.0",
   contentUpdated: "2026-10-07",
   storageKeys: [{ key: "radixloom.workspace" }] as const,
   legacyStorageKeys: [
