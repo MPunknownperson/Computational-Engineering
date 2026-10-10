@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
       { source: "/api/workbench/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
       // Personalized choices and gated supplements must not enter shared caches.
       { source: "/privacy", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
-      { source: "/privacy/regions/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] },
       { source: "/do-not-sell-or-share", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       { source: "/api/privacy/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       // Legacy slug URLs can change. Only content-hashed assets are immutable.
