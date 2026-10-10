@@ -48,6 +48,15 @@ const SECTIONS: LegalSection[] = [
     note: "Results are prepared while you enter information and are displayed only after you press the tool's confirmation button (Convert, Calculate, Evaluate, Show or Filter). Available tools and features may change; these descriptions do not guarantee that a feature will remain available unchanged.",
   },
   {
+    id: "no-ads",
+    title: "No advertising, monetized content or analytics",
+    paragraphs: [
+      `${N} is free to use. The Service does not display advertisements, sponsored placements, affiliate offers or other monetized content, and it is not supported by selling attention or data.`,
+      "We do not collect information for advertising, marketing measurement, sale or any other monetized purpose. We do not use data analytics. We do not set analytics cookies, advertising cookies, or cookies whose purpose is to collect data about you. The only cookie is a strictly necessary privacy-choice cookie described in the Privacy Policy; it remembers an opt-out and is not used to advertise, measure or profile you.",
+      "If that practice ever changed, these Terms and the Privacy Policy would be updated first, and the change would be indicated on the site before any advertisement, analytics product or tracking cookie was introduced. Nothing in the Service today is an offer of paid placement.",
+    ],
+  },
+  {
     id: "voice-input",
     title: "Voice input and language processing",
     paragraphs: [
@@ -243,7 +252,7 @@ export default function TermsPage() {
       path="/terms"
       eyebrow="Legal · Terms"
       title="Terms of Service"
-      intro={`These Terms describe how ${N} may be used, including its voice and language features. They use the service name and neutral language; applicable law determines the rights and responsibilities that cannot be varied by a website notice.`}
+      intro={`These Terms describe how ${N} may be used, including its voice and language features. The Service does not display advertisements or monetized content, does not collect data for those purposes, and does not use data analytics or tracking cookies. These Terms use the service name and neutral language; applicable law determines the rights and responsibilities that cannot be varied by a website notice.`}
       sections={SECTIONS}
     />
   );

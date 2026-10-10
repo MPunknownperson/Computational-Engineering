@@ -119,6 +119,38 @@ svg g[class*="anim-"] { transform-box: fill-box; transform-origin: center; }
 svg g.anim-bar { transform-origin: 50% 100%; }
 svg g.anim-tail { transform-origin: 0% 100%; }
 
+/* Homepage tool cartoons — short loops, ink outlines, reduced-motion safe. */
+.tool-cartoon { display: block; }
+.cartoon-bob { animation: cartoonBob 2.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-hop { animation: cartoonHop 3.2s ease-in-out infinite; transform-origin: center bottom; transform-box: fill-box; }
+.cartoon-tilt { animation: cartoonTilt 3.4s ease-in-out infinite; transform-box: fill-box; }
+.cartoon-orbit { animation: cartoonSpin 8s linear infinite; transform-origin: 176px 78px; transform-box: view-box; }
+.cartoon-stretch { animation: cartoonStretch 3s ease-in-out infinite; transform-origin: left center; transform-box: fill-box; }
+.cartoon-rise { animation: cartoonRise 2.6s ease-in-out infinite; transform-origin: center bottom; transform-box: fill-box; }
+.cartoon-flip { animation: cartoonFlip 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-pulse { animation: cartoonPulse 2.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-bar { animation: cartoonBar 2.4s ease-in-out infinite; transform-origin: center bottom; transform-box: fill-box; }
+.cartoon-spark { animation: cartoonSpark 1.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-scribble { animation: cartoonScribble 2.6s ease-in-out infinite; transform-origin: 20% 80%; transform-box: fill-box; }
+.cartoon-pop { animation: cartoonPop 2.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-wag { animation: cartoonWag 1.6s ease-in-out infinite; transform-origin: 100% 0%; transform-box: fill-box; }
+.cartoon-flap { animation: cartoonFlap 3s ease-in-out infinite; transform-origin: left center; transform-box: fill-box; }
+.cartoon-draw { stroke-dasharray: 140; stroke-dashoffset: 140; animation: drawLine 1.6s var(--ease) infinite; }
+@keyframes cartoonBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes cartoonHop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-7px); } }
+@keyframes cartoonTilt { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
+@keyframes cartoonSpin { to { transform: rotate(360deg); } }
+@keyframes cartoonStretch { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.06); } }
+@keyframes cartoonRise { 0%, 100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+@keyframes cartoonFlip { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.12); } }
+@keyframes cartoonPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes cartoonBar { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
+@keyframes cartoonSpark { 0%, 100% { transform: scale(.7) rotate(0deg); opacity: .7; } 50% { transform: scale(1.15) rotate(18deg); opacity: 1; } }
+@keyframes cartoonScribble { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(8deg); } }
+@keyframes cartoonPop { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.08); } }
+@keyframes cartoonWag { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+@keyframes cartoonFlap { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+
 .icon-tile { position: relative; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 16px; border: 2px solid var(--line); background: #ffd23f; color: var(--ink); box-shadow: var(--shadow-ink-sm); }
 .icon-tile--coral { background: #ffb49d; }
 .icon-tile--sky { background: #c9daff; }

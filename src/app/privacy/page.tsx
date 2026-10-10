@@ -2,7 +2,7 @@ import { LegalPage, type LegalSection } from "@/components/LegalPage";
 import { DataControls } from "@/components/DataControls";
 import { GdprPolicy } from "@/components/legal/GdprPolicy";
 import { CcpaPolicy } from "@/components/legal/CcpaPolicy";
-import { RegionalPrivacyLinks } from "@/components/legal/RegionalPrivacyLinks";
+import { InternationalPrivacy } from "@/components/legal/InternationalPrivacy";
 import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
 import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
@@ -30,7 +30,8 @@ const SECTIONS: LegalSection[] = [
     id: "summary",
     title: "At a glance",
     bullets: [
-      `${N} has no sign-up, no accounts and no advertising or analytics trackers.`,
+      `${N} does not display advertisements, sponsored placements, affiliate offers or other monetized content.`,
+      `${N} does not collect personal information for advertising, monetization or analytics, and it does not use analytics or advertising cookies.`,
       "Saved formulas are stored on our server under a random browser workspace reference. Blackboard notes and voice phrase memory stay on your device.",
       "The contact form is optional; you choose whether to give a name or a reply address.",
       "Microphone access only happens if you press the voice button and approve your browser's permission prompt.",
@@ -62,7 +63,7 @@ const SECTIONS: LegalSection[] = [
         ["Device phrase memory", "Phrases the voice feature understood and the tool each opened", "Stored locally in your browser"],
         ["Board content", "Chalk strokes and typed notes on the Calculator blackboard", "Stored locally in your browser"],
         ["Connection details", "IP address, browser, device, time of request (server logs)", "Generated automatically when the site is visited"],
-        ["Region signal", "A country code from a configured trusted hosting gateway; browser language is used only as a voice-policy fallback", "Regional supplement access uses only the trusted country signal; it does not use language or precise GPS location. The code is not stored in the preference database."],
+        ["Voice region signal", "A country code from a configured trusted hosting gateway, used only to decide whether optional voice input is available", "Evaluated per request for the voice feature. It is not stored, it is not used to hide this policy, and it is not precise GPS location."],
         ["Privacy preference", "Opt-out flag, random receipt identifier, source and timestamps", "Remember an explicit opt-out or Global Privacy Control; no name, email, IP or country is stored with the receipt."],
         ["Reference selections", "The currency, asset, economy or measure you select in a tool", "Entered by you in the tool"],
       ],
@@ -101,10 +102,20 @@ const SECTIONS: LegalSection[] = [
     ],
   },
   {
+    id: "no-ads",
+    title: "No advertisements, monetized content, analytics or tracking cookies",
+    paragraphs: [
+      `${N} does not display advertisements. Pages do not include banner ads, sponsored results, affiliate modules, paid placements or other monetized content. The tools are free, and using them does not put you into an advertising audience.`,
+      `${N} does not collect personal information — including formulas, messages, voice text, workspace references or connection logs — for advertising, marketing measurement, sale, or any other monetized purpose. Reference-data requests carry only the figure you asked for, never an advertising identifier.`,
+      `${N} does not use data analytics. There is no analytics product, pixel, tag manager or measurement cookie. We do not build browsing profiles, and we do not use cookies to collect data about how you move around the site.`,
+    ],
+    note: "The only cookie this site sets is a strictly necessary privacy-choice cookie described below. It remembers an opt-out. It is not an analytics cookie, an advertising cookie, or a cookie used to collect information about you.",
+  },
+  {
     id: "storage",
     title: "Cookies, local storage and similar technologies",
     paragraphs: [
-      `${N} does not include advertising or analytics trackers. Essential privacy-choice cookies remember a restrictive opt-out and a random receipt reference for up to one year. They are not advertising identifiers.`,
+      `${N} does not set analytics cookies, advertising cookies, or any cookie whose purpose is to collect data. The only cookie is an essential privacy-choice cookie that remembers a restrictive opt-out and a random receipt reference for up to one year. It stores no name, email, IP address or browsing history, and it cannot be used to advertise to you.`,
       "Browser storage holds the random saved-formula workspace reference, remembered voice phrases and blackboard strokes/notes. The last voice command uses session storage. Saved formulas themselves are stored in the server database. Clearing browser storage does not delete server-side formulas; use the controls below before disconnecting your workspace.",
       "Your browser's speech service may set its own storage or use its own account state. That is governed by your browser and its vendor, not by this site.",
     ],
@@ -189,12 +200,12 @@ export default function PrivacyPage() {
       path="/privacy"
       eyebrow="Legal · Privacy"
       title="Privacy Policy"
-      intro={`${N} asks for very little. This Privacy Policy explains what information is collected when you use the calculators, conversions, reference tools and optional voice input; why it is used; who receives it; and how long it is kept. GDPR and CCPA provisions are consolidated into distinct sections of this single policy. Other regional clauses are on dedicated location-restricted pages that expressly form part of this policy.`}
+      intro={`${N} asks for very little, and it does not run on advertising. This Privacy Policy explains what information is collected when you use the calculators, conversions, reference tools and optional voice input; why it is used; who receives it; and how long it is kept. It also states the commitments not to display advertisements or monetized content, not to collect data for those purposes, and not to use data analytics or tracking cookies. GDPR, CCPA and the additional rights for Brazil, Canada, Australia, Singapore, Japan and India are sections of this same public policy. They are not hidden behind a country check.`}
       sections={SECTIONS}
       tocExtra={[
         { href: "#gdpr", label: "GDPR — your rights in the EEA and UK" },
         { href: "#ccpa", label: "CCPA / CPRA — California" },
-        { href: "#regional-supplements", label: "Regional supplements" },
+        { href: "#international-rights", label: "Brazil, Canada, Australia, Singapore, Japan and India" },
         { href: "#privacy-choices", label: "Do Not Sell or Share" },
         { href: "#your-data", label: "Manage saved formulas" },
       ]}
@@ -202,7 +213,7 @@ export default function PrivacyPage() {
         <>
           <GdprPolicy />
           <CcpaPolicy />
-          <RegionalPrivacyLinks />
+          <InternationalPrivacy />
           <section id="privacy-choices" className="sketch scroll-mt-24" aria-labelledby="privacy-choices-title">
             <h2 id="privacy-choices-title" className="text-xl font-bold">Your privacy choices</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">The California opt-out page is available everywhere. A privacy request is not limited by your current location.</p>

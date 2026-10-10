@@ -4,7 +4,8 @@ import { SearchContext } from "@/components/search/SearchContext";
 import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
 import { VoiceIllustration } from "@/components/VoiceIllustration";
-import { ToolCard, type ToolTone } from "@/components/ToolCard";
+import { ToolCartoon, type ToolCartoonId } from "@/components/home/ToolCartoons";
+import type { ToolTone } from "@/components/ToolCard";
 import { Icon, type IconName } from "@/components/Icons";
 import { Reveal } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
@@ -22,15 +23,15 @@ const VOICE_POINTS: { icon: IconName; title: string; body: string }[] = [
 export const generateMetadata = () => metadataFor("/");
 
 const TOOLS: {
-  href: string; title: string; blurb: string; icon: IconName; tone: ToolTone; badge?: string; meta: string;
+  href: string; title: string; blurb: string; cartoon: ToolCartoonId; tone: ToolTone; badge?: string; meta: string;
 }[] = [
-  { href: "/tools/calculator", tone: "ink", title: "Calculator", blurb: "A blackboard workspace: sketch the idea, jot the principle, then press Calculate. Not a replica of a plastic keypad.", icon: "calculator", meta: "press Calculate" },
-  { href: "/tools/scientific", tone: "coral", title: "Scientific calculator", blurb: "Mathematical expressions, named values, functions and unit expressions. Press Calculate to see the answer.", icon: "sigma", meta: "press Calculate" },
-  { href: "/tools/units", tone: "sky", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories. Press Convert to reveal the answer and every other unit at once.`, icon: "swap", meta: "press Convert" },
-  { href: "/tools/currency", tone: "terra", title: "Currency reference", blurb: `Reference values for ${CURRENCIES.length} currencies. Press Convert to reveal the amount and the recent trend.`, icon: "globe", badge: "updates", meta: "press Convert" },
-  { href: "/tools/crypto", tone: "violet", title: "Digital-asset prices", blurb: `Price, daily movement and market summaries for ${CRYPTO_IDS.length} digital assets, with a filter you apply yourself.`, icon: "coin", badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
-  { href: "/tools/formula", tone: "pink", title: "Custom formulas", blurb: "Enter expressions and values, press Evaluate to reveal the result, then save what you want to keep.", icon: "function", meta: "press Evaluate" },
-  { href: "/tools/economy", tone: "mint", title: "Economic indicators", blurb: `${INDICATORS.length} measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show to reveal the figures.`, icon: "chart", badge: "updates", meta: "press Show" },
+  { href: "/tools/calculator", tone: "ink", cartoon: "calculator", title: "Calculator", blurb: "Nova keeps a chalkboard, not a plastic keypad. Sketch the diagram, jot the principle in chalk, then press Calculate — the answer waits until you ask, and the board stays in this browser.", meta: "press Calculate" },
+  { href: "/tools/scientific", tone: "coral", cartoon: "scientific", title: "Scientific calculator", blurb: "Type the expression the way you would write it: roots, trigonometry, matrices, named values and units. The sigma on the card is the job — press Calculate and the prepared result is revealed.", meta: "press Calculate" },
+  { href: "/tools/units", tone: "sky", cartoon: "units", title: "Unit converter", blurb: `A stretching ruler, a weight and a thermometer, standing in for ${UNIT_COUNT} units across ${UNIT_CATEGORY_COUNT} categories. Pick both sides, press Convert, and every other unit in that category appears at once.`, meta: "press Convert" },
+  { href: "/tools/currency", tone: "terra", cartoon: "currency", title: "Currency reference", blurb: `Pip watches the coins flip across ${CURRENCIES.length} currencies. Press Convert for an indicative amount, its publication date and a recent trend — a planning figure, not a bank quote.`, badge: "updates", meta: "press Convert" },
+  { href: "/tools/crypto", tone: "violet", cartoon: "crypto", title: "Digital-asset prices", blurb: `A pulsing coin and a row of bars for ${CRYPTO_IDS.length} digital assets: price, daily movement and a market summary. Filter the list yourself. Venues disagree, and nothing here is a trade ticket.`, badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
+  { href: "/tools/formula", tone: "pink", cartoon: "formula", title: "Custom formulas", blurb: "Bring the method with you. The pencil writes P(1+r)ⁿ, you name P, r and n, then press Evaluate. Save, export or delete the expression when you are done with it.", meta: "press Evaluate" },
+  { href: "/tools/economy", tone: "mint", cartoon: "economy", title: "Economic indicators", blurb: `Bars that grow only when you ask: ${INDICATORS.length} public measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show. Many series are periodic and may be revised.`, badge: "updates", meta: "press Show" },
 ];
 
 const FACTS: { icon: IconName; title: string; body: string }[] = [
@@ -129,10 +130,29 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="tools-heading">
         <Reveal>
           <h2 id="tools-heading" className="h-title text-3xl sm:text-4xl">Seven tools, <span className="h-underline">many uses</span></h2>
-          <p className="mt-2 max-w-xl text-slate-600">Calculate, convert values or explore selected reference information.</p>
+          <p className="mt-2 max-w-2xl text-slate-600">Each tool has its own cartoon and its own job — sketch a sum, convert a unit, or look up a reference figure. Nothing is revealed until you press the button.</p>
         </Reveal>
-        <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {TOOLS.map((t, i) => <Reveal key={t.href} delay={i * 50}><ToolCard {...t} /></Reveal>)}
+        <div className="mt-9 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {TOOLS.map((t, i) => (
+            <Reveal key={t.href} delay={i * 50}>
+              <Link href={t.href} className="sketch card-hover flex h-full flex-col overflow-hidden !p-0">
+                <div className="border-b-2 border-[color:var(--line)] bg-[color:var(--paper)] p-3">
+                  <ToolCartoon id={t.cartoon} />
+                </div>
+                <span className="flex flex-1 flex-col p-5">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-[1.05rem] font-extrabold tracking-tight">{t.title}</span>
+                    {t.badge && <span className="chip chip-live !py-0.5 !text-[.6rem] uppercase tracking-widest"><span className="live-dot" /> {t.badge}</span>}
+                  </span>
+                  <span className="mt-2 block text-sm leading-relaxed text-slate-600">{t.blurb}</span>
+                  <span className="mt-4 flex items-center justify-between border-t-2 border-[color:var(--line)] pt-3 text-sm">
+                    <span className="text-xs font-semibold text-slate-500">{t.meta}</span>
+                    <span className="inline-flex items-center gap-1 font-bold">Open <Icon name="arrow-right" size={16} className="card-arrow" /></span>
+                  </span>
+                </span>
+              </Link>
+            </Reveal>
+          ))}
         </div>
       </section>
 
