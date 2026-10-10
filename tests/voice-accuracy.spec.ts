@@ -3,22 +3,26 @@ import { repairTranscript, isNearMatch } from "@/lib/voice/matching";
 import { LANGUAGE_PACKS, packOrder } from "@/lib/i18n";
 import { VoiceRuntime } from "@/lib/voice/pipeline";
 import { routeHypotheses } from "@/lib/command-engine";
-import { whisperLanguage } from "@/lib/voice/whisper-language";
-import { whisperLanguage as localModelLanguage } from "@/lib/voice/local-model";
+import { canRunLocalModel, createLocalModelEngine, localModelReady } from "@/lib/voice/local-model";
+import { aiAvailability, hasOnDeviceAi } from "@/lib/ai/on-device";
 
 const runtime = () => new VoiceRuntime(packOrder(LANGUAGE_PACKS.en));
 
-test.describe("local model locale mapping", () => {
-  test("Whisper receives language names rather than BCP-47 tags", () => {
-    expect(whisperLanguage("fr-FR")).toBe("french");
-    expect(whisperLanguage("fr-CA")).toBe("french");
-    expect(whisperLanguage("zh-CN")).toBe("chinese");
-    expect(whisperLanguage("zh-Hant-HK")).toBe("chinese");
-    expect(whisperLanguage("en-US")).toBe("english");
-    expect(whisperLanguage("hi-IN")).toBe("hindi");
-    expect(localModelLanguage("fr-FR")).toBe("french");
-    expect(localModelLanguage("zh-CN")).toBe("chinese");
-    expect(localModelLanguage("xx-YY")).toBeUndefined();
+test.describe("on-device generative recognition", () => {
+  // Recognition is provided by the browser's built-in model. Nothing is
+  // downloaded from this origin, so with no browser API present every entry
+  // point must degrade quietly rather than throw or start a network fetch.
+  test("reports unavailable without a browser built-in model", async () => {
+    expect(hasOnDeviceAi()).toBe(false);
+    expect(canRunLocalModel()).toBe(false);
+    expect(await localModelReady()).toBe(false);
+    expect(await aiAvailability("audio")).toBe("unavailable");
+    expect(await aiAvailability("text")).toBe("unavailable");
+  });
+
+  test("engine construction is refused instead of failing late", () => {
+    const engine = createLocalModelEngine({ language: "en-US", onText: () => undefined });
+    expect(engine).toBeNull();
   });
 });
 

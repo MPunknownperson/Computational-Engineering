@@ -151,7 +151,7 @@ test("canonical, social image, sitemap and robots follow the serving domain", as
     const response = await request.get("/tools/units?category=length&from=m&to=ft&value=5&utm_source=example", { headers: { host } });
     const html = await response.text();
     expect(html).toContain(`rel="canonical" href="https://${host}/tools/units"`);
-    expect(html).toContain(`https://${host}/media/tools--units.png`);
+    expect(html).toContain(`https://${host}${imagePath(SEARCH_PAGES.find((entry) => entry.path === "/tools/units")!)}`);
     const sitemap = await request.get("/sitemap.xml", { headers: { host } });
     expect(sitemap.status()).toBe(200);
     const xml = await sitemap.text();
@@ -163,7 +163,7 @@ test("canonical, social image, sitemap and robots follow the serving domain", as
       expect(new URL(url).search).toBe("");
     }
     expect(xml).not.toContain("/api/");
-    expect(xml).toContain(`<image:loc>https://${host}/media/guides--meters-to-feet.png</image:loc>`);
+    expect(xml).toContain(`<image:loc>https://${host}${imagePath(SEARCH_PAGES.find((entry) => entry.path === "/guides/meters-to-feet")!)}</image:loc>`);
     const robots = await (await request.get("/robots.txt", { headers: { host } })).text();
     expect(robots).toContain(`Sitemap: https://${host}/sitemap.xml`);
     expect(robots).not.toContain("Disallow: /_next");

@@ -163,93 +163,55 @@ test.describe("desktop", () => {
     await page.waitForURL(/\/tools\/currency\?base=USD&to=EUR&amount=120/);
   });
 
-  test("a browser with no speech engine falls back to a model running on the page", async ({ page }) => {
-    // Headless Chromium ships a real (cloud) recogniser; remove it to model Firefox-like browsers.
+  test("a browser with no speech engine falls back to the built-in on-device model", async ({ page }) => {
     await page.addInitScript(() => {
       const w = window as unknown as Record<string, unknown>;
       delete w.SpeechRecognition;
       delete w.webkitSpeechRecognition;
+      // The browser exposes a built-in generative model, so voice stays
+      // available and recognition runs entirely on the device.
+      w.LanguageModel = {
+        availability: async () => "available",
+        create: async () => ({ prompt: async () => "", destroy() {} }),
+      };
     });
     await page.goto("/calculators");
-    // This runtime can execute a small model, so voice stays available and
-    // runs on the device.
     await expect(voiceCard(page).getByRole("button", { name: "Speak a calculation" })).toBeEnabled();
-    await expect(voiceCard(page)).toContainText(/multilingual Whisper runs on this device/i);
+    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
   });
 
-  test("local model preparation names the publisher, host, asset batch and file progress", async ({ page }) => {
+  test("preparation names the browser's built-in model and downloads nothing from this site", async ({ page }) => {
+    const modelRequests: string[] = [];
+    page.on("request", (request) => {
+      const url = request.url();
+      if (/huggingface|\.onnx|transformers/i.test(url)) modelRequests.push(url);
+    });
     await page.addInitScript(() => {
       const w = window as unknown as Record<string, unknown>;
       delete w.SpeechRecognition;
       delete w.webkitSpeechRecognition;
-      class FakeWorker {
-        listeners: Record<string, Array<(event: { data: unknown }) => void>> = {};
-        addEventListener(type: string, callback: (event: { data: unknown }) => void) {
-          (this.listeners[type] ??= []).push(callback);
-        }
-        postMessage(message: { type?: string; id?: string }) {
-          if (message.type === "prepare") {
-            setTimeout(() => {
-              for (const listener of this.listeners.message ?? []) listener({ data: {
-                type: "progress", id: message.id, status: "progress", file: "onnx/encoder_model_quantized.onnx",
-                filePercent: 42, loaded: 21_000_000, total: 50_000_000, completed: 1, assets: 4,
-              } });
-            }, 30);
-            // Hold the worker in prepare so the progress text stays visible.
-          }
-        }
-        terminate() {}
-      }
-      w.Worker = FakeWorker;
-    });
-    await page.goto("/calculators");
-    await expect(speakButton(page)).toBeEnabled();
-    await speakButton(page).click();
-    await expect(voiceCard(page)).toContainText("Xenova");
-    await expect(voiceCard(page)).toContainText("Hugging Face Hub");
-    await expect(voiceCard(page)).toContainText("onnx/encoder_model_quantized.onnx");
-    await expect(voiceCard(page)).toContainText("42%");
-    await page.getByRole("button", { name: "Cancel" }).click();
-  });
-
-  test("fallback model notice identifies publisher, host, asset and download progress", async ({ page }) => {
-    await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown>;
-      delete w.SpeechRecognition;
-      delete w.webkitSpeechRecognition;
-      class ProgressWorker {
-        private listeners: Record<string, Array<(event: { data: unknown }) => void>> = {};
-        addEventListener(type: string, callback: (event: { data: unknown }) => void) {
-          (this.listeners[type] ??= []).push(callback);
-        }
-        postMessage(message: { type?: string; id?: string }) {
-          if (message.type === "prepare") setTimeout(() => {
-            for (const listener of this.listeners.message ?? []) listener({ data: {
-              type: "progress", id: message.id, status: "progress",
-              file: "onnx/encoder_model_quantized.onnx", filePercent: 42,
-              loaded: 21_000_000, total: 50_000_000, completed: 1, assets: 4,
-            } });
-          }, 20); // keep preparing so the visitor can read the download notice
-        }
-        terminate() {}
-      }
-      w.Worker = ProgressWorker;
+      // Hold the session in "downloadable" so the preparation notice stays up.
+      w.LanguageModel = {
+        availability: async () => "downloadable",
+        create: () => new Promise(() => {}),
+      };
     });
     await page.goto("/calculators");
     await speakButton(page).click();
-    await expect(voiceCard(page)).toContainText("Xenova");
-    await expect(voiceCard(page)).toContainText("Hugging Face Hub");
-    await expect(voiceCard(page)).toContainText("onnx/encoder_model_quantized.onnx");
-    await expect(voiceCard(page)).toContainText("42%");
+    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
+    await expect(voiceCard(page)).toContainText(/hosts no model weights/i);
+    // The decisive assertion: nothing is fetched from a model host.
+    expect(modelRequests).toEqual([]);
     await page.getByRole("button", { name: "Cancel" }).click();
   });
 
   test("a browser with no engine and no model runtime has no voice input", async ({ page }) => {
     await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown> & { WebAssembly?: unknown };
+      const w = window as unknown as Record<string, unknown> & { ai?: unknown };
       delete w.SpeechRecognition;
       delete w.webkitSpeechRecognition;
-      delete w.WebAssembly;
+      delete w.LanguageModel;
+      delete w.ai;
     });
     await page.goto("/calculators");
     await expect(voiceCard(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
@@ -266,6 +228,7 @@ test.describe("mobile", () => {
   test("Android uses on-device recognition", async ({ page }) => {
     await installMock(page, { localOption: true, transcripts: ["five miles to kilometers"] });
     await page.goto("/calculators");
+    await page.locator("[data-voice-entry]").scrollIntoViewIfNeeded();
     await speakButton(page).click();
     await expect(voiceCard(page)).toContainText(/Opening/i);
     const p = await probe(page);
@@ -276,16 +239,25 @@ test.describe("mobile", () => {
   test("a downloadable language model is installed automatically before listening", async ({ page }) => {
     await installMock(page, { localOption: true, localStatus: "downloadable" });
     await page.goto("/calculators");
+    await page.locator("[data-voice-entry]").scrollIntoViewIfNeeded();
     await expect(voiceCard(page)).toContainText(/recognised on this device/i);
     await speakButton(page).click();
     await page.waitForURL(/amount=120/);
   });
 
-  test("a mobile device without browser-local recognition uses the on-device model fallback", async ({ page }) => {
+  test("a mobile device without browser-local recognition uses the built-in model fallback", async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as Record<string, unknown>;
+      w.LanguageModel = {
+        availability: async () => "available",
+        create: async () => ({ prompt: async () => "", destroy() {} }),
+      };
+    });
     await installMock(page, { localOption: false });
     await page.goto("/calculators");
+    await page.locator("[data-voice-entry]").scrollIntoViewIfNeeded();
     await expect(voiceCard(page).getByRole("button", { name: "Speak a calculation" })).toBeEnabled();
-    await expect(voiceCard(page)).toContainText(/multilingual Whisper runs on this device/i);
+    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
   });
 });
 

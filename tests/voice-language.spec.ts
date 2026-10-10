@@ -2,8 +2,6 @@ import { expect, test } from "@playwright/test";
 import { LANGUAGE_PACKS, PACK_IDS, parseAcceptLanguage, recognitionLocale, selectPack, t } from "@/lib/i18n";
 import { parseVoiceCommand } from "@/lib/voice/pipeline";
 import { decideVoiceProcessing, regionFromLocale, type PolicyInput } from "@/lib/voice/policy";
-import { withSystemVocabulary, segmentWords } from "@/lib/i18n/system-lexicon";
-import { findSiteContent } from "@/lib/voice/site-content";
 
 function params(href: string | undefined) {
   expect(href, "expected a destination").toBeTruthy();
@@ -109,10 +107,10 @@ test.describe("automatic processing assignment", () => {
       .toMatchObject({ mode: "local", prepareLocal: true });
   });
 
-  test("browsers without cloud speech use local; devices without local support lose voice", () => {
+  test("browsers without cloud speech use local; devices can use permitted browser speech when local support is absent", () => {
     expect(decideVoiceProcessing({ ...base, browserCloud: false })).toMatchObject({ mode: "local" });
     expect(decideVoiceProcessing({ ...base, browserCloud: false, local: "unavailable" })).toMatchObject({ available: false, reason: "no-cloud" });
-    expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", local: "unavailable" })).toMatchObject({ available: false, reason: "no-local" });
+    expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, speechApi: false })).toMatchObject({ available: false, reason: "no-api" });
   });
 

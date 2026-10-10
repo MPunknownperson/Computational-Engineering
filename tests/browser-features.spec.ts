@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { parseVoiceCommand } from "@/lib/voice/pipeline";
 
-const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "/tools/formula", "/guides", "/contact", "/terms"];
+const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "/tools/formula", "/guides", "/contact", "/terms", "/privacy", "/do-not-sell-or-share"];
 
 /**
  * WCAG 2.1 AA audit using axe-core (Deque Systems, free and open source).
@@ -88,15 +89,14 @@ test("the footer contains no search button", async ({ page, request }) => {
 });
 
 test("voice intent matching is deterministic and never invents a destination", async () => {
-  const { resolveIntent } = await import("../src/lib/intent");
-  expect(resolveIntent("convert 70 kilos to pounds")?.href).toContain("from=kg&to=lb&value=70");
-  expect(resolveIntent("5 miles to kilometers")?.href).toContain("from=mi&to=km&value=5");
-  expect(resolveIntent("celsius to fahrenheit")?.href).toContain("from=C&to=F");
-  expect(resolveIntent("split the bill")?.href).toContain("preset=tip-split");
-  expect(resolveIntent("bitcoin price")?.href).toContain("tools/crypto");
+  expect(parseVoiceCommand("convert 70 kilos to pounds")?.href).toContain("from=kg&to=lb&value=70");
+  expect(parseVoiceCommand("5 miles to kilometers")?.href).toContain("from=mi&to=km&value=5");
+  expect(parseVoiceCommand("celsius to fahrenheit")?.href).toContain("from=C&to=F");
+  expect(parseVoiceCommand("split the bill")?.href).toContain("preset=tip-split");
+  expect(parseVoiceCommand("bitcoin price")?.href).toContain("tools/crypto");
   // No match means no result, not a guess.
-  expect(resolveIntent("what is the weather tomorrow")).toBeNull();
-  expect(resolveIntent("")).toBeNull();
+  expect(parseVoiceCommand("what is the weather tomorrow")).toBeNull();
+  expect(parseVoiceCommand("")).toBeNull();
 });
 
 test("contact works without bot-check keys and the widget stays off", async ({ page, request }) => {

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { LANGUAGE_PACKS, recognitionLocale } from "@/lib/i18n";
 import { segmentWords, withSystemVocabulary } from "@/lib/i18n/system-lexicon";
 import { findSiteContent, contentById, allContent } from "@/lib/voice/site-content";
-import { parseVoiceCommand, VoiceRuntime } from "@/lib/voice/pipeline";
+import { parseVoiceCommand } from "@/lib/voice/pipeline";
 import { verify } from "@/lib/voice/ir";
 import { execute } from "@/lib/voice/vm";
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COUNTRIES } from "@/lib/catalog";
 
 test("exchange-rate tool shows the expanded currency catalog, all-rate table and selectable trend periods", async ({ page }) => {
   await page.goto("/tools/currency", { waitUntil: "networkidle" });
@@ -26,9 +27,26 @@ test("exchange-rate tool shows the expanded currency catalog, all-rate table and
 });
 
 test("economy comparison and ranking each fetch and confirm their own data mode", async ({ page }) => {
+  // Control the response timing; UI regressions must not depend on whether
+  // an upstream statistics service is fast or has a value for every economy.
+  await page.route("**/api/economy?*", async (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const countries = (query.get("country") ?? "USA").split(",");
+    if (countries.length > 1) await new Promise((resolve) => setTimeout(resolve, 250));
+    const results = countries.map((country, index) => ({
+      country,
+      latest: { year: "2024", value: country === "ARG" ? 200 : 30 - index },
+      series: [{ year: "2023", value: 2 }, { year: "2024", value: country === "ARG" ? 200 : 30 - index }],
+    }));
+    await route.fulfill({ json: countries.length > 1
+      ? { compare: true, countries, indicator: "inflation", results }
+      : { country: countries[0], indicator: "inflation", latest: results[0].latest, series: results[0].series },
+    });
+  });
   await page.goto("/tools/economy", { waitUntil: "networkidle" });
   await page.getByRole("tab", { name: /Compare/ }).click();
   const show = page.getByRole("button", { name: "Show" });
+  await expect(show).toBeDisabled();
   await expect(show).toBeEnabled({ timeout: 30000 });
   await show.click();
   await expect(page.locator("tbody tr")).toHaveCount(3, { timeout: 30000 });
@@ -37,7 +55,7 @@ test("economy comparison and ranking each fetch and confirm their own data mode"
   await page.getByRole("tab", { name: /Rank all economies/ }).click();
   await expect(show).toBeEnabled({ timeout: 30000 });
   await show.click();
-  await expect(page.locator("tbody tr")).toHaveCount(30, { timeout: 30000 });
+  await expect(page.locator("tbody tr")).toHaveCount(COUNTRIES.length, { timeout: 30000 });
   await expect(page.locator("tbody tr").first()).toContainText("Argentina");
 });
 
