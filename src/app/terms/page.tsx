@@ -49,11 +49,11 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: "no-ads",
-    title: "No advertising, monetized content or analytics",
+    title: "Advertising, analytics and cookies",
     paragraphs: [
-      `${N} is free to use. The Service does not display advertisements, sponsored placements, affiliate offers or other monetized content, and it is not supported by selling attention or data.`,
-      "We do not collect information for advertising, marketing measurement, sale or any other monetized purpose. We do not use data analytics. We do not set analytics cookies, advertising cookies, or cookies whose purpose is to collect data about you. The only cookie is a strictly necessary privacy-choice cookie described in the Privacy Policy; it remembers an opt-out and is not used to advertise, measure or profile you.",
-      "If that practice ever changed, these Terms and the Privacy Policy would be updated first, and the change would be indicated on the site before any advertisement, analytics product or tracking cookie was introduced. Nothing in the Service today is an offer of paid placement.",
+      `${N} is free to use. The Service may display advertisements, sponsored placements, affiliate offers or other revenue-generating content. Those features help keep the Service available.`,
+      "We may use data analytics and cookies or similar technologies, including to understand how the Service is used, to improve it, and to deliver or measure advertising. Advertising, measurement and analytics partners may receive information as described in the Privacy Policy.",
+      "A strictly necessary privacy-choice cookie may remember an opt-out. You can review sale and sharing choices on the Do Not Sell or Share page, and you can contact us about a related request. Browser controls may also let you block or delete cookies.",
     ],
   },
   {
@@ -252,7 +252,7 @@ export default function TermsPage() {
       path="/terms"
       eyebrow="Legal · Terms"
       title="Terms of Service"
-      intro={`These Terms describe how ${N} may be used, including its voice and language features. The Service does not display advertisements or monetized content, does not collect data for those purposes, and does not use data analytics or tracking cookies. These Terms use the service name and neutral language; applicable law determines the rights and responsibilities that cannot be varied by a website notice.`}
+      intro={`These Terms describe how ${N} may be used, including its voice and language features. The Service may display advertisements and other revenue-generating content, and it may use data analytics and cookies as described in the Privacy Policy. These Terms use the service name and neutral language; applicable law determines the rights and responsibilities that cannot be varied by a website notice.`}
       sections={SECTIONS}
     />
   );

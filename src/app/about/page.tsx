@@ -12,7 +12,7 @@ const PRINCIPLES: { icon: IconName; title: string; body: string; bg: string; fg:
   { icon: "shield", title: "Useful context", body: "Dates and update times appear alongside reference figures where available.", bg: "#5b8cff", fg: "#fff" },
   { icon: "bolt", title: "No account required", body: "Calculators can be used without creating a profile. Saving an expression is optional.", bg: "#ff6b4a", fg: "#fff" },
   { icon: "layers", title: "Everyday calculations", body: "Scientific expressions, unit conversions and selected reference figures in one place.", bg: "#4ade80", fg: "#0b1020" },
-  { icon: "shield", title: "No ads, no analytics", body: "Pages do not carry advertisements or monetized content. We do not collect data for those purposes, and we do not use analytics or tracking cookies.", bg: "#0b1020", fg: "#ffd23f" },
+  { icon: "shield", title: "How the site is supported", body: "The calculators stay free to use. Pages may carry advertisements or other revenue-generating content, and we may use analytics and cookies as described in the Privacy Policy.", bg: "#0b1020", fg: "#ffd23f" },
 ];
 
 const HOW = [
@@ -81,11 +81,11 @@ export default function AboutPage() {
       </Reveal>
 
       <Reveal delay={200}>
-        <h2 className="mt-14 text-2xl font-extrabold tracking-tight">No advertisements, and no data collected for them</h2>
+        <h2 className="mt-14 text-2xl font-extrabold tracking-tight">Advertising, analytics and cookies</h2>
         <div className="sketch mt-4 space-y-3 text-sm leading-relaxed text-slate-700">
-          <p>{SITE.name} does not display advertisements, sponsored placements, affiliate offers or other monetized content. The calculators are free, and opening one does not put you into an advertising audience.</p>
-          <p>We do not collect formulas, messages, voice text, workspace references or connection details for advertising, sale or monetization. We do not use data analytics. We do not set analytics cookies, advertising cookies, or cookies used to collect data about how you use the site.</p>
-          <p>The only cookie is a strictly necessary privacy-choice cookie that remembers an opt-out. It stores no name, email or browsing history. The <Link href="/privacy#no-ads" className="font-bold underline underline-offset-4">Privacy Policy</Link> and the <Link href="/terms#no-ads" className="font-bold underline underline-offset-4">Terms of Service</Link> state these commitments in full.</p>
+          <p>{SITE.name} calculators are free to use. Pages may display advertisements, sponsored placements, affiliate offers or other revenue-generating content.</p>
+          <p>We may use data analytics and cookies or similar technologies, including to understand how the site is used, to improve it, and to deliver or measure advertising. Advertising and analytics partners may receive information as described in the Privacy Policy.</p>
+          <p>You can review sale and sharing choices on the <Link href="/do-not-sell-or-share" className="font-bold underline underline-offset-4">Do Not Sell or Share</Link> page, or contact us about a related request. The <Link href="/privacy#no-ads" className="font-bold underline underline-offset-4">Privacy Policy</Link> and the <Link href="/terms#no-ads" className="font-bold underline underline-offset-4">Terms of Service</Link> describe these practices in full.</p>
         </div>
         <h2 className="mt-14 text-2xl font-extrabold tracking-tight">Policies and questions</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">Read the current notices about use, privacy, result limitations and accessibility.</p>

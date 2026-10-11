@@ -21,21 +21,22 @@ const N = SITE.name;
  * information collected, the purposes and legal bases for each, recipients,
  * retention, transfers, individual rights (GDPR and CCPA-style), children,
  * security, automated decision-making and how the policy changes — mapped onto
- * what this site actually does: no accounts, no analytics or advertising, saved
- * formulas tied to a random browser reference, an opt-in contact form, opt-in
- * microphone capture and three server-side reference-data providers.
+ * what this site actually does: no accounts, optional advertising and analytics,
+ * cookies used for those purposes, saved formulas tied to a random browser
+ * reference, an opt-in contact form, opt-in microphone capture and three
+ * server-side reference-data providers.
  */
 const SECTIONS: LegalSection[] = [
   {
     id: "summary",
     title: "At a glance",
     bullets: [
-      `${N} does not display advertisements, sponsored placements, affiliate offers or other monetized content.`,
-      `${N} does not collect personal information for advertising, monetization or analytics, and it does not use analytics or advertising cookies.`,
+      `${N} may display advertisements, sponsored placements, affiliate offers or other revenue-generating content.`,
+      `${N} may use cookies and similar technologies, including for analytics, measurement and advertising.`,
       "Saved formulas are stored on our server under a random browser workspace reference. Blackboard notes and voice phrase memory stay on your device.",
       "The contact form is optional; you choose whether to give a name or a reply address.",
       "Microphone access only happens if you press the voice button and approve your browser's permission prompt.",
-      `${N} does not sell personal information and does not use it for cross-context behavioural advertising.`,
+      "You can ask us not to sell or share personal information, including for advertising, and we honor Global Privacy Control when we receive it.",
     ],
     note: "This policy should be read with the Terms of Service and the Disclaimer. Where local law gives you rights in addition to those described here, those rights apply as well.",
   },
@@ -63,6 +64,7 @@ const SECTIONS: LegalSection[] = [
         ["Device phrase memory", "Phrases the voice feature understood and the tool each opened", "Stored locally in your browser"],
         ["Board content", "Chalk strokes and typed notes on the Calculator blackboard", "Stored locally in your browser"],
         ["Connection details", "IP address, browser, device, time of request (server logs)", "Generated automatically when the site is visited"],
+        ["Advertising and analytics", "Cookie or similar identifiers, pages viewed, approximate location derived from the request, device and browser type, ad interaction", "Collected automatically when advertising, measurement or analytics technologies run"],
         ["Voice region signal", "A country code from a configured trusted hosting gateway, used only to decide whether optional voice input is available", "Evaluated per request for the voice feature. It is not stored, it is not used to hide this policy, and it is not precise GPS location."],
         ["Privacy preference", "Opt-out flag, random receipt identifier, source and timestamps", "Remember an explicit opt-out or Global Privacy Control; no name, email, IP or country is stored with the receipt."],
         ["Reference selections", "The currency, asset, economy or measure you select in a tool", "Entered by you in the tool"],
@@ -85,6 +87,8 @@ const SECTIONS: LegalSection[] = [
         ["Operate and protect the site", "Server log data; transient rate-limiting keys"],
         ["Optional voice input", "Microphone audio and recognition text"],
         ["Voice availability by region", "Country signal for the current request"],
+        ["Show and measure advertisements and other revenue-generating content", "Advertising and analytics identifiers, pages viewed, approximate location, device type"],
+        ["Understand how the site is used", "Analytics events, cookies and similar technologies"],
       ],
     },
     note: "Where the law requires a stated legal basis for each purpose, the bases are listed in the GDPR section below, with the CCPA purposes in its own section.",
@@ -103,31 +107,32 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: "no-ads",
-    title: "No advertisements, monetized content, analytics or tracking cookies",
+    title: "Advertising, analytics and cookies",
     paragraphs: [
-      `${N} does not display advertisements. Pages do not include banner ads, sponsored results, affiliate modules, paid placements or other monetized content. The tools are free, and using them does not put you into an advertising audience.`,
-      `${N} does not collect personal information — including formulas, messages, voice text, workspace references or connection logs — for advertising, marketing measurement, sale, or any other monetized purpose. Reference-data requests carry only the figure you asked for, never an advertising identifier.`,
-      `${N} does not use data analytics. There is no analytics product, pixel, tag manager or measurement cookie. We do not build browsing profiles, and we do not use cookies to collect data about how you move around the site.`,
+      `${N} may display advertisements, sponsored placements, affiliate modules, paid placements or other revenue-generating content. Those features help keep the calculators available.`,
+      `${N} may use data analytics and measurement technologies to understand how the site is used, to improve it, and to deliver or measure advertising. Partners that provide advertising, measurement or analytics may receive information such as pages viewed, cookie or similar identifiers, approximate location derived from the request, and device or browser type.`,
+      "Cookies and similar technologies may be used for these purposes. Some are set by us; others may be set by advertising, measurement or analytics partners. You can also use your browser controls to block or delete cookies. Blocking cookies may affect how some features work.",
     ],
-    note: "The only cookie this site sets is a strictly necessary privacy-choice cookie described below. It remembers an opt-out. It is not an analytics cookie, an advertising cookie, or a cookie used to collect information about you.",
+    note: "A strictly necessary privacy-choice cookie may remember an opt-out and a random receipt reference for up to one year. It stores no name, email, IP address or browsing history. Advertising and analytics cookies, where used, are separate from that privacy-choice cookie.",
   },
   {
     id: "storage",
     title: "Cookies, local storage and similar technologies",
     paragraphs: [
-      `${N} does not set analytics cookies, advertising cookies, or any cookie whose purpose is to collect data. The only cookie is an essential privacy-choice cookie that remembers a restrictive opt-out and a random receipt reference for up to one year. It stores no name, email, IP address or browsing history, and it cannot be used to advertise to you.`,
+      `${N} may set or allow cookies and similar technologies for advertising, analytics, measurement and essential site operation. An essential privacy-choice cookie may remember a restrictive opt-out and a random receipt reference for up to one year. It stores no name, email, IP address or browsing history.`,
       "Browser storage holds the random saved-formula workspace reference, remembered voice phrases and blackboard strokes/notes. The last voice command uses session storage. Saved formulas themselves are stored in the server database. Clearing browser storage does not delete server-side formulas; use the controls below before disconnecting your workspace.",
-      "Your browser's speech service may set its own storage or use its own account state. That is governed by your browser and its vendor, not by this site.",
+      "Your browser's speech service may set its own storage or use its own account state. Advertising, measurement or analytics partners may also set their own cookies under their own terms.",
     ],
   },
   {
     id: "recipients",
     title: "Who receives information",
     paragraphs: [
-      "We do not operate advertising relationships and we do not disclose personal information to advertising networks. The following categories of recipient may receive information as needed:",
+      "The following categories of recipient may receive information as needed:",
     ],
     bullets: [
       "The hosting and infrastructure provider that runs this site — IP address and request details in ordinary server logs, needed to deliver the site and protect it.",
+      "Advertising, measurement and analytics partners — cookie or similar identifiers, pages viewed, approximate location derived from the request, and device or browser type, used to show, measure or improve advertisements and to understand site use.",
       "Reference-data providers that supply figures when a tool requests them: Frankfurter (European Central Bank reference rates), CoinGecko (digital-asset prices) and the World Bank (economic indicators). Each request carries only the selected parameters (for example `USD/EUR` or an indicator code) — never your workspace, saved formulas or message.",
       "The browser vendor's speech service, when your browser uses it for voice input — microphone audio, under that vendor's terms and only while voice input is active.",
       "A bot-check provider (Cloudflare Turnstile) if it is enabled for the contact form; when it is not configured, no check and no third-party script is loaded.",
@@ -157,7 +162,7 @@ const SECTIONS: LegalSection[] = [
     id: "sale",
     title: "Selling, sharing and targeted advertising",
     paragraphs: [
-      `${N} does not currently sell personal information or share it for cross-context behavioral advertising. Our Do Not Sell or Share My Personal Information page lets you record a restrictive browser preference, and we honor Global Privacy Control when received. No account or identity verification is required for the browser opt-out.`,
+      `${N} may share personal information with advertising, measurement and analytics partners in ways that some privacy laws treat as a “sale” or “share,” including for cross-context behavioral advertising. Our Do Not Sell or Share My Personal Information page explains those choices. Browser controls may be available on that page. We honor Global Privacy Control when received. You can also contact us about a sale or sharing request. No account is required.`,
     ],
   },
   {
@@ -200,7 +205,7 @@ export default function PrivacyPage() {
       path="/privacy"
       eyebrow="Legal · Privacy"
       title="Privacy Policy"
-      intro={`${N} asks for very little, and it does not run on advertising. This Privacy Policy explains what information is collected when you use the calculators, conversions, reference tools and optional voice input; why it is used; who receives it; and how long it is kept. It also states the commitments not to display advertisements or monetized content, not to collect data for those purposes, and not to use data analytics or tracking cookies. GDPR, CCPA and the additional rights for Brazil, Canada, Australia, Singapore, Japan and India are sections of this same public policy. They are not hidden behind a country check.`}
+      intro={`${N} asks for little to run the calculators, and it may also display advertisements and other revenue-generating content. This Privacy Policy explains what information is collected when you use the calculators, conversions, reference tools and optional voice input; why it is used; who receives it; and how long it is kept. It also describes advertising, analytics and cookies. GDPR, CCPA and the additional rights for Brazil, Canada, Australia, Singapore, Japan and India are sections of this same public policy. They are not hidden behind a country check.`}
       sections={SECTIONS}
       tocExtra={[
         { href: "#gdpr", label: "GDPR — your rights in the EEA and UK" },
@@ -216,7 +221,7 @@ export default function PrivacyPage() {
           <InternationalPrivacy />
           <section id="privacy-choices" className="sketch scroll-mt-24" aria-labelledby="privacy-choices-title">
             <h2 id="privacy-choices-title" className="text-xl font-bold">Your privacy choices</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700">The California opt-out page is available everywhere. A privacy request is not limited by your current location.</p>
+            <p className="mt-3 text-sm leading-relaxed text-slate-700">You can review sale and sharing choices on the Do Not Sell or Share page. Browser controls may be available there. You can also contact us about a sale, sharing or related request.</p>
             <PrivacyChoicesLink className="mt-4 text-sm text-[#194eb0]" />
           </section>
           <DataControls />
