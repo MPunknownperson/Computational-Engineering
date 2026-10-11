@@ -2,7 +2,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { config as loadEnv } from "dotenv";
 import { expect, test } from "@playwright/test";
 import { PRIVACY_REGIONS } from "@/lib/privacy/regions";
-import { trustedPrivacyCountry } from "@/lib/privacy/geo";
+import { browserPreferenceControlsVisible, trustedPrivacyCountry } from "@/lib/privacy/geo";
 import { PRIVACY_CHOICES_PATH } from "@/lib/privacy/constants";
 
 loadEnv({ quiet: true });
@@ -17,6 +17,17 @@ function signedCountry(country: string, secret = process.env.PRIVACY_GEO_SIGNING
   };
 }
 
+function signedArea(country: string, region: string, secret = process.env.PRIVACY_GEO_SIGNING_SECRET, time = Date.now()) {
+  if (!secret) throw new Error("Regional integration tests require the configured server-only signing secret.");
+  const timestamp = String(time);
+  return {
+    "x-privacy-geo-country": country,
+    "x-privacy-geo-region": region,
+    "x-privacy-geo-timestamp": timestamp,
+    "x-privacy-geo-signature": createHmac("sha256", secret).update(`${country}.${region}.${timestamp}`).digest("hex"),
+  };
+}
+
 test("country resolver fails closed and never treats language as location", () => {
   const secret = randomBytes(32).toString("hex");
   const options = { provider: "signed-header", signingSecret: secret };
@@ -26,6 +37,11 @@ test("country resolver fails closed and never treats language as location", () =
   expect(trustedPrivacyCountry(new Headers(signedCountry("BR", secret, now - 360_000)), options, now)).toBeNull();
   expect(trustedPrivacyCountry(new Headers(signedCountry("BR", "wrong-secret-".repeat(4), now)), options, now)).toBeNull();
   expect(trustedPrivacyCountry(new Headers(signedCountry("BR", secret, now)), { provider: "disabled", signingSecret: secret }, now)).toBeNull();
+  expect(browserPreferenceControlsVisible(new Headers(signedCountry("US", secret, now)), options, now)).toBe(false);
+  expect(browserPreferenceControlsVisible(new Headers(signedArea("US", "CA", secret, now)), options, now)).toBe(true);
+  expect(browserPreferenceControlsVisible(new Headers(signedArea("US", "NY", secret, now)), options, now)).toBe(false);
+  expect(browserPreferenceControlsVisible(new Headers(signedCountry("JP", secret, now)), options, now)).toBe(false);
+  expect(browserPreferenceControlsVisible(new Headers(), options, now)).toBe(false);
 });
 
 test("GDPR and CCPA are consolidated on the main policy with the official icon", async ({ page, request }) => {
@@ -94,7 +110,7 @@ test("regional links are per-request and excluded from public discovery", async 
   expect(sitemap).toContain(PRIVACY_CHOICES_PATH);
 });
 
-test("California choices use local official artwork and a conspicuous footer link", async ({ page, request }) => {
+test("choice page artwork, contact route and browser controls", async ({ page, request }) => {
   await page.goto("/");
   const link = page.getByRole("contentinfo").getByRole("link", { name: /Do Not Sell or Share My Personal Information/ });
   await expect(link).toHaveAttribute("href", PRIVACY_CHOICES_PATH);
@@ -104,11 +120,19 @@ test("California choices use local official artwork and a conspicuous footer lin
   expect(await icon.text()).toContain("#0066FF");
   await page.goto(PRIVACY_CHOICES_PATH);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Do Not Sell or Share My Personal Information");
-  await expect(page.getByRole("button", { name: "Opt out of sale and sharing" })).toBeVisible();
-  expect((await request.get(PRIVACY_CHOICES_PATH, { headers: signedCountry("JP") })).status()).toBe(200);
+  const distant = await request.get(PRIVACY_CHOICES_PATH, { headers: signedCountry("JP") });
+  expect(distant.status()).toBe(200);
+  const distantHtml = await distant.text();
+  expect(distantHtml).not.toContain("Your browser preference");
+  expect(distantHtml).not.toContain("California residents only");
+  expect(distantHtml).toContain("contact form");
+  const local = await request.get(PRIVACY_CHOICES_PATH, { headers: signedArea("US", "CA") });
+  expect(local.status()).toBe(200);
+  expect(await local.text()).toContain("Your browser preference");
 });
 
 test("manual opt-out persists without personal information and survives reload", async ({ page }) => {
+  await page.setExtraHTTPHeaders(signedArea("US", "CA"));
   await page.goto(PRIVACY_CHOICES_PATH);
   await page.getByRole("button", { name: "Opt out of sale and sharing" }).click();
   await expect(page.getByRole("button", { name: "Opt-out saved for this browser" })).toBeDisabled();
@@ -123,18 +147,19 @@ test("manual opt-out persists without personal information and survives reload",
 });
 
 test("GPC is honored without confirmation and cannot be reversed by the API", async ({ page }) => {
-  await page.context().setExtraHTTPHeaders({ "Sec-GPC": "1" });
+  await page.context().setExtraHTTPHeaders({ "Sec-GPC": "1", ...signedArea("US", "CA") });
   await page.goto(PRIVACY_CHOICES_PATH);
   await expect(page.getByRole("status")).toContainText("Global Privacy Control is detected and honored");
   await expect(page.getByRole("status")).toContainText("opt-out is active");
   const undo = await page.request.post("/api/privacy/choices", { data: { action: "opt-in" } });
   expect(undo.status()).toBe(400);
-  await page.context().setExtraHTTPHeaders({});
+  await page.context().setExtraHTTPHeaders(signedArea("US", "CA"));
   await page.reload();
   await expect(page.getByRole("status")).toContainText("opt-out is active");
 });
 
 test("browser-only GPC property is respected when no header is exposed", async ({ page }) => {
+  await page.setExtraHTTPHeaders(signedArea("US", "CA"));
   await page.addInitScript(() => Object.defineProperty(navigator, "globalPrivacyControl", { value: true, configurable: true }));
   await page.goto(PRIVACY_CHOICES_PATH);
   await expect(page.getByRole("status")).toContainText("Global Privacy Control is detected and honored");
@@ -147,6 +172,7 @@ test("HTML form records a privacy choice with JavaScript disabled", async ({ bro
   const context = await browser.newContext({ javaScriptEnabled: false, baseURL: "http://127.0.0.1:3000" });
   const page = await context.newPage();
   try {
+    await page.setExtraHTTPHeaders(signedArea("US", "CA"));
     await page.goto(PRIVACY_CHOICES_PATH);
     await page.getByRole("button", { name: "Opt out of sale and sharing" }).click();
     await expect(page).toHaveURL(/do-not-sell-or-share\?saved=1$/);
