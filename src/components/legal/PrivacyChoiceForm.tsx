@@ -60,7 +60,7 @@ export function PrivacyChoiceForm({ initial, initialError = null }: { initial: P
         <p className="mt-1">{activeGpc
           ? "Global Privacy Control is detected and honored. You do not need to confirm it."
           : status.optedOut ? "Your restrictive preference is remembered for this browser."
-          : "Radix Loom still does not sell or share personal information, whether or not you save a choice."}</p>
+          : "Save this choice to opt out of sale and sharing for this browser, including for advertising."}</p>
       </div>
       <form action="/api/privacy/choices" method="post" onSubmit={submit} className="mt-5">
         <input type="hidden" name="action" value="opt-out" />

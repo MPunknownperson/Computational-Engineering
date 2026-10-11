@@ -32,6 +32,8 @@ export function GdprPolicy() {
               ["Answering your contact message", "Art. 6(1)(f) — legitimate interest in responding to you, plus Art. 6(1)(b) for what you ask"],
               ["Security, availability and abuse protection of the site", "Art. 6(1)(f) — legitimate interest; Art. 6(1)(c) where a duty of law applies"],
               ["Optional voice input", "Art. 6(1)(a) — consent, given by pressing the voice button and allowing the microphone"],
+              ["Advertising, measurement and other revenue-generating content", "Art. 6(1)(a) — consent where required; Art. 6(1)(f) — legitimate interests in funding and improving the service where permitted"],
+              ["Analytics about how the site is used", "Art. 6(1)(a) — consent where required; Art. 6(1)(f) — legitimate interests in understanding and improving the service where permitted"],
             ].map(([purpose, basis]) => (
               <tr key={purpose} className="align-top odd:bg-white even:bg-[#fffdf5]">
                 <td className="border-t border-slate-200 px-3 py-2 font-bold text-[color:var(--ink)]">{purpose}</td>

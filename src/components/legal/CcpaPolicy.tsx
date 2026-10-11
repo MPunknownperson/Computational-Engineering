@@ -24,6 +24,7 @@ export function CcpaPolicy() {
           <tbody>{[
             ["Identifiers", "Optional contact name and email; a random saved-formula workspace reference and opt-out receipt; connection IP processed by infrastructure.", "Answer messages, provide requested storage, remember privacy choices and protect the service."],
             ["Electronic content and request activity", "Formulas and messages you choose to submit; ordinary connection/request details handled by hosting systems.", "Operate the requested tools, handle enquiries and maintain security."],
+            ["Internet and advertising activity", "Pages viewed, cookie or similar identifiers, approximate location derived from the request, device and browser type, and ad interaction.", "Deliver, measure and improve advertisements and other revenue-generating content; understand how the site is used."],
             ["Browser-only information", "Blackboard strokes/notes and voice phrase memory remain on your device. Microphone audio is handled by your chosen browser recognition path, not received or stored by our server.", "Optional drawing, notes and speech input. A browser-managed speech service may process audio under its own terms."],
           ].map(([category, examples, purpose]) => <tr key={category} className="border-t border-slate-200"><th scope="row" className="px-3 py-3 align-top font-semibold">{category}</th><td className="px-3 py-3 align-top text-slate-700">{examples}</td><td className="px-3 py-3 align-top text-slate-700">{purpose}</td></tr>)}</tbody>
         </table>
@@ -35,15 +36,15 @@ export function CcpaPolicy() {
       </p>
       <h3 className="mt-5 font-bold">Sale, sharing and your opt-out</h3>
       <p className="mt-3 text-sm leading-relaxed text-slate-700">
-        Radix Loom does not currently sell personal information or share it for cross-context behavioral advertising.
-        We nevertheless provide a direct opt-out control and honor Global Privacy Control (GPC) when received.
-        A saved choice is not required to benefit from the site’s no-sale/no-sharing practice.
+        Radix Loom may share personal information with advertising, measurement and analytics partners in ways that
+        the CCPA treats as a sale or as sharing for cross-context behavioral advertising. You can record a choice on
+        the Do Not Sell or Share page when those browser controls are shown, and we honor Global Privacy Control (GPC)
+        when received. You can also contact us about a sale or sharing request.
       </p>
       <PrivacyChoicesLink className="mt-4 text-sm text-[#194eb0]" />
       <p className="mt-3 text-sm leading-relaxed text-slate-700">
-        The opt-out covers both sale and sharing, is available without an account or identity verification, and does not require
-        scrolling through this policy to find the control. The page is public in every location so travel or an uncertain country signal
-        does not block a California resident. A received GPC signal applies without an extra confirmation step.
+        The choice covers both sale and sharing. No account or identity verification is required to use the contact form
+        or, where shown, the browser controls. A received GPC signal applies without an extra confirmation step.
       </p>
       <h3 className="mt-5 font-bold">Other California rights</h3>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
