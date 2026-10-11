@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { missingPageResponse } from "@/lib/not-found-response";
 import { pageDisposition } from "@/lib/public-routes";
-import { PRIVACY_COOKIE_SECONDS, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
+import { PRIVACY_COOKIE_SECONDS, PRIVACY_GEO_VARY, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
 
 const PRIVATE_API_PREFIX = "/api/workbench/";
 const PAGE_TONES: Array<[string, string]> = [
@@ -45,7 +45,7 @@ export function proxy(request: NextRequest) {
 
   if (pathname === "/privacy" || pathname === "/do-not-sell-or-share") {
     response.headers.set("cache-control", "private, no-store");
-    response.headers.append("vary", "Cookie, Sec-GPC");
+    response.headers.append("vary", `Cookie, Sec-GPC, ${PRIVACY_GEO_VARY}`);
   }
 
   // A non-identifying, restrictive preference. No login, location check or

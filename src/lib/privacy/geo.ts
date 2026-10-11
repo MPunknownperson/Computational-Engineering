@@ -5,9 +5,44 @@ export interface GeoConfiguration {
   signingSecret?: string;
 }
 
+export interface PrivacyArea {
+  country: string;
+  region: string | null;
+}
+
 function normalizeCountry(value: string | null): string | null {
   const country = value?.trim().toUpperCase();
   return country && /^[A-Z]{2}$/.test(country) && !["XX", "ZZ", "EU"].includes(country) ? country : null;
+}
+
+function normalizeRegion(value: string | null): string | null {
+  const region = value?.trim().toUpperCase();
+  return region && /^[A-Z]{2,3}$/.test(region) ? region : null;
+}
+
+function signaturesMatch(expected: Buffer, signature: string): boolean {
+  if (!/^[a-f0-9]{64}$/.test(signature)) return false;
+  const supplied = Buffer.from(signature, "hex");
+  return expected.length === supplied.length && timingSafeEqual(expected, supplied);
+}
+
+function signedPayload(
+  headers: Pick<Headers, "get">,
+  secret: string,
+  now: number,
+): { country: string; region: string | null } | null {
+  const country = normalizeCountry(headers.get("x-privacy-geo-country"));
+  const timestamp = headers.get("x-privacy-geo-timestamp") ?? "";
+  const signature = headers.get("x-privacy-geo-signature") ?? "";
+  const region = normalizeRegion(headers.get("x-privacy-geo-region"));
+  if (!country || !/^\d{13}$/.test(timestamp)) return null;
+  if (Math.abs(now - Number(timestamp)) > 5 * 60_000) return null;
+  if (region) {
+    const withRegion = createHmac("sha256", secret).update(`${country}.${region}.${timestamp}`).digest();
+    if (signaturesMatch(withRegion, signature)) return { country, region };
+  }
+  const countryOnly = createHmac("sha256", secret).update(`${country}.${timestamp}`).digest();
+  return signaturesMatch(countryOnly, signature) ? { country, region: null } : null;
 }
 
 /**
@@ -25,18 +60,37 @@ export function trustedPrivacyCountry(
   },
   now = Date.now(),
 ): string | null {
-  if (config.provider === "cloudflare") return normalizeCountry(headers.get("cf-ipcountry"));
-  if (config.provider === "vercel") return normalizeCountry(headers.get("x-vercel-ip-country"));
-  if (config.provider !== "signed-header" || !config.signingSecret || config.signingSecret.length < 32) return null;
-
-  const country = normalizeCountry(headers.get("x-privacy-geo-country"));
-  const timestamp = headers.get("x-privacy-geo-timestamp") ?? "";
-  const signature = headers.get("x-privacy-geo-signature") ?? "";
-  if (!country || !/^\d{13}$/.test(timestamp) || !/^[a-f0-9]{64}$/.test(signature)) return null;
-  if (Math.abs(now - Number(timestamp)) > 5 * 60_000) return null;
-  const expected = createHmac("sha256", config.signingSecret).update(`${country}.${timestamp}`).digest();
-  const supplied = Buffer.from(signature, "hex");
-  return expected.length === supplied.length && timingSafeEqual(expected, supplied) ? country : null;
+  return trustedPrivacyArea(headers, config, now)?.country ?? null;
 }
 
-export const PRIVACY_GEO_VARY = "cf-ipcountry, x-vercel-ip-country, x-privacy-geo-country, x-privacy-geo-timestamp, x-privacy-geo-signature";
+export function trustedPrivacyArea(
+  headers: Pick<Headers, "get">,
+  config: GeoConfiguration = {
+    provider: process.env.PRIVACY_GEO_PROVIDER,
+    signingSecret: process.env.PRIVACY_GEO_SIGNING_SECRET,
+  },
+  now = Date.now(),
+): PrivacyArea | null {
+  if (config.provider === "cloudflare") {
+    const country = normalizeCountry(headers.get("cf-ipcountry"));
+    return country ? { country, region: normalizeRegion(headers.get("cf-region-code")) } : null;
+  }
+  if (config.provider === "vercel") {
+    const country = normalizeCountry(headers.get("x-vercel-ip-country"));
+    return country ? { country, region: normalizeRegion(headers.get("x-vercel-ip-country-region")) } : null;
+  }
+  if (config.provider !== "signed-header" || !config.signingSecret || config.signingSecret.length < 32) return null;
+  return signedPayload(headers, config.signingSecret, now);
+}
+
+/** Browser preference controls on the choice page. Fail closed when location is unknown. */
+export function browserPreferenceControlsVisible(
+  headers: Pick<Headers, "get">,
+  config?: GeoConfiguration,
+  now?: number,
+): boolean {
+  const area = trustedPrivacyArea(headers, config, now);
+  return area?.country === "US" && area.region === "CA";
+}
+
+export { PRIVACY_GEO_VARY } from "./constants";
