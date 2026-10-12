@@ -1,72 +1,92 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from "framer-motion";
 
-/** A single short translation, without keyed remounts, fades or double effects. */
+const spring = { type: "spring" as const, stiffness: 280, damping: 28, mass: 0.85 };
+
+/** Keep the App Router's RSC surface mounted so linked tools stay hydrated. */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
   const previous = useRef(pathname);
+  const controls = useAnimationControls();
 
   useEffect(() => {
     if (previous.current === pathname) return;
     previous.current = pathname;
-    const node = ref.current;
-    if (!node?.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const animation = node.animate(
-      [{ transform: "translateY(4px)" }, { transform: "none" }],
-      { duration: 160, easing: "cubic-bezier(.2,.7,.3,1)" },
-    );
-    return () => animation.cancel();
-  }, [pathname]);
+    if (reduced) return;
+    controls.set({ opacity: 0.92, y: 9 });
+    void controls.start({ opacity: 1, y: 0, transition: { ...spring, opacity: { duration: 0.2 } } });
+  }, [controls, pathname, reduced]);
 
-  return <div ref={ref} data-route-surface>{children}</div>;
+  return <motion.div data-route-surface initial={false} animate={controls}>{children}</motion.div>;
 }
 
+/** A keyed result panel that can leave before the replacement is displayed. */
 export function PanelSwap({ trigger, children, className = "", stagger = false }: {
   trigger: string | number;
   children: ReactNode;
   className?: string;
   stagger?: boolean;
 }) {
+  const reduced = useReducedMotion();
   return (
-    <div key={trigger} className={`${stagger ? "stagger" : "panel-swap"} ${className}`}>
-      {children}
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={trigger}
+        layout="position"
+        className={className}
+        initial={reduced ? false : { opacity: 0.8, y: stagger ? 12 : 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduced ? { opacity: 1 } : { opacity: 0, y: -8 }}
+        transition={reduced ? { duration: 0 } : spring}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
-/** Always-visible server markup. Animate once; never hide already-painted text. */
+/** Render readable server markup while progressively settling into view. */
 export function Reveal({ children, delay = 0, className = "", once = true }: {
   children: ReactNode;
   delay?: number;
   className?: string;
   once?: boolean;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node?.animate || typeof IntersectionObserver === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let animation: Animation | undefined;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      animation?.cancel();
-      animation = node.animate([{ transform: "translateY(4px)" }, { transform: "none" }], {
-        duration: 180,
-        delay: Math.min(delay, 80),
-        easing: "cubic-bezier(.2,.7,.3,1)",
-      });
-      if (once) observer.disconnect();
-    }, { threshold: 0.05 });
-    observer.observe(node);
-    return () => { observer.disconnect(); animation?.cancel(); };
-  }, [delay, once]);
-  return <div ref={ref} className={className}>{children}</div>;
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduced ? false : { opacity: 0.86, y: 15 }}
+      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once, amount: 0.08 }}
+      transition={reduced ? { duration: 0 } : { ...spring, delay: Math.min(delay, 300) / 1000 }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
-/** Tween only the text node; never re-key/re-animate each digit every frame. */
+/** Subtle lift and pressed state for linked, keyboard-accessible cards. */
+export function MotionCard({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      layout="position"
+      className={className}
+      whileHover={reduced ? undefined : { y: -5, rotate: -0.3 }}
+      whileTap={reduced ? undefined : { scale: 0.985, y: 0 }}
+      transition={spring}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Numeric updates are short and scoped to the text node, not the whole card. */
 export function AnimatedNumber({ value, format, duration = 240, className = "" }: {
   value: number | null;
   format: (n: number) => string;
@@ -98,6 +118,7 @@ export function AnimatedNumber({ value, format, duration = 240, className = "" }
   return <span ref={node} className={`tabular-nums ${className}`} aria-label={value === null ? undefined : format(value)}>{format(value ?? 0)}</span>;
 }
 
+/** Shared-layout indicator follows selection without measuring pixel widths. */
 export function Segmented<T extends string>({ options, value, onChange, size = "md", ariaLabel = "Options" }: {
   options: { value: T; label: string; icon?: ReactNode }[];
   value: T;
@@ -105,25 +126,9 @@ export function Segmented<T extends string>({ options, value, onChange, size = "
   size?: "sm" | "md";
   ariaLabel?: string;
 }) {
-  const wrap = useRef<HTMLDivElement>(null);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
-  const [pill, setPill] = useState({ left: 0, width: 0 });
-  const index = Math.max(0, options.findIndex((option) => option.value === value));
-
-  useLayoutEffect(() => {
-    const node = buttons.current[index];
-    if (!node) return;
-    const measure = () => {
-      const next = { left: node.offsetLeft, width: node.offsetWidth };
-      setPill((previous) => previous.left === next.left && previous.width === next.width ? previous : next);
-    };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    if (wrap.current) observer.observe(wrap.current);
-    return () => observer.disconnect();
-  }, [index, options.length]);
+  const groupId = useId();
+  const reduced = useReducedMotion();
 
   const focus = (next: number) => {
     buttons.current[next]?.focus();
@@ -131,31 +136,41 @@ export function Segmented<T extends string>({ options, value, onChange, size = "
   };
 
   return (
-    <div ref={wrap} className="segmented" role="radiogroup" aria-label={ariaLabel}>
-      <span className="segmented-pill" aria-hidden="true" style={{ transform: `translateX(${pill.left}px)`, width: pill.width, visibility: pill.width ? "visible" : "hidden" }} />
-      {options.map((option, i) => (
-        <button
-          key={option.value}
-          type="button"
-          ref={(element) => { buttons.current[i] = element; }}
-          role="radio"
-          aria-checked={option.value === value}
-          tabIndex={option.value === value ? 0 : -1}
-          className={`segmented-item ${size === "sm" ? "is-sm" : ""} ${option.value === value ? "is-active" : ""}`}
-          onKeyDown={(event) => {
-            if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) {
-              event.preventDefault();
-              if (event.key === "Home") focus(0);
-              else if (event.key === "End") focus(options.length - 1);
-              else focus((i + (event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
-            }
-          }}
-          onClick={() => onChange(option.value)}
-        >
-          <span className="inline-flex items-center gap-1.5">{option.icon}{option.label}</span>
-        </button>
-      ))}
-    </div>
+    <LayoutGroup id={groupId}>
+      <div className="segmented" role="radiogroup" aria-label={ariaLabel}>
+        {options.map((option, i) => (
+          <motion.button
+            key={option.value}
+            type="button"
+            ref={(element) => { buttons.current[i] = element; }}
+            role="radio"
+            aria-checked={option.value === value}
+            tabIndex={option.value === value ? 0 : -1}
+            className={`segmented-item ${size === "sm" ? "is-sm" : ""} ${option.value === value ? "is-active" : ""}`}
+            whileTap={reduced ? undefined : { scale: 0.96 }}
+            onKeyDown={(event) => {
+              if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) {
+                event.preventDefault();
+                if (event.key === "Home") focus(0);
+                else if (event.key === "End") focus(options.length - 1);
+                else focus((i + (event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+              }
+            }}
+            onClick={() => onChange(option.value)}
+          >
+            {option.value === value && (
+              <motion.span
+                layoutId="segmented-active-pill"
+                className="segmented-pill"
+                aria-hidden="true"
+                transition={reduced ? { duration: 0 } : spring}
+              />
+            )}
+            <span className="segmented-label inline-flex items-center gap-1.5">{option.icon}{option.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    </LayoutGroup>
   );
 }
 

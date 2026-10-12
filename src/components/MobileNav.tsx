@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Icon } from "@/components/Icons";
 
 export function MobileNav({ items }: { items: { href: string; label: string }[] }) {
@@ -9,9 +10,8 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
   const pathname = usePathname();
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const reduced = useReducedMotion();
 
-  // Close the menu when the route changes, using a render-phase adjustment
-  // rather than an effect, so no extra render pass is scheduled.
   const [renderedPath, setRenderedPath] = useState(pathname);
   if (renderedPath !== pathname) {
     setRenderedPath(pathname);
@@ -43,28 +43,35 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
         <span className="sr-only">Menu</span>
       </button>
 
-      <nav
-        id={menuId}
-        aria-label="Mobile navigation"
-        className={`absolute left-0 right-0 top-16 origin-top border-b-2 border-[color:var(--line)] bg-[color:var(--nav-bg)] shadow-[0_4px_0_var(--line)] transition-all duration-200 ${
-          open ? "opacity-100 translate-y-0" : "pointer-events-none -translate-y-2 opacity-0"
-        }`}
-        hidden={!open}
-      >
-        <div className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-5">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-xl px-3 py-3 font-semibold transition-colors duration-200 ${
-                pathname === item.href ? "bg-[color:var(--nav-active)] text-[color:var(--ink)]" : "text-slate-700 hover:bg-[color:var(--nav-hover)]"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.nav
+            key="mobile-navigation"
+            id={menuId}
+            aria-label="Mobile navigation"
+            className="absolute left-0 right-0 top-16 origin-top border-b-2 border-[color:var(--line)] bg-[color:var(--nav-bg)] shadow-[0_4px_0_var(--line)]"
+            initial={reduced ? false : { opacity: 0, y: -12, scaleY: 0.95 }}
+            animate={{ opacity: 1, y: 0, scaleY: 1 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10, scaleY: 0.96 }}
+            transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 30 }}
+          >
+            <div className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-5">
+              {items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={`rounded-xl px-3 py-3 font-semibold transition-colors duration-200 ${
+                    pathname === item.href ? "bg-[color:var(--nav-active)] text-[color:var(--ink)]" : "text-slate-700 hover:bg-[color:var(--nav-hover)]"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

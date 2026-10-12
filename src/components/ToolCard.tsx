@@ -22,7 +22,7 @@ export function ToolCard({
   badge,
   meta,
 }: ToolCardProps) {
-  const stickerStroke = tone === "ink" ? "#ffd23f" : "#0b1020";
+  const stickerStroke = tone === "ink" ? "#285679" : "#0b1020";
   return (
     <Link
         href={href}

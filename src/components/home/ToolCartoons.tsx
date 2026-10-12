@@ -25,10 +25,18 @@ function Frame({ tone, label, children }: { tone: ToolTone; label: string; child
 
 function CalculatorScene() {
   return (
-    <Frame tone="ink" label="Cartoon of an owl sketching a sum on a blackboard">
-      <rect x="36" y="36" width="128" height="96" rx="8" fill="#1c2438" stroke="#0b1020" strokeWidth="2.4" />
-      <path className="cartoon-draw" d="M52 78h40M52 96h28M92 70l16 36" stroke="#f4f1ea" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <text x="58" y="64" fill="#ffd23f" fontSize="13" fontWeight="800">12 + 7</text>
+    <Frame tone="ink" label="Cartoon of an owl sketching a sum on a two-color pastel board">
+      <defs>
+        <linearGradient id="calc-card-board" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffdc9c" />
+          <stop offset="53%" stopColor="#ffd49a" />
+          <stop offset="54%" stopColor="#a3ddcf" />
+          <stop offset="100%" stopColor="#8bd2d0" />
+        </linearGradient>
+      </defs>
+      <rect x="36" y="36" width="128" height="96" rx="8" fill="url(#calc-card-board)" stroke="#285679" strokeWidth="2.4" />
+      <path className="cartoon-draw" d="M52 78h40M52 96h28M92 70l16 36" stroke="#285679" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <text x="58" y="64" fill="#285679" fontSize="13" fontWeight="800">12 + 7</text>
       <g className="cartoon-bob">
         <rect x="148" y="48" width="10" height="42" rx="3" fill="#f4f1ea" stroke="#0b1020" strokeWidth="2" transform="rotate(18 153 70)" />
         <path d="M168 42c8 2 10 10 4 14" stroke="#cbd5e1" strokeWidth="2" fill="none" strokeLinecap="round" />
