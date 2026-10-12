@@ -5,9 +5,11 @@ import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
 import { VoiceIllustration } from "@/components/VoiceIllustration";
 import { ToolCartoon, type ToolCartoonId } from "@/components/home/ToolCartoons";
+import { VisualShowcase } from "@/components/home/VisualShowcase";
+import { mediaAssets } from "@/lib/media/assets";
 import type { ToolTone } from "@/components/ToolCard";
 import { Icon, type IconName } from "@/components/Icons";
-import { Reveal } from "@/components/Motion";
+import { MotionCard, Reveal } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
 import { FormulaLibrary } from "@/components/home/Sections";
 import { SITE } from "@/lib/site";
@@ -81,6 +83,11 @@ export default function Home() {
         </div>
       </section>
 
+      <VisualShowcase
+        firstImage={mediaAssets("home")?.png ?? "/media/home.png"}
+        secondImage={mediaAssets("tools--scientific")?.png ?? "/media/tools--scientific.png"}
+      />
+
       <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="voice-heading">
         <div className="sketch overflow-hidden !p-0">
           <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-2">
@@ -134,23 +141,25 @@ export default function Home() {
         </Reveal>
         <div className="mt-9 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {TOOLS.map((t, i) => (
-            <Reveal key={t.href} delay={i * 50}>
-              <Link href={t.href} className="sketch card-hover flex h-full flex-col overflow-hidden !p-0">
-                <div className="border-b-2 border-[color:var(--line)] bg-[color:var(--paper)] p-3">
-                  <ToolCartoon id={t.cartoon} />
-                </div>
-                <span className="flex flex-1 flex-col p-5">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-[1.05rem] font-extrabold tracking-tight">{t.title}</span>
-                    {t.badge && <span className="chip chip-live !py-0.5 !text-[.6rem] uppercase tracking-widest"><span className="live-dot" /> {t.badge}</span>}
+            <Reveal key={t.href} delay={i * 50} className="h-full">
+              <MotionCard className="h-full">
+                <Link href={t.href} className="sketch card-hover flex h-full flex-col overflow-hidden !p-0">
+                  <div className="border-b-2 border-[color:var(--line)] bg-[color:var(--paper)] p-3">
+                    <ToolCartoon id={t.cartoon} />
+                  </div>
+                  <span className="flex flex-1 flex-col p-5">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-[1.05rem] font-extrabold tracking-tight">{t.title}</span>
+                      {t.badge && <span className="chip chip-live !py-0.5 !text-[.6rem] uppercase tracking-widest"><span className="live-dot" /> {t.badge}</span>}
+                    </span>
+                    <span className="mt-2 block text-sm leading-relaxed text-slate-600">{t.blurb}</span>
+                    <span className="mt-4 flex items-center justify-between border-t-2 border-[color:var(--line)] pt-3 text-sm">
+                      <span className="text-xs font-semibold text-slate-500">{t.meta}</span>
+                      <span className="inline-flex items-center gap-1 font-bold">Open <Icon name="arrow-right" size={16} className="card-arrow" /></span>
+                    </span>
                   </span>
-                  <span className="mt-2 block text-sm leading-relaxed text-slate-600">{t.blurb}</span>
-                  <span className="mt-4 flex items-center justify-between border-t-2 border-[color:var(--line)] pt-3 text-sm">
-                    <span className="text-xs font-semibold text-slate-500">{t.meta}</span>
-                    <span className="inline-flex items-center gap-1 font-bold">Open <Icon name="arrow-right" size={16} className="card-arrow" /></span>
-                  </span>
-                </span>
-              </Link>
+                </Link>
+              </MotionCard>
             </Reveal>
           ))}
         </div>

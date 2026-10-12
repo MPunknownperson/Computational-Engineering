@@ -44,7 +44,12 @@ export default function GuidesPage() {
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {GUIDES.filter((guide) => guide.category === category).map((guide, index) => (
               <article key={guide.slug} className="sketch card-hover h-full overflow-hidden !p-0">
-                <GuideHero priority={category === "Conversions" && index === 0} path={`/guides/${guide.slug}`} alt={guide.imageAlt} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" className="border-b-2 border-[color:var(--line)]" />
+                <Link href={`/guides/${guide.slug}`} aria-label={`Read ${guide.title}`} className="block border-b-2 border-[color:var(--line)]">
+                  <figure className={`guide-teaser-figure ${index % 2 ? "imghvr-shutter-out-horiz" : "imghvr-slide-up"}`}>
+                    <GuideHero priority={category === "Conversions" && index === 0} path={`/guides/${guide.slug}`} alt={guide.imageAlt} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" />
+                    <figcaption aria-hidden="true"><span>READ THE GUIDE <span>↗</span></span></figcaption>
+                  </figure>
+                </Link>
                 <div className="p-4">
                 <span className="chip !text-[.66rem]">{guide.formula}</span>
                 <h3 className="mt-3 text-lg font-extrabold leading-snug">
