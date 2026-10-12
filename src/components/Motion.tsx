@@ -1,27 +1,113 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import { AnimatePresence, LayoutGroup, motion, useAnimationControls, useReducedMotion } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 28, mass: 0.85 };
 
-/** Keep the App Router's RSC surface mounted so linked tools stay hydrated. */
+/** Route changes use a brief, reduced-motion-aware GSAP cross-fade. */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const reduced = useReducedMotion();
-  const previous = useRef(pathname);
-  const controls = useAnimationControls();
+  const surface = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+  const pendingNavigation = useRef(false);
+
+  useGSAP(() => {
+    const element = surface.current;
+    if (!element) return;
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (reduced) {
+      gsap.set(element, { clearProps: "opacity,visibility,transform" });
+      return;
+    }
+    gsap.fromTo(
+      element,
+      { autoAlpha: 0.84, y: 10 },
+      { autoAlpha: 1, y: 0, duration: 0.36, ease: "power2.out", clearProps: "opacity,visibility,transform" },
+    );
+  }, { scope: surface, dependencies: [pathname, reduced], revertOnUpdate: true });
 
   useEffect(() => {
-    if (previous.current === pathname) return;
-    previous.current = pathname;
-    if (reduced) return;
-    controls.set({ opacity: 0.92, y: 9 });
-    void controls.start({ opacity: 1, y: 0, transition: { ...spring, opacity: { duration: 0.2 } } });
-  }, [controls, pathname, reduced]);
+    pendingNavigation.current = false;
+  }, [pathname]);
 
-  return <motion.div data-route-surface initial={false} animate={controls}>{children}</motion.div>;
+  useEffect(() => {
+    const captureInteraction = (event: MouseEvent) => {
+      const target = event.target instanceof Element
+        ? event.target
+        : event.target instanceof Node
+          ? event.target.parentElement
+          : null;
+      if (!target) return;
+
+      const control = target.closest<HTMLElement>(
+        'button:not(:disabled), [role="button"], a.btn, .segmented-item, .card-hover',
+      );
+      if (control && !reduced) {
+        gsap.fromTo(
+          control,
+          { scale: 0.975 },
+          { scale: 1, duration: 0.24, ease: "back.out(1.65)", overwrite: "auto", clearProps: "transform" },
+        );
+      }
+
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) return;
+
+      const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target !== "_self")) return;
+
+      let destination: URL;
+      try {
+        destination = new URL(anchor.href, window.location.href);
+      } catch {
+        return;
+      }
+      if (destination.origin !== window.location.origin || destination.pathname === window.location.pathname) return;
+
+      event.preventDefault();
+      if (pendingNavigation.current) return;
+      pendingNavigation.current = true;
+      const nextLocation = `${destination.pathname}${destination.search}${destination.hash}`;
+      const navigate = () => router.push(nextLocation);
+      const element = surface.current;
+      if (reduced || !element) {
+        navigate();
+        return;
+      }
+      gsap.killTweensOf(element);
+      gsap.to(element, {
+        autoAlpha: 0,
+        y: -7,
+        duration: 0.17,
+        ease: "power1.in",
+        overwrite: "auto",
+        onComplete: navigate,
+      });
+    };
+
+    document.addEventListener("click", captureInteraction, true);
+    return () => document.removeEventListener("click", captureInteraction, true);
+  }, [pathname, reduced, router]);
+
+  return <div ref={surface} data-route-surface>{children}</div>;
 }
 
 /** A keyed result panel that can leave before the replacement is displayed. */
@@ -49,7 +135,7 @@ export function PanelSwap({ trigger, children, className = "", stagger = false }
   );
 }
 
-/** Render readable server markup while progressively settling into view. */
+/** Content enters as it reaches the reading viewport, without hiding SSR markup. */
 export function Reveal({ children, delay = 0, className = "", once = true }: {
   children: ReactNode;
   delay?: number;
@@ -57,32 +143,62 @@ export function Reveal({ children, delay = 0, className = "", once = true }: {
   once?: boolean;
 }) {
   const reduced = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduced ? false : { opacity: 0.86, y: 15 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once, amount: 0.08 }}
-      transition={reduced ? { duration: 0 } : { ...spring, delay: Math.min(delay, 300) / 1000 }}
-    >
-      {children}
-    </motion.div>
-  );
+  const element = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const node = element.current;
+    if (!node || reduced) return;
+    gsap.fromTo(
+      node,
+      { autoAlpha: 0, y: 15 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.48,
+        delay: Math.min(Math.max(delay, 0), 350) / 1000,
+        ease: "power2.out",
+        clearProps: "opacity,visibility,transform",
+        scrollTrigger: {
+          trigger: node,
+          start: "top 92%",
+          once,
+          toggleActions: once ? "play none none none" : "play none none reverse",
+        },
+      },
+    );
+  }, { scope: element, dependencies: [delay, once, reduced], revertOnUpdate: true });
+
+  return <div ref={element} className={className}>{children}</div>;
 }
 
-/** Subtle lift and pressed state for linked, keyboard-accessible cards. */
+/** Small pointer and press feedback for linked cards across the site. */
 export function MotionCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   const reduced = useReducedMotion();
+  const card = useRef<HTMLDivElement>(null);
+
+  const settle = () => {
+    const node = card.current;
+    if (!node || reduced) return;
+    gsap.to(node, { y: 0, scale: 1, rotate: 0, duration: 0.2, ease: "power2.out", overwrite: "auto", clearProps: "transform" });
+  };
+
   return (
-    <motion.div
-      layout="position"
+    <div
+      ref={card}
       className={className}
-      whileHover={reduced ? undefined : { y: -5, rotate: -0.3 }}
-      whileTap={reduced ? undefined : { scale: 0.985, y: 0 }}
-      transition={spring}
+      onPointerEnter={(event) => {
+        if (reduced || event.pointerType !== "mouse" || !card.current) return;
+        gsap.to(card.current, { y: -4, rotate: -0.12, duration: 0.22, ease: "power2.out", overwrite: "auto" });
+      }}
+      onPointerLeave={settle}
+      onPointerDown={() => {
+        if (!reduced && card.current) gsap.to(card.current, { scale: 0.985, duration: 0.1, ease: "power1.out", overwrite: "auto" });
+      }}
+      onPointerUp={settle}
+      onPointerCancel={settle}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
