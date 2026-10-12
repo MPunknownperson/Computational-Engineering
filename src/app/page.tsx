@@ -5,8 +5,6 @@ import Link from "next/link";
 import { HeroIllustration } from "@/components/HeroIllustration";
 import { VoiceIllustration } from "@/components/VoiceIllustration";
 import { ToolCartoon, type ToolCartoonId } from "@/components/home/ToolCartoons";
-import { VisualShowcase } from "@/components/home/VisualShowcase";
-import { mediaAssets } from "@/lib/media/assets";
 import type { ToolTone } from "@/components/ToolCard";
 import { Icon, type IconName } from "@/components/Icons";
 import { MotionCard, Reveal } from "@/components/Motion";
@@ -82,11 +80,6 @@ export default function Home() {
           <Reveal delay={120}><HeroIllustration /></Reveal>
         </div>
       </section>
-
-      <VisualShowcase
-        firstImage={mediaAssets("home")?.png ?? "/media/home.png"}
-        secondImage={mediaAssets("tools--scientific")?.png ?? "/media/tools--scientific.png"}
-      />
 
       <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="voice-heading">
         <div className="sketch overflow-hidden !p-0">

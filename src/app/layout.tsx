@@ -1,7 +1,6 @@
 import type { Viewport } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import "imagehover.css/css/imagehover.min.css";
 import "./globals.css";
 import { BrandMark, Wordmark } from "@/components/Brand";
 import { SiteFooter } from "@/components/SiteFooter";
