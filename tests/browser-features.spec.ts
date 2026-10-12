@@ -6,14 +6,11 @@ const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "
 /**
  * WCAG 2.1 AA audit using axe-core (Deque Systems, free and open source).
  *
- * Colour contrast must be measured on elements at rest. The site's scroll-reveal
- * animation transitions `.reveal` from opacity 0 to 1, so an audit that runs
- * while that transition is in flight reads partially transparent text and
- * blends the foreground with the background — turning a 7:1 pair into a
- * spurious 4.2:1 "violation" that differs on every run. Requesting reduced
- * motion makes the stylesheet pin `.reveal` to its final opacity (see the
- * `prefers-reduced-motion` block in globals.css), so measurements are
- * deterministic and reflect the state users actually end up reading.
+  * Colour contrast must be measured on elements at rest. GSAP ScrollTrigger
+  * reveals can be mid-tween when an audit begins, making text partially
+  * transparent and producing contrast measurements that vary between runs.
+  * This suite requests reduced motion so reveals stay in their readable final
+  * state and the axe-core results remain deterministic.
  */
 async function audit(page: Page, path: string) {
   await page.goto(path);

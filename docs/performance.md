@@ -8,16 +8,16 @@ Guide art is generated ahead of time, not rasterised on a visitor request. Regen
 
 The script writes compressed PNG originals, 400/800/1200px lossless WebP variants, content-hashed filenames and `src/lib/media/manifest.json`. It verifies full-size WebP pixel equality against the source PNG and removes obsolete hashes. Resizing the thumbnail variants is intentional; compression of each resulting raster is lossless.
 
-`GuideHero` uses a responsive picture element. Article heroes and the first guide image load eagerly; remaining cards load lazily. Width and height reserve space before decode. The same full-size PNG is exposed to sitemap/metadata; old slug-only image links redirect to the static asset. Only hashed filenames are immutable.
+`GuideHero` uses a responsive picture element. Article heroes and the first guide image load eagerly; remaining cards load lazily. Width and height reserve space before decode. The hashed PNG is canonical for sharing and the generated WebP variants are served from the same-origin media route. Only hashed filenames are immutable.
 
 ## Navigation and motion
 
-The navigation wrapper is not keyed by route, so navigation does not remount the page subtree a second time. A single 160ms transform does not fade text or animate the header. Navigation links prefetch on pointer, focus or touch intent (respecting Save-Data) and show a fixed-size pending indicator. They do not download every tool bundle on the homepage. No global loading boundary hides streamed article HTML from no-JavaScript readers. Browser back/forward remains native.
+The shared route surface stays mounted so client navigation does not remount the page subtree. Internal route links fade the current content out and the destination in with GSAP; the active navigation link animates into place instead of displaying a pending dot. Links prefetch on pointer, focus or touch intent (respecting Save-Data). Browser back and forward remain native, and no global loading boundary hides server-rendered article content.
 
-There are no scroll-driven React renders, animated box shadows, glow/sheens over text, or perpetual illustration drift. Reveals never hide rendered content. Numeric tweens update one text node rather than re-keying individual digits. Reduced-motion preferences skip programmatic movement.
+GSAP ScrollTrigger reveals content as it reaches the reading viewport. Cards and controls use small transform-based hover and press feedback; no layout-affecting animation or animated text overlay is used. Reduced-motion preferences skip programmatic movement and keep the page readable.
 
 ## Quality checks
 
-Unused local variables and parameters fail TypeScript compilation. Duplicate/unreachable source modules and obsolete model/provider code have been removed.
+Unused local variables and parameters fail TypeScript compilation. The route tree keeps one media handler, and the guide image manifest is checked against generated public assets.
 
-Run the browser suites against the production preview with `npx playwright test`. The regression suite checks static image delivery, language routing, stable route wrapper and hover overlays. Accessibility audits use axe-core on the principal pages.
+Run the browser suites against the production preview with `npx playwright test`. Regression checks cover responsive static image delivery, route-wrapper continuity, browser history, interactions, and accessibility audits on principal pages.
