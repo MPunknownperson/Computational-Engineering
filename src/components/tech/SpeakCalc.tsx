@@ -7,8 +7,6 @@ import { Icon } from "@/components/Icons";
 import {
   browserSupportsCloudSpeech,
   createRecognition,
-  installLocalSpeech,
-  localSpeechAvailability,
   releaseStream,
   requestMicrophone,
   speechRecognitionAvailability,
@@ -20,7 +18,7 @@ import {
 import { localModelReady, createLocalModelEngine, type LocalModelEngine, type ModelAssetProgress } from "@/lib/voice/local-model";
 import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type CommandRoute, type WeightedHypothesis } from "@/lib/command-engine";
 import { repairCommandOnDevice } from "@/lib/ai/on-device";
-import { LANGUAGE_PACKS, packOrder, recognitionLocale, t, type PackId, type UiKey } from "@/lib/i18n";
+import { LANGUAGE_PACKS, packOrder, t, type PackId, type UiKey } from "@/lib/i18n";
 import { withSystemVocabulary } from "@/lib/i18n/system-lexicon";
 import { detectPlatformProfile } from "@/lib/platform";
 import {
@@ -53,14 +51,14 @@ const MIC_KEY: Record<MicrophoneStatus, UiKey> = {
   unsupported: "mic.unsupported",
 };
 
-function speechErrorKey(code: string | undefined, mode: "local" | "cloud" | "local-model"): UiKey {
+function speechErrorKey(code: string | undefined): UiKey {
   switch (code) {
     case "no-speech": return "speech.noSpeech";
     case "network": return "speech.network";
     case "audio-capture": return "speech.audio";
     case "not-allowed": return "mic.denied";
-    case "language-not-supported": return "speech.language";
-    case "service-not-allowed": return mode === "local" ? "speech.language" : "speech.service";
+    case "language-not-supported": return "speech.generic";
+    case "service-not-allowed": return "speech.service";
     default: return "speech.generic";
   }
 }
@@ -109,9 +107,11 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   useEffect(() => {
     let active = true;
     (async () => {
-      const lang = recognitionLocale(pack, typeof navigator !== "undefined" ? navigator.languages : []);
-      langRef.current = lang;
-      runtimeRef.current = new VoiceRuntime([withSystemVocabulary(pack, lang), ...packOrder(pack).filter((candidate) => candidate.id !== pack.id)]);
+      const browserLang = typeof navigator !== "undefined"
+        ? (navigator.languages?.[0] || navigator.language || "en")
+        : "en";
+      langRef.current = browserLang;
+      runtimeRef.current = new VoiceRuntime([withSystemVocabulary(pack, browserLang), ...packOrder(pack).filter((candidate) => candidate.id !== pack.id)]);
       const speechApi = speechRecognitionAvailability() !== "unavailable";
       const profile = detectPlatformProfile();
       const geo = await fetch("/api/voice/policy", { cache: "no-store" })
@@ -120,16 +120,18 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       const region = geo?.country ?? regionFromLocale(navigator.language);
       const rule = regionRule(region, geo?.overrides ?? {});
 
-      // Probe the selected language for each permitted path. Model presence
-      // alone is not proof of audio support, especially outside English.
+      // Native SpeechRecognition is used whenever the constructor exists. Do
+      // not probe a website-selected language — that is what produced
+      // "not available for this language on this device". Generative English
+      // audio is only prepared when there is no native engine.
       const [local, browserCloud, modelReady] = await Promise.all([
         speechApi && rule !== "none" && rule !== "cloud-only" && supportsOnDeviceSpeech()
-          ? localSpeechAvailability(lang)
+          ? Promise.resolve("unknown" as const)
           : Promise.resolve("unavailable" as const),
         speechApi && (rule === "any" || rule === "cloud-only")
-          ? browserSupportsCloudSpeech(lang)
+          ? browserSupportsCloudSpeech()
           : Promise.resolve(false),
-        rule !== "none" && rule !== "cloud-only" ? localModelReady(lang) : Promise.resolve(false),
+        !speechApi && rule !== "none" && rule !== "cloud-only" ? localModelReady("en") : Promise.resolve(false),
       ]);
 
       const next = decideVoiceProcessing({
@@ -142,7 +144,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         region,
         overrides: geo?.overrides ?? {},
         canRunLocalModel: modelReady,
-        language: lang,
+        language: "en",
       });
       if (!active) return;
       const previous = loadVoiceSession();
@@ -255,8 +257,9 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
 
   const listen = useCallback(
     (mode: "local" | "cloud") => {
-      const launch = (locale: string) => {
-        const recognition = createRecognition(locale, { preferOnDevice: mode === "local" });
+      let retried = false;
+      const launch = (preferOnDevice: boolean) => {
+        const recognition = createRecognition(undefined, { preferOnDevice });
         if (!recognition) {
           fail("speech.generic");
           return;
@@ -273,7 +276,12 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         };
         recognition.onerror = (event) => {
           if (recognitionRef.current !== recognition || event.error === "aborted") return;
-          fail(speechErrorKey(event.error, mode));
+          if (!retried && (event.error === "language-not-supported" || event.error === "service-not-allowed") && preferOnDevice) {
+            retried = true;
+            launch(false);
+            return;
+          }
+          fail(speechErrorKey(event.error));
         };
         recognition.onend = () => {
           if (recognitionRef.current !== recognition) return;
@@ -290,7 +298,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           fail("speech.busy");
         }
       };
-      launch(langRef.current);
+      launch(mode === "local");
     },
     [fail, handleTranscript, setPhaseBoth],
   );
@@ -310,7 +318,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         // Prepare the browser-managed model before opening the microphone.
         if (!modelRef.current) {
           modelRef.current = createLocalModelEngine({
-            language: langRef.current,
+            language: "en",
             onStatus: (status) => {
               if (status === "recording") setPhaseBoth("listening");
               else if (status === "loading" || status === "decoding") setPhaseBoth("preparing");
@@ -332,17 +340,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         fail(message.startsWith("microphone:") ? (MIC_KEY[reason] ?? "mic.unsupported") : message === "no-speech" ? "speech.noSpeech" : "unavailable.noModel");
       }
       return;
-    }
-
-    if (decision.mode === "local" && decision.prepareLocal) {
-      setPhaseBoth("preparing");
-      const installed = await installLocalSpeech(langRef.current);
-      if (phaseRef.current !== "preparing") return; // cancelled
-      if (!installed) {
-        fail("speech.language");
-        return;
-      }
-      setDecision({ ...decision, prepareLocal: false });
     }
 
     setPhaseBoth("requesting");
