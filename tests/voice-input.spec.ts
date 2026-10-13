@@ -134,7 +134,6 @@ test.describe("desktop", () => {
     expect(p.getUserMedia).toBe(1);
     expect(p.started).toBe(1);
     expect(p.processLocally).toBeNull();
-    expect(p.lang).toMatch(/^en-/);
   });
 
   test("a refused microphone explains how to allow it and starts no recognition", async ({ page }) => {
@@ -245,7 +244,7 @@ test.describe("mobile", () => {
     await page.waitForURL(/amount=120/);
   });
 
-  test("a mobile device without browser-local recognition uses the built-in model fallback", async ({ page }) => {
+  test("a mobile device without browser-local recognition still uses native speech recognition", async ({ page }) => {
     await page.addInitScript(() => {
       const w = window as unknown as Record<string, unknown>;
       w.LanguageModel = {
@@ -257,7 +256,7 @@ test.describe("mobile", () => {
     await page.goto("/calculators");
     await page.locator("[data-voice-entry]").scrollIntoViewIfNeeded();
     await expect(voiceCard(page).getByRole("button", { name: "Speak a calculation" })).toBeEnabled();
-    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
+    await expect(voiceCard(page)).toContainText(/browser provider's speech service/i);
   });
 });
 

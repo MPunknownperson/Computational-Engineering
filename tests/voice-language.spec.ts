@@ -109,9 +109,11 @@ test.describe("automatic processing assignment", () => {
 
   test("browsers without cloud speech use local; devices can use permitted browser speech when local support is absent", () => {
     expect(decideVoiceProcessing({ ...base, browserCloud: false })).toMatchObject({ mode: "local" });
-    expect(decideVoiceProcessing({ ...base, browserCloud: false, local: "unavailable" })).toMatchObject({ available: false, reason: "no-cloud" });
+    expect(decideVoiceProcessing({ ...base, browserCloud: false, local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, speechApi: false })).toMatchObject({ available: false, reason: "no-api" });
+    expect(decideVoiceProcessing({ ...base, canRunLocalModel: true, language: "en-US" })).toMatchObject({ available: true, mode: "cloud" });
+    expect(decideVoiceProcessing({ ...base, speechApi: false, canRunLocalModel: true, language: "en-US" })).toMatchObject({ mode: "local-model" });
   });
 
   test("regional rules restrict or disable processing", () => {
