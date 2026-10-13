@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { imageId, imagePath, SEARCH_PAGES } from "@/lib/search-pages";
+import { renderPageImage } from "@/lib/media/artwork";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +34,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ima
   const direct = await mediaFile(image);
   if (direct) return direct;
 
-  const page = SEARCH_PAGES.find((candidate) => `${imageId(candidate)}.png` === image);
+  const id = image
+    .replace(/\.(png|webp)$/i, "")
+    .replace(/\.[a-f0-9]{12}(?:\.\d+)?$/i, "");
+  const page =
+    SEARCH_PAGES.find((candidate) => imageId(candidate) === id) ??
+    SEARCH_PAGES.find((candidate) => `${imageId(candidate)}.png` === image);
   if (page) {
     const hashed = imagePath(page).replace(/^\/media\//, "");
     const served = await mediaFile(hashed);
     if (served) return served;
+    return renderPageImage(page);
   }
 
   return new Response("Image not found", { status: 404 });
