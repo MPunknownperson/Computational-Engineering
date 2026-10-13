@@ -165,7 +165,10 @@ export function createRecognition(
   const ctor = recognitionCtor();
   if (!ctor) return null;
   const recognition = new ctor();
-  recognition.lang = lang || navigator.language || "en-US";
+  // Do not pin recognition to the website UI language. When a locale is not
+  // supplied, the browser speech service uses its own default and detects the
+  // spoken language.
+  if (lang) recognition.lang = lang;
   recognition.interimResults = true;
   recognition.continuous = false;
   // Several hypotheses let the command engine pick the one that parses and

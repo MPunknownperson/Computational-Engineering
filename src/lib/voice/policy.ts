@@ -2,10 +2,11 @@ import { supportsGenerativeSpeechLanguage } from "./languages";
 import type { BrowserFamily, DeviceKind, OperatingSystem } from "@/lib/platform";
 
 /**
- * Region policy is always enforced first. Browser language packs and permitted
- * browser speech services handle multilingual input. Generative AUDIO is an
- * English-only fallback, and only when its exact capabilities were probed.
- * Mobile prefers on-device; desktop keeps its browser service when allowed.
+ * Region policy is always enforced first. Native SpeechRecognition is used
+ * whenever the browser exposes it; the user agent chooses and detects the
+ * spoken language. Generative AUDIO is an English-only fallback, and only
+ * when there is no native speech engine. It is never required for English
+ * when the browser already supports speech recognition.
  */
 
 export type RegionRule = "any" | "local-only" | "cloud-only" | "none";
@@ -108,7 +109,7 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const canModel = !!input.canRunLocalModel && supportsGenerativeSpeechLanguage(input.language ?? "en-US");
   if (rule === "none") return { available: false, reason: "region", region, rule };
 
-  // No browser engine: use a probed English audio model only if policy permits.
+  // No native speech engine: English generative audio only, and only if probed.
   if (!input.speechApi) {
     if (rule === "cloud-only") return { available: false, reason: "no-cloud", region, rule };
     if (canModel) {
@@ -128,26 +129,18 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   });
   const cloud = (): VoiceDecision => ({ available: true, mode: "cloud", prepareLocal: false, region, rule });
 
-  const model = (): VoiceDecision =>
-    canModel
-      ? { available: true, mode: "local-model", prepareLocal: true, region, rule }
-      : { available: false, reason: "no-cloud", region, rule };
-
   if (rule === "local-only") {
     if (canLocal) return local();
-    return canModel
-      ? { available: true, mode: "local-model", prepareLocal: true, region, rule }
-      : { available: false, reason: "no-local", region, rule };
+    return { available: false, reason: "no-local", region, rule };
   }
   if (rule === "cloud-only") return canCloud ? cloud() : { available: false, reason: "no-cloud", region, rule };
 
   if (isMobile(input.os, input.device)) {
     if (canLocal) return local();
-    if (canModel) return { available: true, mode: "local-model", prepareLocal: true, region, rule };
     if (canCloud) return cloud();
-    return { available: false, reason: "no-local", region, rule };
+    return cloud();
   }
   if (canCloud) return cloud();
   if (canLocal) return local();
-  return model();
+  return cloud();
 }
