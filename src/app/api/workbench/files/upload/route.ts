@@ -28,7 +28,7 @@ async function uniqueDestination(dir: string, name: string, overwrite: boolean) 
   const ext = path.extname(name);
   const stem = path.basename(name, ext);
   for (let index = 1; index < 500; index += 1) {
-    const exists = await fs.stat(candidate).catch(() => null);
+    const exists = await fs.stat(/* turbopackIgnore: true */ candidate).catch(() => null);
     if (!exists) return candidate;
     candidate = path.join(dir, `${stem}-${index}${ext}`);
   }
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         Readable.fromWeb(file.stream() as unknown as WebReadableStream),
         createWriteStream(destination),
       );
-      const stats = await fs.stat(destination);
+      const stats = await fs.stat(/* turbopackIgnore: true */ destination);
       totalBytes += stats.size;
       const archive = kindFromName(safeName)
         ? await describeArchive(destination, {

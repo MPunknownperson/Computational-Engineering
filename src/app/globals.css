@@ -334,7 +334,7 @@ html[data-theme="dark"] .theme-thumb { transform: translateX(34px); background: 
 .guide-teaser-figure picture { display: block; width: 100%; height: 100%; }
 .guide-teaser-figure picture img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .38s cubic-bezier(.2,.7,.3,1), filter .32s ease; }
 a:hover .guide-teaser-figure img, a:focus-visible .guide-teaser-figure img { transform: scale(1.035); filter: saturate(1.14) contrast(1.035) brightness(1.055); }
-.guide-teaser-action { color: #6c874a; transition: color .18s, transform .18s; }
+.guide-teaser-action { color: #4f6e31; transition: color .18s, transform .18s; }
 a:hover .guide-teaser-action, a:focus-visible .guide-teaser-action { color: #3f6729; transform: translateX(3px); }
 html[data-theme="dark"] .guide-teaser-action { color: #c4e99b; }
 html[data-theme="dark"] a:hover .guide-teaser-action, html[data-theme="dark"] a:focus-visible .guide-teaser-action { color: #daf9b7; }
