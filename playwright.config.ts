@@ -8,6 +8,10 @@ export default defineConfig({
   expect: { timeout: 12_000 },
   outputDir: "/tmp/radix-loom-browser-results",
   reporter: "list",
+  projects: [
+    { name: "chromium", use: { browserName: "chromium" } },
+    { name: "webkit", testMatch: /voice-lifecycle\.spec\.ts/, use: { browserName: "webkit" } },
+  ],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
     headless: true,

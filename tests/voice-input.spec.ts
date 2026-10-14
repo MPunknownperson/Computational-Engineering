@@ -47,6 +47,8 @@ async function installMock(target: Page | BrowserContext, options: MockOptions) 
       continuous = false;
       interimResults = true;
       maxAlternatives = 1;
+      onstart: (() => void) | null = null;
+      onaudiostart: (() => void) | null = null;
       onresult: ((event: unknown) => void) | null = null;
       onerror: ((event: { error: string }) => void) | null = null;
       onend: (() => void) | null = null;
@@ -65,6 +67,9 @@ async function installMock(target: Page | BrowserContext, options: MockOptions) 
         probe.processLocally = (this as { __local?: boolean }).__local ?? null;
         const list = (window as unknown as { __voiceTranscripts: string[] }).__voiceTranscripts;
         queueMicrotask(() => {
+          if (opts.microphone === "denied") { this.onerror?.({ error: "not-allowed" }); return; }
+          this.onstart?.();
+          this.onaudiostart?.();
           const alternatives: Record<number, { transcript: string; confidence: number }> = {};
           list.forEach((transcript, i) => { alternatives[i] = { transcript, confidence: 0.9 - i * 0.1 }; });
           const result = { length: list.length, isFinal: true, ...alternatives };
@@ -125,25 +130,26 @@ test.describe("desktop", () => {
     expect(state.processLocally).toBeNull();
   });
 
-  test("desktop never requests on-device processing and asks for the microphone first", async ({ page }) => {
+  test("desktop uses the native speech service without a competing microphone stream", async ({ page }) => {
     await installMock(page, { localOption: true, transcripts: ["what a lovely day"] });
     await page.goto("/calculators");
     await speakButton(page).click();
     await expect(voiceCard(page)).toContainText(/didn't match a calculator/i);
     const p = await probe(page);
-    expect(p.getUserMedia).toBe(1);
+    expect(p.getUserMedia).toBe(0);
     expect(p.started).toBe(1);
     expect(p.processLocally).toBeNull();
   });
 
-  test("a refused microphone explains how to allow it and starts no recognition", async ({ page }) => {
+  test("a refused native microphone request explains how to allow it and disables recording", async ({ page }) => {
     await installMock(page, { microphone: "denied" });
     await page.goto("/calculators");
     await speakButton(page).click();
     await expect(voiceCard(page)).toContainText(/address bar/i);
     const p = await probe(page);
-    expect(p.getUserMedia).toBe(1);
-    expect(p.constructed).toBe(0);
+    expect(p.getUserMedia).toBe(0);
+    expect(p.constructed).toBe(1);
+    await expect(voiceCard(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
   });
 
   test("learns a recogniser mis-hearing from a later hypothesis", async ({ page }) => {
@@ -235,11 +241,11 @@ test.describe("mobile", () => {
     await page.waitForURL(/\/tools\/units\?category=length&from=mi&to=km&value=5/);
   });
 
-  test("a downloadable language model is installed automatically before listening", async ({ page }) => {
+  test("a missing local language pack uses the disclosed browser service when policy allows", async ({ page }) => {
     await installMock(page, { localOption: true, localStatus: "downloadable" });
     await page.goto("/calculators");
     await page.locator("[data-voice-entry]").scrollIntoViewIfNeeded();
-    await expect(voiceCard(page)).toContainText(/recognised on this device/i);
+    await expect(voiceCard(page)).toContainText(/browser provider's speech service/i);
     await speakButton(page).click();
     await page.waitForURL(/amount=120/);
   });
