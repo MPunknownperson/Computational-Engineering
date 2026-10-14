@@ -6,32 +6,32 @@ import { supportsGenerativeSpeechLanguage } from "./languages";
 
 export type ModelEngineStatus = "loading" | "requesting" | "recording" | "decoding" | "error";
 export interface ModelAssetProgress { percent: number | null }
-export interface LocalModelEngine {
-  start(): Promise<void>;
-  stop(): void;
-  cancel(): void;
-  dispose(): void;
-}
+export interface LocalModelEngine { start(): Promise<void>; stop(): void; cancel(): void; dispose(): void }
 
 export function canRunLocalModel(language = "en-US"): boolean {
   return supportsGenerativeSpeechLanguage(language)
-    && typeof window !== "undefined"
+    && typeof window !== "undefined" && window.isSecureContext
     && typeof MediaRecorder !== "undefined"
-    && !!navigator.mediaDevices?.getUserMedia
-    && hasOnDeviceAi();
+    && !!navigator.mediaDevices?.getUserMedia && hasOnDeviceAi();
 }
-
-/** Probe the requested AUDIO language, not just whether a model global exists. */
 export async function localModelReady(language = "en-US"): Promise<boolean> {
   return canRunLocalModel(language) && await aiAvailability("audio", language) !== "unavailable";
 }
-
 function mimeType(): string | undefined {
   return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]
     .find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-/** English-only generative recognition; other languages use browser speech. */
+/** Bound even browser APIs that ignore AbortSignal; late sessions self-dispose. */
+function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(new DOMException("Cancelled", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) abort();
+    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort));
+  });
+}
+
 export function createLocalModelEngine(options: {
   language: string;
   onStatus?: (status: ModelEngineStatus) => void;
@@ -47,12 +47,10 @@ export function createLocalModelEngine(options: {
   let transcriber: AudioTranscriber | null = null;
   let recordingTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const stop = () => {
-    if (recorder?.state === "recording") recorder.stop();
-  };
+  const stop = () => { if (recorder?.state === "recording") recorder.stop(); };
   const releaseAudio = () => {
     clearTimeout(recordingTimer);
-    stop();
+    try { stop(); } catch { /* capture already ended */ }
     recorder = null;
     releaseStream(stream);
     stream = null;
@@ -69,21 +67,24 @@ export function createLocalModelEngine(options: {
       if (running || disposed) return;
       running = true;
       controller = new AbortController();
-      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(90_000)]);
+      const signal = controller.signal;
+      let timedOut = false;
+      const deadline = setTimeout(() => { timedOut = true; controller?.abort(); }, 90_000);
       try {
         options.onStatus?.("loading");
-        transcriber = await prepareAudioTranscriber({
-          language: options.language,
-          signal,
-          onProgress: (percent) => options.onProgress?.({ percent }),
-        });
+        transcriber = await abortable(prepareAudioTranscriber({
+          language: options.language, signal,
+          onProgress: (percent) => { if (!signal.aborted) options.onProgress?.({ percent }); },
+        }), signal);
         if (signal.aborted) return;
         if (!transcriber) throw new Error("no-local-model");
-
-        // No microphone remains open while the browser prepares/downloads.
         options.onStatus?.("requesting");
-        const access = await requestMicrophone();
-        if (signal.aborted) { releaseStream(access.stream); return; }
+        const access = await requestMicrophone(signal);
+        if (signal.aborted) {
+          releaseStream(access.stream);
+          if (timedOut) throw new Error("speech-timeout");
+          return;
+        }
         if (access.status !== "granted") throw new Error(`microphone:${access.status}`);
         stream = access.stream;
         const type = mimeType();
@@ -91,32 +92,41 @@ export function createLocalModelEngine(options: {
         recorder = capture;
         const audio = await new Promise<Blob>((resolve, reject) => {
           const chunks: Blob[] = [];
-          const abort = () => { stop(); reject(new DOMException("Cancelled", "AbortError")); };
+          const abort = () => {
+            try { stop(); } catch { /* already stopped */ }
+            reject(new DOMException("Cancelled", "AbortError"));
+          };
           signal.addEventListener("abort", abort, { once: true });
           capture.addEventListener("dataavailable", (event) => { if (event.data.size) chunks.push(event.data); });
-          capture.addEventListener("error", () => reject(new Error("audio-capture")), { once: true });
+          capture.addEventListener("error", () => {
+            signal.removeEventListener("abort", abort);
+            reject(new Error("audio-capture"));
+          }, { once: true });
           capture.addEventListener("stop", () => {
             signal.removeEventListener("abort", abort);
             resolve(new Blob(chunks, { type: capture.mimeType || type || "audio/webm" }));
           }, { once: true });
-          capture.start();
-          options.onStatus?.("recording");
-          recordingTimer = setTimeout(stop, 12_000);
+          capture.addEventListener("start", () => {
+            if (signal.aborted) { abort(); return; }
+            options.onStatus?.("recording");
+            recordingTimer = setTimeout(stop, 12_000);
+          }, { once: true });
+          if (signal.aborted) { abort(); return; }
+          capture.start(); // UI waits for the real MediaRecorder start event.
         });
         releaseAudio();
         if (signal.aborted) return;
         if (audio.size < 1200) throw new Error("no-speech");
         options.onStatus?.("decoding");
-        const text = await transcriber.transcribe(audio, signal);
+        const text = await abortable(transcriber.transcribe(audio, signal), signal);
         if (signal.aborted) return;
         if (!text) throw new Error("no-speech");
         options.onText(text);
       } catch (error) {
-        if (!controller?.signal.aborted && !disposed) {
-          options.onStatus?.("error");
-          throw error;
-        }
+        if (timedOut && !disposed) { options.onStatus?.("error"); throw new Error("speech-timeout"); }
+        if (!signal.aborted && !disposed) { options.onStatus?.("error"); throw error; }
       } finally {
+        clearTimeout(deadline);
         releaseAudio();
         transcriber?.dispose();
         transcriber = null;
@@ -124,8 +134,7 @@ export function createLocalModelEngine(options: {
         running = false;
       }
     },
-    stop,
-    cancel,
+    stop, cancel,
     dispose() { disposed = true; cancel(); },
   };
 }

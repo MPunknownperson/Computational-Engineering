@@ -2,6 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { missingPageResponse } from "@/lib/not-found-response";
 import { pageDisposition } from "@/lib/public-routes";
+import { privacyRegion } from "@/lib/privacy/regions";
+import { trustedPrivacyCountry } from "@/lib/privacy/geo";
 import { PRIVACY_COOKIE_SECONDS, PRIVACY_GEO_VARY, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
 
 const PRIVATE_API_PREFIX = "/api/workbench/";
@@ -31,10 +33,25 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // These intentional private pages are not part of the public SEO catalog.
+  // Gate document, HEAD and RSC requests before any content can be streamed.
+  const regionalMatch = pathname.match(/^\/privacy\/regions\/([^/]+)\/?$/);
+  const regional = regionalMatch ? privacyRegion(regionalMatch[1]) : undefined;
+  if (regionalMatch && !regional) return missingPageResponse();
+  if (regional && trustedPrivacyCountry(request.headers) !== regional.country) {
+    return new NextResponse("This privacy supplement is unavailable for this location. Visit /privacy or /contact for assistance.", {
+      status: 403,
+      headers: {
+        "content-type": "text/plain; charset=utf-8", "cache-control": "private, no-store",
+        "x-robots-tag": "noindex, nofollow, noarchive", "vary": PRIVACY_GEO_VARY,
+      },
+    });
+  }
+
   // Unknown pages must be HTTP 404 before the App Router streams a 200
   // not-found shell. A non-flight 404 also forces the client router into a
   // real document navigation instead of a soft "page not found" on status 200.
-  if (pageDisposition(pathname) === "missing") return missingPageResponse();
+  if (!regional && pageDisposition(pathname) === "missing") return missingPageResponse();
 
   // Supply this to the server layout as a REQUEST header, overriding spoofed input.
   const requestHeaders = new Headers(request.headers);
@@ -43,8 +60,9 @@ export function proxy(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("x-page-tone", tone);
 
-  if (pathname === "/privacy" || pathname === "/do-not-sell-or-share") {
+  if (regional || pathname === "/privacy" || pathname === "/do-not-sell-or-share") {
     response.headers.set("cache-control", "private, no-store");
+    if (regional) response.headers.set("x-robots-tag", "noindex, nofollow, noarchive");
     response.headers.append("vary", `Cookie, Sec-GPC, ${PRIVACY_GEO_VARY}`);
   }
 

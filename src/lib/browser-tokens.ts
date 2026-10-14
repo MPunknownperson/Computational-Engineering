@@ -7,7 +7,7 @@
  *   The newer `processLocally` option (Chrome 139+, Edge) can use a language
  *   model on the device. This module requests that local path when the browser
  *   genuinely implements it and never silently falls back to cloud processing.
- *   Cloud recognition is a separate, explicit user choice in the UI.
+ *   A switch to the browser service is disclosed and requires a fresh tap.
  *
  * Vibration:
  *   The Vibration API provides haptic feedback on Android, and on some
@@ -57,7 +57,7 @@ function recognitionCtor(): SpeechConstructor | null {
   const ctor =
     (window as unknown as Record<string, unknown>)["SpeechRecognition"] ??
     (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"];
-  return ctor ? (ctor as SpeechConstructor) : null;
+  return typeof ctor === "function" ? (ctor as SpeechConstructor) : null;
 }
 
 /**
@@ -92,7 +92,7 @@ export async function localSpeechAvailability(lang = "en-US"): Promise<LocalSpee
   // Chromium builds without the on-device speech component (headless shells,
   // some stripped builds) crash the renderer on available({processLocally:true}).
   // Headless builds never ship it, so report it unavailable without probing.
-  if (typeof navigator !== "undefined" && /HeadlessChrome/.test(navigator.userAgent) && /\[native code\]/.test(Function.prototype.toString.call(ctor))) return "unavailable";
+  if (typeof navigator !== "undefined" && (navigator.webdriver || /HeadlessChrome/.test(navigator.userAgent)) && /\[native code\]/.test(Function.prototype.toString.call(ctor))) return "unavailable";
   if (!ctor.available) return "unknown";
   try {
     return await ctor.available({ langs: [lang], processLocally: true, quality: "command" });
@@ -136,13 +136,21 @@ export async function browserSupportsCloudSpeech(_lang = "en-US"): Promise<boole
   return true;
 }
 
+export type RecognitionResult = ArrayLike<{ transcript: string; confidence: number }> & { isFinal?: boolean };
+
 export type RecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   maxAlternatives?: number;
   processLocally?: boolean;
-  onresult: ((event: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string; confidence: number }>> }) => void) | null;
+  onstart: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onspeechstart: (() => void) | null;
+  onspeechend: (() => void) | null;
+  onaudioend: (() => void) | null;
+  onnomatch: (() => void) | null;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<RecognitionResult> }) => void) | null;
   onerror: ((event: { error?: string }) => void) | null;
   onend: (() => void) | null;
   start(): void;
@@ -155,8 +163,8 @@ export type RecognitionInstance = {
  *
  * `preferOnDevice` opts in to on-device transcription, and is only honoured
  * when the browser implements the option (see `supportsOnDeviceSpeech`).
- * Callers should retry without it if the service reports
- * `service-not-allowed` or `language-not-supported`.
+ * A local failure must not silently fall back to the default/cloud service.
+ * Only a fresh user gesture and a policy-permitted, disclosed choice can retry.
  */
 export function createRecognition(
   lang?: string,
@@ -165,21 +173,18 @@ export function createRecognition(
   const ctor = recognitionCtor();
   if (!ctor) return null;
   const recognition = new ctor();
-  // Do not pin recognition to the website UI language. When a locale is not
-  // supplied, the browser speech service uses its own default and detects the
-  // spoken language.
+  // Use the operating-system locale rather than pinning recognition to the
+  // English HTML document. Native speech does not universally auto-detect language.
   if (lang) recognition.lang = lang;
   recognition.interimResults = true;
   recognition.continuous = false;
   // Several hypotheses let the command engine pick the one that parses and
   // learn the recogniser's habitual mishearings.
   recognition.maxAlternatives = 4;
-  if (options?.preferOnDevice && supportsOnDeviceSpeech()) {
-    try {
-      recognition.processLocally = true;
-    } catch {
-      /* Read-only or blocked by the browser: fall back to the default path. */
-    }
+  if (options?.preferOnDevice) {
+    if (!supportsOnDeviceSpeech()) throw new DOMException("On-device speech is unavailable", "NotSupportedError");
+    recognition.processLocally = true;
+    if (recognition.processLocally !== true) throw new DOMException("Local speech could not be enabled", "NotSupportedError");
   }
   return recognition;
 }
@@ -200,25 +205,32 @@ export type MicrophoneAccess =
   | { status: MicrophoneStatus; stream: null };
 
 /**
- * Ask the browser for the microphone explicitly and hand back the live stream.
- *
- * `SpeechRecognition.start()` *should* trigger the permission prompt on its
- * own, but it does so only if the recognition service starts successfully.
- * When the service fails first — a missing on-device model, a disabled
- * service, an insecure context — the API reports `not-allowed` and the user is
- * never prompted at all. Requesting via `getUserMedia` guarantees the prompt
- * appears, and surfaces the real reason when it cannot.
- *
- * The caller owns the stream and must stop its tracks when listening ends.
+ * Capture for MediaRecorder/local audio models only. Native SpeechRecognition
+ * requests and owns its own microphone. The signal releases late-granted
+ * streams even if the visitor cancels while a permission prompt is open.
  */
-export async function requestMicrophone(): Promise<MicrophoneAccess> {
+export async function requestMicrophone(signal?: AbortSignal): Promise<MicrophoneAccess> {
   if (typeof window === "undefined") return { status: "unsupported", stream: null };
   const media = navigator.mediaDevices;
   if (!media || typeof media.getUserMedia !== "function") {
     return { status: window.isSecureContext ? "unsupported" : "insecure", stream: null };
   }
+  if (signal?.aborted) return { status: "in-use", stream: null };
+  let onAbort: (() => void) | undefined;
   try {
-    const stream = await media.getUserMedia({ audio: true });
+    const capture = media.getUserMedia({ audio: true }).then((stream) => {
+      if (signal?.aborted) {
+        releaseStream(stream);
+        throw new DOMException("Microphone request cancelled", "AbortError");
+      }
+      return stream;
+    });
+    const stream = signal ? await new Promise<MediaStream>((resolve, reject) => {
+      onAbort = () => reject(new DOMException("Microphone request cancelled", "AbortError"));
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) onAbort();
+      capture.then(resolve, reject);
+    }) : await capture;
     return { status: "granted", stream };
   } catch (error) {
     const name = (error as { name?: string } | null)?.name;
@@ -238,6 +250,8 @@ export async function requestMicrophone(): Promise<MicrophoneAccess> {
       default:
         return { status: "denied", stream: null };
     }
+  } finally {
+    if (onAbort) signal?.removeEventListener("abort", onAbort);
   }
 }
 

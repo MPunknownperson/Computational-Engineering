@@ -138,9 +138,9 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   if (isMobile(input.os, input.device)) {
     if (canLocal) return local();
     if (canCloud) return cloud();
-    return cloud();
+    return { available: false, reason: "no-cloud", region, rule };
   }
   if (canCloud) return cloud();
   if (canLocal) return local();
-  return cloud();
+  return { available: false, reason: "no-cloud", region, rule };
 }
