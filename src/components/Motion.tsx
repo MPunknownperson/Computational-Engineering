@@ -11,7 +11,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 28, mass: 0.85 };
 
-/** Route changes use a brief, reduced-motion-aware GSAP cross-fade. */
+/** Route motion preserves fully opaque, readable content throughout navigation. */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -33,8 +33,8 @@ export function PageTransition({ children }: { children: ReactNode }) {
     }
     gsap.fromTo(
       element,
-      { autoAlpha: 0.84, y: 10 },
-      { autoAlpha: 1, y: 0, duration: 0.36, ease: "power2.out", clearProps: "opacity,visibility,transform" },
+      { y: 10 },
+      { y: 0, duration: 0.36, ease: "power2.out", clearProps: "transform" },
     );
   }, { scope: surface, dependencies: [pathname, reduced], revertOnUpdate: true });
 
@@ -94,7 +94,6 @@ export function PageTransition({ children }: { children: ReactNode }) {
       }
       gsap.killTweensOf(element);
       gsap.to(element, {
-        autoAlpha: 0,
         y: -7,
         duration: 0.17,
         ease: "power1.in",

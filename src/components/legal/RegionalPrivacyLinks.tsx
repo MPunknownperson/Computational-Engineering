@@ -10,9 +10,10 @@ export async function RegionalPrivacyLinks() {
     <section id="regional-supplements" className="sketch scroll-mt-24" aria-labelledby="regional-supplements-title">
       <h2 id="regional-supplements-title" className="text-xl font-extrabold tracking-tight">Regional privacy supplements</h2>
       <p className="mt-3 text-sm leading-relaxed text-slate-700">
-        GDPR and CCPA provisions are included above in this single Privacy Policy. Clauses for Brazil, Canada,
-        Australia, Singapore, Japan and India are on dedicated regional pages. Each expressly forms part of this policy
-        and is available only through a connection identified in that country by our trusted hosting gateway.
+        GDPR, CCPA and international rights are described above in this public Privacy Policy.
+        When our trusted hosting gateway verifies a supported country, an additional regional
+        supplement is linked here. Each supplement forms part of this same policy; access to
+        the main policy and your privacy rights does not depend on a location check.
       </p>
       {region ? (
         <Link href={`/privacy/regions/${region.slug}`} prefetch={false} className="mt-4 inline-flex rounded-xl border-2 border-[color:var(--line)] bg-[#edf5f8] px-4 py-3 font-semibold underline underline-offset-4">
