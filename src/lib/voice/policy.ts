@@ -80,7 +80,7 @@ export function regionFromLocale(locale: string | null | undefined): string | nu
 }
 
 export function isMobile(os: OperatingSystem, device: DeviceKind): boolean {
-  return os === "android" || os === "ios" || os === "ipados" || device === "phone";
+  return os === "android" || os === "ios" || os === "ipados" || device === "phone" || device === "tablet";
 }
 
 export interface PolicyInput {
@@ -133,14 +133,16 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
     if (canLocal) return local();
     return { available: false, reason: "no-local", region, rule };
   }
-  if (rule === "cloud-only") return canCloud ? cloud() : { available: false, reason: "no-cloud", region, rule };
+  if (rule === "cloud-only") return canCloud || input.speechApi ? cloud() : { available: false, reason: "no-cloud", region, rule };
 
-  if (isMobile(input.os, input.device)) {
-    if (canLocal) return local();
-    if (canCloud) return cloud();
-    return { available: false, reason: "no-cloud", region, rule };
-  }
+  // Phones, tablets and desktops all use the browser's native speech engine
+  // when it exists. Prefer a truly-installed on-device pack on handhelds, but
+  // never tell the visitor the device "does not support voice input" just
+  // because they are on a phone or tablet — the SpeechRecognition constructor
+  // is the capability signal, not the form factor.
+  if (isMobile(input.os, input.device) && canLocal) return local();
   if (canCloud) return cloud();
   if (canLocal) return local();
+  if (input.speechApi) return cloud();
   return { available: false, reason: "no-cloud", region, rule };
 }

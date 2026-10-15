@@ -28,7 +28,7 @@ export type UiKey =
   | "nav.about" | "nav.contact"
   | "voice.heading" | "voice.speak" | "voice.stop" | "voice.cancel" | "voice.unavailableButton"
   | "voice.listening" | "voice.preparing" | "voice.waitingMic" | "voice.heard" | "voice.opening"
-  | "voice.checking" | "voice.starting" | "voice.processing" | "voice.localReady" | "voice.recheck" | "voice.keyboard" | "voice.help" | "voice.helpBrowser" | "voice.helpPrivacy" | "mic.policy" | "speech.startTimeout" | "speech.startFailed" | "speech.interrupted" | "speech.browserRetry"
+  | "voice.checking" | "voice.starting" | "voice.processing" | "voice.localReady" | "voice.recheck" | "voice.help" | "voice.helpBrowser" | "voice.helpPrivacy" | "mic.policy" | "speech.startTimeout" | "speech.startFailed" | "speech.interrupted" | "speech.browserRetry"
   | "voice.understoodAs" | "voice.retryHint"
   | "voice.open" | "voice.noMatch" | "voice.tryOne" | "voice.learned" | "voice.forget"
   | "voice.disclosureLocal" | "voice.disclosureCloud" | "voice.disclosureOnDeviceModel"
@@ -215,10 +215,9 @@ const en: LanguagePack = {
     "voice.processing": "Finishing speech recognition…",
     "voice.localReady": "The local language pack is ready. Tap Speak a calculation to start.",
     "voice.recheck": "Recheck availability",
-    "voice.keyboard": "Use the keyboard instead",
     "voice.help": "Voice & microphone help",
-    "voice.helpBrowser": "Use an up-to-date supported browser over HTTPS, such as Safari on iPhone/iPad or Chrome on Android. Allow microphone access in site and device settings. On Apple devices, also check Siri & Dictation permissions. In-app browsers may not offer speech recognition.",
-    "voice.helpPrivacy": "Voice starts only after a tap and stops when you cancel or leave this page. A browser speech service may require internet access. Audio is never uploaded to this website; typing remains available.",
+    "voice.helpBrowser": "Use an up-to-date browser over HTTPS, such as Safari on iPhone/iPad or Chrome on Android and tablets. Microphone access is requested only when you tap Speak a calculation — this site never asks on page load. In-app browsers may not offer speech recognition.",
+    "voice.helpPrivacy": "Voice starts only after a tap and stops when you cancel or leave this page. A browser speech service may require internet access. Audio is never uploaded to this website.",
     "mic.policy": "Microphone access is blocked by this embedded page. Open the website in a full browser tab, or ask the host to allow microphone access.",
     "speech.startTimeout": "The microphone or speech service did not start in time. Check permissions, close other recording apps, then try again.",
     "speech.startFailed": "Speech recognition ended before the microphone started. Nothing was recorded. Check browser permissions and try again.",
@@ -390,10 +389,9 @@ const es: LanguagePack = {
     "voice.processing": "Finalizando el reconocimiento de voz…",
     "voice.localReady": "El paquete de idioma local está listo. Pulsa Dictar un cálculo para empezar.",
     "voice.recheck": "Comprobar disponibilidad",
-    "voice.keyboard": "Usar el teclado",
     "voice.help": "Ayuda de voz y micrófono",
-    "voice.helpBrowser": "Usa un navegador compatible actualizado con HTTPS, como Safari en iPhone/iPad o Chrome en Android. Permite el micrófono en el sitio y en el dispositivo. En Apple, revisa también los permisos de Siri y Dictado. Los navegadores integrados pueden no admitir voz.",
-    "voice.helpPrivacy": "La voz solo empieza al pulsar y se detiene al cancelar o salir. El servicio del navegador puede necesitar internet. El audio nunca se sube a este sitio; puedes seguir escribiendo.",
+    "voice.helpBrowser": "Usa un navegador actualizado con HTTPS, como Safari en iPhone/iPad o Chrome en Android y tabletas. El micrófono solo se pide al pulsar Dictar un cálculo; este sitio nunca lo solicita al cargar. Los navegadores integrados pueden no admitir voz.",
+    "voice.helpPrivacy": "La voz solo empieza al pulsar y se detiene al cancelar o salir. El servicio del navegador puede necesitar internet. El audio nunca se sube a este sitio.",
     "mic.policy": "Esta página integrada bloquea el micrófono. Abre el sitio en una pestaña completa o pide al anfitrión que permita el micrófono.",
     "speech.startTimeout": "El micrófono o servicio de voz no se inició a tiempo. Revisa los permisos, cierra otras aplicaciones de grabación y vuelve a intentarlo.",
     "speech.startFailed": "El reconocimiento terminó antes de iniciar el micrófono. No se grabó nada. Revisa los permisos y vuelve a intentarlo.",
@@ -560,10 +558,9 @@ const fr: LanguagePack = {
     "voice.processing": "Finalisation de la reconnaissance vocale…",
     "voice.localReady": "Le module de langue local est prêt. Appuyez sur Dicter un calcul pour démarrer.",
     "voice.recheck": "Revérifier la disponibilité",
-    "voice.keyboard": "Utiliser le clavier",
     "voice.help": "Aide voix et microphone",
-    "voice.helpBrowser": "Utilisez un navigateur compatible à jour via HTTPS, comme Safari sur iPhone/iPad ou Chrome sur Android. Autorisez le micro dans les réglages du site et de l’appareil. Sur Apple, vérifiez aussi Siri et Dictée. Les navigateurs intégrés peuvent ne pas proposer la reconnaissance vocale.",
-    "voice.helpPrivacy": "La voix démarre uniquement après un appui et s’arrête si vous annulez ou quittez la page. Le service du navigateur peut nécessiter internet. Aucun audio n’est envoyé à ce site ; la saisie reste disponible.",
+    "voice.helpBrowser": "Utilisez un navigateur à jour via HTTPS, comme Safari sur iPhone/iPad ou Chrome sur Android et tablettes. Le micro n’est demandé que lorsque vous appuyez sur Dicter un calcul ; ce site ne le demande jamais au chargement. Les navigateurs intégrés peuvent ne pas proposer la reconnaissance vocale.",
+    "voice.helpPrivacy": "La voix démarre uniquement après un appui et s’arrête si vous annulez ou quittez la page. Le service du navigateur peut nécessiter internet. Aucun audio n’est envoyé à ce site.",
     "mic.policy": "Cette page intégrée bloque le micro. Ouvrez le site dans un onglet complet ou demandez à l’hôte d’autoriser le microphone.",
     "speech.startTimeout": "Le micro ou le service vocal n’a pas démarré à temps. Vérifiez les autorisations, fermez les autres applications d’enregistrement et réessayez.",
     "speech.startFailed": "La reconnaissance s’est arrêtée avant le démarrage du micro. Rien n’a été enregistré. Vérifiez les autorisations et réessayez.",
@@ -731,10 +728,9 @@ const de: LanguagePack = {
     "voice.processing": "Spracherkennung wird abgeschlossen…",
     "voice.localReady": "Das lokale Sprachpaket ist bereit. Tippen Sie auf Rechnung sprechen.",
     "voice.recheck": "Verfügbarkeit prüfen",
-    "voice.keyboard": "Stattdessen tippen",
     "voice.help": "Hilfe zu Sprache und Mikrofon",
-    "voice.helpBrowser": "Verwenden Sie einen aktuellen unterstützten Browser mit HTTPS, etwa Safari auf iPhone/iPad oder Chrome auf Android. Erlauben Sie das Mikrofon in Website- und Geräteeinstellungen. Prüfen Sie auf Apple-Geräten auch Siri und Diktieren. In-App-Browser unterstützen Sprache möglicherweise nicht.",
-    "voice.helpPrivacy": "Sprache startet nur nach einem Tippen und endet beim Abbrechen oder Verlassen. Der Browser-Sprachdienst benötigt eventuell Internet. Audio wird nie an diese Website gesendet; die Tastatur bleibt nutzbar.",
+    "voice.helpBrowser": "Verwenden Sie einen aktuellen Browser mit HTTPS, etwa Safari auf iPhone/iPad oder Chrome auf Android und Tablets. Das Mikrofon wird erst angefragt, wenn Sie auf Rechnung sprechen tippen — nicht beim Laden der Seite. In-App-Browser unterstützen Sprache möglicherweise nicht.",
+    "voice.helpPrivacy": "Sprache startet nur nach einem Tippen und endet beim Abbrechen oder Verlassen. Der Browser-Sprachdienst benötigt eventuell Internet. Audio wird nie an diese Website gesendet.",
     "mic.policy": "Diese eingebettete Seite blockiert das Mikrofon. Öffnen Sie die Website in einem eigenen Tab oder bitten Sie den Host um Mikrofonfreigabe.",
     "speech.startTimeout": "Mikrofon oder Sprachdienst ist nicht rechtzeitig gestartet. Prüfen Sie die Berechtigungen, schließen Sie andere Aufnahme-Apps und versuchen Sie es erneut.",
     "speech.startFailed": "Die Erkennung endete vor dem Mikrofonstart. Es wurde nichts aufgenommen. Prüfen Sie die Berechtigungen und versuchen Sie es erneut.",
@@ -893,10 +889,9 @@ const zh: LanguagePack = {
     "voice.processing": "正在完成语音识别…",
     "voice.localReady": "本地语言包已准备好。请点击“语音计算”开始。",
     "voice.recheck": "重新检查可用性",
-    "voice.keyboard": "改用键盘输入",
     "voice.help": "语音与麦克风帮助",
-    "voice.helpBrowser": "请通过 HTTPS 使用最新版受支持浏览器，如 iPhone/iPad 上的 Safari 或 Android 上的 Chrome。在网站及设备设置中允许麦克风权限。Apple 设备还需检查 Siri 与听写权限。应用内浏览器可能不支持语音识别。",
-    "voice.helpPrivacy": "语音仅在点击后启动，取消或离开页面时停止。浏览器的语音服务可能需要联网。音频不会上传到本网站；键盘输入始终可用。",
+    "voice.helpBrowser": "请通过 HTTPS 使用最新版浏览器，如 iPhone/iPad 上的 Safari，或 Android 手机和平板的 Chrome。仅在点击“语音计算”时才会请求麦克风，本网站不会在页面加载时申请。应用内浏览器可能不支持语音识别。",
+    "voice.helpPrivacy": "语音仅在点击后启动，取消或离开页面时停止。浏览器的语音服务可能需要联网。音频不会上传到本网站。",
     "mic.policy": "此嵌入页面禁止麦克风访问。请在完整浏览器标签页中打开网站，或要求宿主允许麦克风权限。",
     "speech.startTimeout": "麦克风或语音服务未能及时启动。请检查权限、关闭其他录音应用后重试。",
     "speech.startFailed": "语音识别在麦克风启动前已结束，未录制任何内容。请检查浏览器权限后重试。",
