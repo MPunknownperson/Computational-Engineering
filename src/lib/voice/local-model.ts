@@ -2,6 +2,7 @@
 
 import { releaseStream, requestMicrophone } from "@/lib/browser-tokens";
 import { aiAvailability, hasOnDeviceAi, prepareAudioTranscriber, type AudioTranscriber } from "@/lib/ai/on-device";
+import { createAudioMonitor, type AudioMonitor } from "@/lib/ml/audio";
 import { supportsGenerativeSpeechLanguage } from "./languages";
 
 export type ModelEngineStatus = "loading" | "requesting" | "recording" | "decoding" | "error";
@@ -36,6 +37,8 @@ export function createLocalModelEngine(options: {
   language: string;
   onStatus?: (status: ModelEngineStatus) => void;
   onProgress?: (progress: ModelAssetProgress) => void;
+  /** Reported by the on-device audio classifier while recording. */
+  onHint?: (hint: "noisy") => void;
   onText: (transcript: string) => void;
 }): LocalModelEngine | null {
   if (!canRunLocalModel(options.language)) return null;
@@ -46,10 +49,13 @@ export function createLocalModelEngine(options: {
   let recorder: MediaRecorder | null = null;
   let transcriber: AudioTranscriber | null = null;
   let recordingTimer: ReturnType<typeof setTimeout> | undefined;
+  let monitor: AudioMonitor | null = null;
 
   const stop = () => { if (recorder?.state === "recording") recorder.stop(); };
   const releaseAudio = () => {
     clearTimeout(recordingTimer);
+    monitor?.dispose();
+    monitor = null;
     try { stop(); } catch { /* capture already ended */ }
     recorder = null;
     releaseStream(stream);
@@ -110,6 +116,17 @@ export function createLocalModelEngine(options: {
             if (signal.aborted) { abort(); return; }
             options.onStatus?.("recording");
             recordingTimer = setTimeout(stop, 12_000);
+            // TensorFlow.js audio classifier: ends the recording shortly after
+            // the speaker pauses and flags a noisy room. Started in the
+            // background so it can never delay or block capture.
+            const live = stream;
+            if (live) {
+              void createAudioMonitor(live, { onEndpoint: stop, onNoisy: () => options.onHint?.("noisy") }).then((created) => {
+                if (!created) return;
+                if (signal.aborted || recorder !== capture || capture.state !== "recording") created.dispose();
+                else monitor = created;
+              }).catch(() => undefined);
+            }
           }, { once: true });
           if (signal.aborted) { abort(); return; }
           capture.start(); // UI waits for the real MediaRecorder start event.

@@ -30,7 +30,7 @@ export type UiKey =
   | "voice.listening" | "voice.preparing" | "voice.waitingMic" | "voice.heard" | "voice.opening"
   | "voice.checking" | "voice.starting" | "voice.processing" | "voice.localReady" | "voice.recheck" | "voice.help" | "voice.helpBrowser" | "voice.helpPrivacy" | "mic.policy" | "speech.startTimeout" | "speech.startFailed" | "speech.interrupted" | "speech.browserRetry"
   | "voice.understoodAs" | "voice.retryHint"
-  | "voice.open" | "voice.noMatch" | "voice.tryOne" | "voice.learned" | "voice.forget"
+  | "voice.open" | "voice.noMatch" | "voice.tryOne" | "voice.learned" | "voice.forget" | "voice.noisy" | "voice.guess"
   | "voice.disclosureLocal" | "voice.disclosureCloud" | "voice.disclosureOnDeviceModel"
   | "voice.modelLanguageNote"
   | "voice.privacyLink" | "unavailable.noModel"
@@ -241,6 +241,8 @@ const en: LanguagePack = {
     "voice.tryOne": "Try one of:",
     "voice.learned": "{count} phrases learned on this device.",
     "voice.forget": "Forget learned phrases",
+    "voice.noisy": "It is noisy around you. Move closer to the microphone or speak a little louder.",
+    "voice.guess": "Best guess from this device's model. Check it before opening.",
     "voice.disclosureLocal": "Speech is recognised on this device; audio is not sent to a server.",
     "voice.disclosureCloud": "Speech is recognised by your browser provider's speech service (Google for Chrome). This site does not receive or store audio.",
     "voice.privacyLink": "Privacy Policy",
@@ -415,6 +417,8 @@ const es: LanguagePack = {
     "voice.tryOne": "Prueba:",
     "voice.learned": "{count} frases aprendidas en este dispositivo.",
     "voice.forget": "Olvidar frases aprendidas",
+    "voice.noisy": "Hay mucho ruido. Acércate al micrófono o habla un poco más alto.",
+    "voice.guess": "Mejor suposición del modelo de este dispositivo. Compruébala antes de abrir.",
     "voice.disclosureLocal": "La voz se reconoce en este dispositivo; el audio no se envía a ningún servidor.",
     "voice.disclosureCloud": "La voz la reconoce el servicio de tu navegador (Google en Chrome). Este sitio no recibe ni guarda audio.",
     "voice.privacyLink": "Política de privacidad",
@@ -584,6 +588,8 @@ const fr: LanguagePack = {
     "voice.tryOne": "Essayez :",
     "voice.learned": "{count} expressions apprises sur cet appareil.",
     "voice.forget": "Oublier les expressions apprises",
+    "voice.noisy": "Il y a beaucoup de bruit. Rapprochez-vous du micro ou parlez un peu plus fort.",
+    "voice.guess": "Meilleure hypothèse du modèle de cet appareil. Vérifiez avant d'ouvrir.",
     "voice.disclosureLocal": "La voix est reconnue sur cet appareil ; l'audio n'est envoyé à aucun serveur.",
     "voice.disclosureCloud": "La voix est reconnue par le service de votre navigateur (Google pour Chrome). Ce site ne reçoit ni ne conserve l'audio.",
     "voice.privacyLink": "Politique de confidentialité",
@@ -754,6 +760,8 @@ const de: LanguagePack = {
     "voice.tryOne": "Versuchen Sie:",
     "voice.learned": "{count} Formulierungen auf diesem Gerät gelernt.",
     "voice.forget": "Gelernte Formulierungen vergessen",
+    "voice.noisy": "Es ist laut. Gehen Sie näher ans Mikrofon oder sprechen Sie etwas lauter.",
+    "voice.guess": "Beste Vermutung des Modells auf diesem Gerät. Bitte vor dem Öffnen prüfen.",
     "voice.disclosureLocal": "Sprache wird auf diesem Gerät erkannt; Audio wird an keinen Server gesendet.",
     "voice.disclosureCloud": "Sprache wird vom Sprachdienst Ihres Browsers erkannt (bei Chrome: Google). Diese Website empfängt und speichert kein Audio.",
     "voice.privacyLink": "Datenschutzerklärung",
@@ -915,6 +923,8 @@ const zh: LanguagePack = {
     "voice.tryOne": "试试：",
     "voice.learned": "本设备已学习 {count} 条说法。",
     "voice.forget": "清除已学习的说法",
+    "voice.noisy": "周围比较吵。请靠近麦克风或稍微提高音量。",
+    "voice.guess": "这是本设备模型的最佳猜测，打开前请确认。",
     "voice.disclosureLocal": "语音在本设备上识别，音频不会发送到服务器。",
     "voice.disclosureCloud": "语音由你的浏览器提供商的语音服务识别（Chrome 为 Google）。本网站不接收也不存储音频。",
     "voice.privacyLink": "隐私政策",

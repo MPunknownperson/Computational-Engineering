@@ -1,6 +1,7 @@
 import { normalizeSpeech } from "@/lib/voice/parser";
 import { VoiceRuntime } from "@/lib/voice/pipeline";
 import { decode, encode, verify, type Program } from "@/lib/voice/ir";
+import { recordVoiceOutcome } from "@/lib/ml/intent";
 
 /**
  * Stage 6: client-side learning.
@@ -198,6 +199,11 @@ function scoreOf(interpretation: NonNullable<ReturnType<VoiceRuntime["interpret"
 /** Reinforce a completed command and teach any mis-hearing. Returns memory size. */
 export function learnFromRoute(route: CommandRoute): number {
   if (!route.program) return learnedCommandCount();
+  // Teach the on-device intent model which tool this wording leads to.
+  if (route.action) {
+    recordVoiceOutcome(route.understood ?? route.heard, route.action.href);
+    if (route.understood && route.understood !== route.heard) recordVoiceOutcome(route.heard, route.action.href);
+  }
   if (route.understood && route.understood !== route.heard) rememberPhrase(route.heard, route.program);
   return rememberPhrase(route.understood ?? route.heard, route.program);
 }
