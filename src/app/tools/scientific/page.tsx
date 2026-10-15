@@ -2,6 +2,8 @@
 import { useSearchParams } from "next/navigation";
 import { findPreset, type ExpressionPreset } from "@/lib/presets";
 import { useDeferredValue, useMemo, useState } from "react";
+import { ExpressionAssist } from "@/components/tech/MlAssist";
+import { recordExpression } from "@/lib/ml/completion";
 import {
   bracketedRoot, numericDerivative, numericIntegral,
   parseVariableAssignments, safeEvaluate, simplify,
@@ -80,6 +82,7 @@ function ScientificWorkspace({ initial }: { initial?: ExpressionPreset }) {
     if (gate.revealed || !result.ok) return;
     const value = safeEvaluate(expression, scope);
     if (value.ok) {
+      recordExpression(expression);
       setHistory((old) => old[0]?.expression === expression && old[0]?.result === value.formatted
         ? old
         : [{ expression, result: value.formatted }, ...old].slice(0, 8));
@@ -127,6 +130,7 @@ function ScientificWorkspace({ initial }: { initial?: ExpressionPreset }) {
                 autoCapitalize="off"
                 autoCorrect="off"
               />
+              <ExpressionAssist inputId="scientific-expression" expression={expression} variables={Object.keys(scope)} onApply={(next) => { setExpression(next); gate.reset(); }} />
 
               <label htmlFor="scientific-variables" className="mb-1.5 mt-5 block text-sm font-semibold text-slate-700">
                 Values <span className="font-normal text-slate-500">— separate with semicolons; a value may use an earlier one</span>

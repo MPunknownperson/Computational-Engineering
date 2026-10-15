@@ -1,6 +1,8 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PersonalPicks, usePersonalPicks } from "@/components/tech/MlAssist";
+import { recordUse } from "@/lib/ml/preferences";
 import { AnimatedNumber, Reveal, Skeleton, PanelSwap } from "@/components/Motion";
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
 import { Icon } from "@/components/Icons";
@@ -33,10 +35,10 @@ export default function CurrencyPage() {
   };
   const rawAmount = search.get("amount") ?? "100";
   const amount = rawAmount.length <= 80 && rawAmount.trim() && Number.isFinite(Number(rawAmount)) ? rawAmount : "100";
-  return <CurrencyWorkspace key={search.toString()} initial={{ base: code("base", "USD"), target: code("to", "EUR"), amount }} />;
+  return <CurrencyWorkspace key={search.toString()} initial={{ base: code("base", "USD"), target: code("to", "EUR"), amount }} explicit={["base", "to", "amount"].some((key) => search.has(key))} />;
 }
 
-function CurrencyWorkspace({ initial }: { initial: { base: string; target: string; amount: string } }) {
+function CurrencyWorkspace({ initial, explicit }: { initial: { base: string; target: string; amount: string }; explicit: boolean }) {
   const [base, setBase] = useState(initial.base);
   const [target, setTarget] = useState(initial.target);
   const [amount, setAmount] = useState(initial.amount);
@@ -111,6 +113,35 @@ function CurrencyWorkspace({ initial }: { initial: { base: string; target: strin
     gate.reset();
   }
 
+  // Personalisation (TensorFlow.js, on-device): open on the visitor's usual
+  // currency pair and offer quick picks; learned only from completed conversions.
+  const picks = usePersonalPicks("currency");
+  const personalised = useRef(false);
+  const validPick = (label: string) => {
+    const [from, to] = label.split("|");
+    return (CURRENCIES as readonly string[]).includes(from) && (CURRENCIES as readonly string[]).includes(to) && from !== to;
+  };
+  function applyPick(label: string) {
+    const [from, to] = label.split("|");
+    setBase(from);
+    setTarget(to);
+    gate.reset();
+  }
+  useEffect(() => {
+    if (!picks || personalised.current) return;
+    personalised.current = true;
+    const top = picks.find((pick) => validPick(pick.label));
+    const untouched = base === initial.base && target === initial.target && amount === initial.amount;
+    if (explicit || !top || top.probability < 0.34 || !untouched) return;
+    applyPick(top.label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picks]);
+  useEffect(() => {
+    if (gate.revealed) recordUse("currency", `${base}|${target}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.revealed]);
+  const shownPicks = (picks ?? []).filter((pick) => pick.label !== `${base}|${target}` && validPick(pick.label)).slice(0, 3);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-5 sm:py-12">
       <Reveal>
@@ -128,6 +159,7 @@ function CurrencyWorkspace({ initial }: { initial: { base: string; target: strin
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
         <Reveal className="lg:col-span-2">
           <div className="sketch min-w-0">
+            <PersonalPicks picks={shownPicks} format={(label) => label.replace("|", " → ")} onPick={applyPick} />
             <ConfirmForm onSubmit={gate.confirm} label="Currency conversion">
               <div className="grid gap-4 md:grid-cols-3">
                 <div>

@@ -104,6 +104,16 @@ const SECTIONS: LegalSection[] = [
       "Voice input is withheld where offering it is restricted, and limited to on-device processing where cross-border transfer of audio is restricted. This uses a country signal supplied by the hosting network, or the region of your browser language when no signal exists; that signal is evaluated per request and is not stored.",
       "If a voice command is understood, this browser remembers the phrase and the tool it opened — including a later hypothesis that corrected a mis-recognition — so a follow-up such as “and 80” works. No audio is kept. Clear it any time with “Forget learned phrases” on the voice card, or by clearing site data in your browser.",
       "Device and browser characteristics (device type, operating system, browser, whether speech and microphone APIs exist) are read locally to choose that path. This site does not send them to its server.",
+      "Machine learning runs in your browser (TensorFlow.js). When the on-device speech model is recording, a small classifier looks at live spectrum measurements to detect when you have stopped talking or the room is noisy; it keeps no audio and no recording of those measurements. If a command is not understood, another small model may suggest the closest tool from the words recognised — you decide whether to open it.",
+    ],
+  },
+  {
+    id: "personalisation",
+    title: "On-device personalisation and predictive input",
+    paragraphs: [
+      "Calculators, converters and the contact form use small machine-learning models that run entirely in your browser. They suggest the next part of an expression, open the unit and currency converters on the choices you make most often at that time of day, suggest the next word in the contact message, and suggest a contact topic.",
+      "To adapt, this browser stores a short local history: expressions you calculated, which unit or currency pair you converted, the hour of day and weekday/weekend, the tool you used just before, and voice phrases that led to a tool. Trained model weights are cached in this browser's IndexedDB. Contact messages are never stored or used for learning.",
+      "None of this is sent to our servers or shared, and it is not tied to an account. You can erase it at any time with “Forget what the models learned” in Manage saved formulas below, with “Forget learned phrases” on the voice card, or by clearing site data in your browser. Every tool works the same without it.",
     ],
   },
   {

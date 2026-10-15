@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { unitInput, type UnitInput } from "@/lib/presets";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { bignumber } from "mathjs";
 import {
   CATEGORIES, FACTORS, TEMPERATURE_UNITS, type Category,
@@ -11,13 +11,16 @@ import { Segmented, Reveal, PanelSwap } from "@/components/Motion";
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
 import { Icon } from "@/components/Icons";
 import { WakeLockToggle, ShareCopy } from "@/components/tech/BrowserTools";
+import { PersonalPicks, usePersonalPicks } from "@/components/tech/MlAssist";
+import { recordUse } from "@/lib/ml/preferences";
 
 export default function UnitsPage() {
   const search = useSearchParams();
-  return <UnitsWorkspace key={search.toString()} initial={unitInput(search)} />;
+  const explicit = ["category", "from", "to", "value"].some((key) => search.has(key));
+  return <UnitsWorkspace key={search.toString()} initial={unitInput(search)} explicit={explicit} />;
 }
 
-function UnitsWorkspace({ initial }: { initial: UnitInput }) {
+function UnitsWorkspace({ initial, explicit }: { initial: UnitInput; explicit: boolean }) {
   const [category, setCategory] = useState<Category>(initial.category);
   const [value, setValue] = useState(initial.value);
   const [from, setFrom] = useState(initial.from);
@@ -70,6 +73,39 @@ function UnitsWorkspace({ initial }: { initial: UnitInput }) {
     gate.reset();
   }
 
+  // Personalisation (TensorFlow.js, on-device): learn which conversions this
+  // visitor completes, then open on their usual one and offer quick picks.
+  const picks = usePersonalPicks("units");
+  const personalised = useRef(false);
+  const validPick = (label: string) => {
+    const [pickCategory, pickFrom, pickTo] = label.split("|");
+    if (!Object.hasOwn(CATEGORIES, pickCategory)) return false;
+    const list = pickCategory === "temperature" ? Object.keys(TEMPERATURE_UNITS) : Object.keys(FACTORS[pickCategory as Exclude<Category, "temperature">]);
+    return list.includes(pickFrom) && list.includes(pickTo);
+  };
+  function applyPick(label: string) {
+    const [pickCategory, pickFrom, pickTo] = label.split("|");
+    setCategory(pickCategory as Category);
+    setFrom(pickFrom);
+    setTo(pickTo);
+    gate.reset();
+  }
+  useEffect(() => {
+    if (!picks || personalised.current) return;
+    personalised.current = true;
+    const top = picks.find((pick) => validPick(pick.label));
+    const untouched = category === initial.category && from === initial.from && to === initial.to && value === initial.value;
+    if (explicit || !top || top.probability < 0.34 || !untouched) return;
+    applyPick(top.label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picks]);
+  useEffect(() => {
+    if (gate.revealed) recordUse("units", `${category}|${from}|${to}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.revealed]);
+  const currentPick = `${category}|${from}|${to}`;
+  const shownPicks = (picks ?? []).filter((pick) => pick.label !== currentPick && validPick(pick.label)).slice(0, 3);
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-5 sm:py-12">
       <Reveal>
@@ -96,6 +132,12 @@ function UnitsWorkspace({ initial }: { initial: UnitInput }) {
             options={(Object.keys(CATEGORIES) as Category[]).map((key) => ({ value: key, label: CATEGORIES[key] }))}
             value={category}
             onChange={chooseCategory}
+          />
+
+          <PersonalPicks
+            picks={shownPicks}
+            format={(label) => { const [c, f, t] = label.split("|"); return `${labelFor(c as Category, f)} → ${labelFor(c as Category, t)}`; }}
+            onPick={applyPick}
           />
 
           <PanelSwap trigger={category} className="mt-6 sm:mt-8">

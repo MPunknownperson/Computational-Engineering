@@ -9,6 +9,8 @@ import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/compone
 import { Icon } from "@/components/Icons";
 import { WakeLockToggle, ShareCopy } from "@/components/tech/BrowserTools";
 import { SITE } from "@/lib/site";
+import { ExpressionAssist } from "@/components/tech/MlAssist";
+import { recordExpression } from "@/lib/ml/completion";
 
 type Formula = {
   id: string;
@@ -74,6 +76,8 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
   const simplified = useMemo(() => variables.ok ? simplify(deferredExpression, scope) : null, [deferredExpression, scope, variables.ok]);
   const deriv = useMemo(() => variables.ok ? numericDerivative(deferredExpression, "x", 0, scope) : null, [deferredExpression, scope, variables.ok]);
   const usesX = /\bx\b/.test(deferredExpression);
+  // Predictive input learns from expressions the visitor actually calculated.
+  useEffect(() => { if (gate.revealed) recordExpression(expression); }, [gate.revealed, expression]);
 
   const save = async () => {
     setStatus(null);
@@ -156,6 +160,7 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
                 placeholder="e.g. P * (1 + r/n)^(n*t)"
                 spellCheck={false}
               />
+              <ExpressionAssist inputId="f-expr" expression={expression} variables={Object.keys(scope)} onApply={setExpression} />
             </div>
 
             <div>
