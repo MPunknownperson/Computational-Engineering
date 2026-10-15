@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@/components/Icons";
 import { SITE } from "@/lib/site";
+import { clearMlData, mlSummary, type MlSummary } from "@/lib/ml/runtime";
 
 const KEY = SITE.storageKeys[0].key;
 
@@ -12,6 +13,7 @@ export function DataControls() {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [learning, setLearning] = useState<MlSummary | null>(null);
 
   const refresh = useCallback(async () => {
     const token = localStorage.getItem(KEY) ?? SITE.legacyStorageKeys.map((k) => localStorage.getItem(k)).find(Boolean) ?? null;
@@ -26,6 +28,13 @@ export function DataControls() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { setLearning(mlSummary()); }, []);
+
+  async function forgetLearning() {
+    await clearMlData();
+    setLearning(mlSummary());
+    setNote("The on-device models in this browser were reset and everything they learned from your use was removed.");
+  }
 
   async function download() {
     if (!ws) return;
@@ -92,6 +101,16 @@ export function DataControls() {
           </span>
         )}
         <button className="btn btn-ghost text-sm" onClick={forget} disabled={!ws}>Disconnect this browser</button>
+      </div>
+      <div className="mt-5 border-t border-[color:var(--line)]/15 pt-4" id="your-personalisation">
+        <h3 className="text-sm font-extrabold">Personalisation on this device</h3>
+        <p className="mt-1 max-w-xl text-xs leading-relaxed text-slate-600">
+          Small machine-learning models run in your browser to suggest the next part of an expression, open the converters on the
+          units you use most, and recognise the wording of your voice commands. What they learn ({learning ? `${learning.phrases} phrases, ${learning.expressions} expressions, ${learning.uses} tool choices` : "checking…"}) is stored only in this browser and is never sent to us.
+        </p>
+        <button className="btn btn-ghost mt-2 text-sm" onClick={forgetLearning} disabled={!learning || learning.phrases + learning.expressions + learning.uses === 0}>
+          Forget what the models learned
+        </button>
       </div>
       {note && <p role="status" className="mt-3 text-sm font-semibold text-[#146c3a]">{note}</p>}
     </div>

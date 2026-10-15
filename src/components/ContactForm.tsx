@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/Icons";
 import { CONTACT_LIMITS as L, CONTACT_TOPICS } from "@/lib/catalog";
 import { TurnstileWidget } from "@/components/tech/TurnstileWidget";
+import { TopicHint, WordAssist } from "@/components/tech/MlAssist";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -97,6 +98,8 @@ export function ContactForm() {
           required
           aria-describedby="cf-count"
         />
+        <WordAssist inputId="cf-message" text={message} onApply={(next) => setMessage(next.slice(0, L.message))} />
+        <TopicHint message={message} current={topic} onUse={setTopic} />
         <div id="cf-count" className="mt-1 flex justify-between text-xs text-slate-500">
           <span>Please do not include passwords, payment details or health information.</span>
           <span className="mono">{message.length}/{L.message}</span>

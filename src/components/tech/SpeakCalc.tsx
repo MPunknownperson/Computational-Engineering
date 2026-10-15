@@ -14,6 +14,8 @@ import { useMicrophoneEligibility, within, type MicrophoneProblem } from "@/lib/
 import { localModelReady, createLocalModelEngine, type LocalModelEngine, type ModelAssetProgress } from "@/lib/voice/local-model";
 import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type CommandRoute, type WeightedHypothesis } from "@/lib/command-engine";
 import { repairCommandOnDevice } from "@/lib/ai/on-device";
+import { guessDestination, recordVoiceOutcome } from "@/lib/ml/intent";
+import { clearMlData } from "@/lib/ml/runtime";
 import { LANGUAGE_PACKS, packOrder, recognitionLocale, t, type PackId, type UiKey } from "@/lib/i18n";
 import { withSystemVocabulary } from "@/lib/i18n/system-lexicon";
 import { detectPlatformProfile } from "@/lib/platform";
@@ -62,6 +64,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const [runtimeBlock, setRuntimeBlock] = useState<UiKey | null>(null);
   const [checkVersion, setCheckVersion] = useState(0);
   const [learned, setLearned] = useState(0);
+  const [guessed, setGuessed] = useState(false);
   const [modelProgress, setModelProgress] = useState<ModelAssetProgress | null>(null);
   const { problem: micProblem, recheck: recheckMicrophone, reportProblem } = useMicrophoneEligibility();
 
@@ -190,6 +193,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     repairRef.current?.abort();
     const repair = new AbortController();
     repairRef.current = repair;
+    const attempt = generation.current;
     setPhaseBoth("processing");
     void (async () => {
       const repaired = await within(repairCommandOnDevice(route.heard, { language: langRef.current, signal: repair.signal }), 6_000, null);
@@ -199,6 +203,20 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       if (repaired) {
         const retry = routeHypotheses([repaired], runtimeRef.current);
         if (retry.action && retry.program) { commitRoute(retry); return; }
+      }
+      // Last resort before giving up: the TensorFlow.js intent model reads the
+      // same words and proposes the closest tool. It only suggests; the visitor
+      // decides whether to open it.
+      const guess = await within(guessDestination(hypotheses.map((item) => typeof item === "string" ? item : item.text)), 8_000, null);
+      if (generation.current !== attempt) return;
+      if (guess) {
+        setMatchedLabel(guess.label);
+        setNavigateTo(guess.path);
+        setGuessed(true);
+        setError(null);
+        setNotice(t(pack, "voice.guess"));
+        setPhaseBoth("ready");
+        return;
       }
       setError(t(pack, "voice.noMatch", { example: pack.examples[0] }));
       setPhaseBoth("ready");
@@ -211,7 +229,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     teardown();
     const attempt = generation.current;
     const current = () => generation.current === attempt;
-    setError(null); setNotice(null); setHeard(""); setMatchedLabel(null); setNavigateTo(null); setModelProgress(null);
+    setError(null); setNotice(null); setHeard(""); setMatchedLabel(null); setNavigateTo(null); setModelProgress(null); setGuessed(false);
     try { window.speechSynthesis?.cancel(); } catch { /* Speech output is optional, never required for input. */ }
 
     if (decision.mode === "local" && decision.prepareLocal) {
@@ -240,6 +258,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
               else if (status === "loading") setPhaseBoth("preparing");
             },
             onProgress: (progress) => { if (current()) setModelProgress(progress); },
+            onHint: () => { if (current()) setNotice(t(pack, "voice.noisy")); },
             onText: (text) => { if (current()) handleTranscript([{ text, confidence: 0.5 }]); },
           });
           modelRef.current = engine;
@@ -380,7 +399,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         <div className="mt-3 rounded-2xl border-2 border-[color:var(--line)] bg-[color:var(--paper)] p-4">
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-0 text-sm font-extrabold">{matchedLabel}</div>
-            {navigateTo && <Link href={navigateTo} className="btn btn-primary ml-auto !min-h-11">{t(pack, "voice.open", { label: matchedLabel })}<Icon name="arrow-right" size={15} /></Link>}
+            {navigateTo && <Link href={navigateTo} onClick={() => { if (guessed) { recordVoiceOutcome(heard, navigateTo); setLearned((count) => count + 1); } }} className="btn btn-primary ml-auto !min-h-11">{t(pack, "voice.open", { label: matchedLabel })}<Icon name="arrow-right" size={15} /></Link>}
           </div>
         </div>
       )}
@@ -390,7 +409,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           {t(pack, disclosureKey)}{" "}<Link href="/privacy#voice" className="font-bold underline underline-offset-4">{t(pack, "voice.privacyLink")}</Link>
           {learned > 0 && <>{" · "}{t(pack, "voice.learned", { count: learned })}{" "}
             <button type="button" className="font-bold underline underline-offset-2" onClick={() => {
-              clearLearnedCommands(); clearVoiceSession(); runtimeRef.current.forget(); setLearned(0);
+              clearLearnedCommands(); clearVoiceSession(); runtimeRef.current.forget(); void clearMlData(); setLearned(0);
             }}>{t(pack, "voice.forget")}</button>
           </>}
         </p>

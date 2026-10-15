@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
 import { ShareCopy, WakeLockToggle } from "@/components/tech/BrowserTools";
 import { safeEvaluate } from "@/lib/math";
+import { ExpressionAssist } from "@/components/tech/MlAssist";
+import { recordExpression } from "@/lib/ml/completion";
 
 type Mode = "draw" | "type" | "erase";
 type Point = { x: number; y: number };
@@ -84,6 +86,8 @@ export function CalculatorWorkspace() {
   const evaluation = safeEvaluate(expression);
   const gate = useConfirmGate(expression, evaluation.ok);
   const state = !expression.trim() ? "needs-input" : !evaluation.ok ? "invalid" : gate.revealed ? "revealed" : "awaiting";
+  // Predictive input learns from expressions the visitor actually calculated.
+  useEffect(() => { if (gate.revealed) recordExpression(expression); }, [gate.revealed, expression]);
 
   const redraw = useCallback((preview?: Stroke | null) => {
     const canvas = canvasRef.current;
@@ -307,6 +311,7 @@ export function CalculatorWorkspace() {
               autoCapitalize="off"
               autoCorrect="off"
             />
+            <ExpressionAssist inputId="board-expression" expression={expression} onApply={(next) => { setExpression(next); gate.reset(); }} />
             <div id="board-result" role="status" aria-live="polite" className={`result-panel mt-4 ${gate.revealed ? "is-revealed" : "is-locked"}`}>
               <div className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Result</div>
               {gate.revealed
