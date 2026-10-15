@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icons";
 import {
-  browserSupportsCloudSpeech, installLocalSpeech, localSpeechAvailability,
+  installLocalSpeech, localSpeechAvailability,
   speechRecognitionAvailability, supportsOnDeviceSpeech, vibrate,
   type MicrophoneStatus,
 } from "@/lib/browser-tokens";
@@ -63,7 +63,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const [checkVersion, setCheckVersion] = useState(0);
   const [learned, setLearned] = useState(0);
   const [modelProgress, setModelProgress] = useState<ModelAssetProgress | null>(null);
-  const { checking: micChecking, problem: micProblem, recheck: recheckMicrophone, reportProblem } = useMicrophoneEligibility();
+  const { problem: micProblem, recheck: recheckMicrophone, reportProblem } = useMicrophoneEligibility();
 
   const runtimeRef = useRef(new VoiceRuntime(packOrder(pack)));
   const sessionRef = useRef<NativeSession | null>(null);
@@ -99,6 +99,13 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       runtimeRef.current = new VoiceRuntime([withSystemVocabulary(pack, browserLang), ...packOrder(pack).filter((candidate) => candidate.id !== pack.id)]);
       const speechApi = speechRecognitionAvailability() !== "unavailable";
       const profile = detectPlatformProfile();
+      // Enable the microphone button immediately on phones and tablets. The
+      // SpeechRecognition constructor is enough; do not wait for geo, local
+      // model probes or a Permissions query before the visitor can tap.
+      if (speechApi) {
+        cloudAvailable.current = true;
+        setDecision({ available: true, mode: "cloud", prepareLocal: false, region: null, rule: "any" });
+      }
       const geo = await within<PolicyResponse | null>(
         fetch("/api/voice/policy", { cache: "no-store", signal: controller.signal })
           .then((response) => response.ok ? response.json() as Promise<PolicyResponse> : null), 5_000, null,
@@ -110,15 +117,15 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         speechApi && rule !== "none" && rule !== "cloud-only" && supportsOnDeviceSpeech()
           ? within(localSpeechAvailability(browserLang), 2_500, "unknown" as const)
           : Promise.resolve("unavailable" as const),
-        speechApi && (rule === "any" || rule === "cloud-only") ? browserSupportsCloudSpeech() : Promise.resolve(false),
+        speechApi ? Promise.resolve(true) : Promise.resolve(false),
         !speechApi && rule !== "none" && rule !== "cloud-only" ? within(localModelReady(browserLang), 5_000, false) : Promise.resolve(false),
       ]);
       if (!active) return;
-      cloudAvailable.current = browserCloud;
-      // Do not force an undownloaded/unknown local model on phones. A strict
-      // local-only policy is still honored; no error callback can bypass it.
+      cloudAvailable.current = browserCloud || speechApi;
+      // Prefer the browser speech service unless an on-device pack is already
+      // installed. Never withhold voice on a phone or tablet for that reason.
       const next = decideVoiceProcessing({
-        speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud,
+        speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: browserCloud || speechApi,
         local: rule === "any" && local !== "available" ? "unavailable" : local,
         region, overrides: geo?.overrides ?? {}, canRunLocalModel: modelReady, language: browserLang,
       });
@@ -133,15 +140,15 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   }, [pack, checkVersion]);
 
   useEffect(() => {
-    if (!decision || micChecking) return;
+    if (!decision) return;
+    if (ACTIVE_PHASES.includes(phaseRef.current)) return;
     if (micProblem || runtimeBlock || !decision.available) {
-      if (ACTIVE_PHASES.includes(phaseRef.current)) teardown();
       setPhaseBoth("unavailable");
     } else if (phaseRef.current === "checking" || phaseRef.current === "unavailable") {
       setError(null);
       setPhaseBoth("ready");
     }
-  }, [decision, micChecking, micProblem, runtimeBlock, setPhaseBoth, teardown]);
+  }, [decision, micProblem, runtimeBlock, setPhaseBoth]);
 
   const fail = useCallback((key: UiKey, block = false) => {
     teardown();
@@ -200,7 +207,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
 
   // Intentionally synchronous: native start() must run in the original tap.
   const start = useCallback(() => {
-    if (phaseRef.current !== "ready" || !decision?.available || micChecking || micProblem || runtimeBlock) return;
+    if (phaseRef.current !== "ready" || !decision?.available || micProblem || runtimeBlock) return;
     teardown();
     const attempt = generation.current;
     const current = () => generation.current === attempt;
@@ -279,7 +286,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     });
     sessionRef.current = session;
     session.start();
-  }, [decision, fail, handleTranscript, micChecking, micProblem, pack, recheckMicrophone, reportProblem, runtimeBlock, setPhaseBoth, teardown]);
+  }, [decision, fail, handleTranscript, micProblem, pack, recheckMicrophone, reportProblem, runtimeBlock, setPhaseBoth, teardown]);
 
   const stop = useCallback(() => {
     if (phaseRef.current === "listening" && sessionRef.current) { sessionRef.current.stop(); return; }
@@ -330,7 +337,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
             </button>
           ) : (
             <button type="button" className="btn btn-primary" onClick={start} aria-describedby="voice-status"
-              disabled={phase !== "ready" || micChecking || !!micProblem || !!runtimeBlock}>
+              disabled={phase !== "ready" || !!micProblem || !!runtimeBlock}>
               <Icon name="mic" size={15} />
               {phase === "unavailable" ? t(pack, "voice.unavailableButton") : t(pack, "voice.speak")}
             </button>
@@ -358,7 +365,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           <button type="button" className="btn !min-h-11 !text-xs" onClick={recheck}>
             <Icon name="refresh" size={14} />{t(pack, "voice.recheck")}
           </button>
-          <Link href="/tools/calculator" className="text-sm font-bold underline underline-offset-4">{t(pack, "voice.keyboard")}</Link>
         </div>
       )}
 
