@@ -193,31 +193,25 @@ for (const error of ["no-speech", "audio-capture", "aborted"]) {
   });
 }
 
-test("known permission denial disables recording and a permission change restores it", async ({ page }) => {
+test("a denied microphone permission is not queried until the visitor taps Speak", async ({ page }) => {
   await setup(page, { permission: "denied" });
-  await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
-  await expect(card(page)).toContainText("Microphone access is blocked");
-  expect((await probe(page)).starts).toBe(0);
-  await page.evaluate(() => (window as unknown as { __voiceTest: Harness }).__voiceTest.permission("granted"));
   await expect(speak(page)).toBeEnabled();
-  await speak(page).click(); expect((await probe(page)).starts).toBe(1);
+  expect((await probe(page)).starts).toBe(0);
+  expect((await probe(page)).mediaRequests).toBe(0);
 });
 
-test("permission denied by recognition stays disabled until rechecked or changed", async ({ page }) => {
+test("permission denied by recognition stays disabled until rechecked", async ({ page }) => {
   await setup(page); await speak(page).click(); await emit(page, "error", "not-allowed");
   await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
   await expect(card(page).getByRole("alert")).toContainText("address bar");
-  await page.evaluate(() => (window as unknown as { __voiceTest: Harness }).__voiceTest.permission("granted"));
+  await card(page).getByRole("button", { name: "Recheck availability" }).click();
   await expect(speak(page)).toBeEnabled();
-  expect((await probe(page)).starts).toBe(1);
 });
 
-test("confirmed missing hardware is unavailable until a microphone is connected", async ({ page }) => {
+test("missing hardware is not assumed before a tap", async ({ page }) => {
   await setup(page, { permission: "granted", microphone: false });
-  await expect(card(page)).toContainText("No microphone was found");
-  await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
-  await page.evaluate(() => (window as unknown as { __voiceTest: Harness }).__voiceTest.microphone(true));
   await expect(speak(page)).toBeEnabled();
+  expect((await probe(page)).mediaRequests).toBe(0);
 });
 
 test("a privacy-filtered device list before permission does not disable voice", async ({ page }) => {
@@ -225,10 +219,10 @@ test("a privacy-filtered device list before permission does not disable voice", 
   await expect(speak(page)).toBeEnabled();
 });
 
-test("no native engine or verified audio model disables voice but leaves typing available", async ({ page }) => {
+test("no native engine or verified audio model disables voice without a keyboard fallback", async ({ page }) => {
   await setup(page, { noApi: true });
   await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
-  await expect(card(page).getByRole("link", { name: "Use the keyboard instead" })).toHaveAttribute("href", "/tools/calculator");
+  await expect(card(page).getByRole("link", { name: /keyboard|teclado|clavier|tippen|键盘/i })).toHaveCount(0);
   expect((await probe(page)).starts).toBe(0);
 });
 
