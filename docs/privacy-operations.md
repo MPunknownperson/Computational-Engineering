@@ -62,3 +62,13 @@ These are implementation-aligned provisions, not a certification of the operator
 - India notification: https://www.pib.gov.in/PressNoteDetails.aspx?NoteId=156054&ModuleId=3&reg=48&lang=2
 
 India has phased commencement; do not claim all substantive DPDP provisions are already in force merely because the rules were notified.
+
+## Cookie consent (Silktide Consent Manager v2.0)
+
+The self-hosted Silktide Consent Manager v2.0.1 (MIT, `public/vendor/silktide/`) is mounted from the root layout via `src/components/consent/ConsentManager.tsx`. The experience depends on the visitor's regime (`src/lib/privacy/consent-regime.ts`):
+
+- **GDPR** (EU/EEA, UK, CH — from the trusted edge location): full consent manager, opt-in. Every non-essential category defaults *off*; "Accept all" and "Reject non-essential" have equal prominence; the preferences modal allows granular choice and withdrawal; a backdrop blocks interaction until a choice is made.
+- **CCPA/CPRA** (US-CA): notice at collection, opt-out model. Non-essential categories default *on* unless the browser sends Global Privacy Control, in which case they default off. The primary secondary action is "Do Not Sell or Share My Personal Information"; rejecting the sale/sharing category also `POST`s to `/api/privacy/choices` so the opt-out persists server-side alongside the existing choice page.
+- **Everywhere else**: a plain informational notice with "I understand" and a close (X) button (`StandardCookieNotice.tsx`); dismissal is remembered in `localStorage` (`radixloom.cookie-notice`).
+
+When no trusted geo provider is configured the server reports `unknown` and the browser falls back to an IANA-timezone heuristic that errs toward the protective experience. This fallback only chooses between notice styles; it never unlocks regional supplements. Choices are stored in `localStorage` under the `radixloom-gdpr` / `radixloom-ccpa` namespaces; the tool itself sets no cookies. A "Cookie settings" link in the footer re-opens the preferences modal (or the simple notice). Styling lives at the end of `src/app/globals.css` under `#stcm-wrapper`.
