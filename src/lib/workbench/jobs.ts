@@ -11,7 +11,8 @@ export type JobKind =
   | "upload"
   | "scaffold"
   | "delete"
-  | "system";
+  | "system"
+  | "code";
 
 export type JobStatus = "running" | "succeeded" | "failed" | "blocked";
 
@@ -358,6 +359,7 @@ export const JOB_KINDS = [
   "scaffold",
   "delete",
   "system",
+  "code",
 ] as const;
 
 export async function jobsByKind(kinds: JobKind[]): Promise<Job[]> {
