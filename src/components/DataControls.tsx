@@ -16,7 +16,9 @@ export function DataControls() {
   const [learning, setLearning] = useState<MlSummary | null>(null);
 
   const refresh = useCallback(async () => {
-    const token = localStorage.getItem(KEY) ?? SITE.legacyStorageKeys.map((k) => localStorage.getItem(k)).find(Boolean) ?? null;
+    let token: string | null = null;
+    try { token = localStorage.getItem(KEY) ?? SITE.legacyStorageKeys.map((k) => localStorage.getItem(k)).find(Boolean) ?? null; }
+    catch { /* Explicit data controls also work when storage is unavailable. */ }
     setWs(token);
     if (!token) { setCount(0); return; }
     try {

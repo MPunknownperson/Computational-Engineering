@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import type { ManagedConsentRegime } from "@/lib/privacy/consent-regime";
+import type { ConsentRegime } from "@/lib/privacy/consent-regime";
+import { announceConsentChange, consentNamespace } from "@/lib/privacy/browser-consent";
 import { buildSilktideConfig } from "./silktide-config";
 import { OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
 
-/** Records a CCPA sale/sharing opt-out server-side so it outlives localStorage. */
 async function recordOptOut(): Promise<void> {
   try {
     await fetch("/api/privacy/choices", {
@@ -16,44 +16,102 @@ async function recordOptOut(): Promise<void> {
       keepalive: true,
     });
   } catch {
-    // The site never sells or shares regardless; failure to persist is non-fatal.
+    // No sale or sharing takes place even when a receipt cannot be persisted.
   }
 }
 
-export function SilktideConsent({ regime }: { regime: ManagedConsentRegime }) {
+export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const initialised = useRef<string | null>(null);
+  const pendingOpen = useRef(false);
 
-  const initialise = useCallback(() => {
+  const initialise = useCallback((force = false) => {
     const api = window.silktideConsentManager;
-    if (!api || initialised.current === regime) return;
+    if (!api || (!force && initialised.current === regime)) return;
     initialised.current = regime;
+    const gpc = navigator.globalPrivacyControl === true;
+    const namespace = consentNamespace(regime);
+    const sync = () => {
+      const instance = api.getInstance();
+      if (!instance || instance.config.namespace !== namespace) return;
+      if (gpc) {
+        for (const type of instance.config.consentTypes) {
+          if (["advertising", "sale-sharing", "third-party-provision"].includes(type.id)) {
+            if (instance.getConsentChoice(type.id) !== false) instance.setConsentChoice(type.id, false);
+            const checkbox = document.getElementById(`consent-${type.id}`) as HTMLInputElement | null;
+            if (checkbox) { checkbox.checked = false; checkbox.disabled = true; }
+          }
+        }
+      }
+      announceConsentChange();
+    };
+    const scheduleSync = () => queueMicrotask(sync);
     const config = buildSilktideConfig({
       regime,
-      globalPrivacyControl: navigator.globalPrivacyControl === true,
-      onOptOut: () => { void recordOptOut(); },
+      globalPrivacyControl: gpc,
+      onOptOut: () => {
+        if (regime === "ccpa") void recordOptOut();
+      },
     });
+    for (const type of config.consentTypes) {
+      const accept = type.onAccept;
+      const reject = type.onReject;
+      type.onAccept = () => { accept?.(); scheduleSync(); };
+      type.onReject = () => { reject?.(); scheduleSync(); };
+    }
+    config.onAcceptAll = scheduleSync;
+    config.onRejectAll = scheduleSync;
+    config.onPreferencesOpen = scheduleSync;
+    config.onPreferencesClose = () => {
+      // The vendor removes the prompt when opening preferences. Closing without
+      // saving must restore it, not silently dismiss the unanswered notice.
+      window.setTimeout(() => {
+        const instance = api.getInstance();
+        if (!instance || instance.config.namespace !== namespace) return;
+        if (regime !== "standard" && !instance.getHasConsented()) {
+          api.init(config);
+        }
+        sync();
+      }, 0);
+    };
     api.init(config);
+    sync();
+    if (gpc && regime === "ccpa") void recordOptOut();
+    if (pendingOpen.current) {
+      pendingOpen.current = false;
+      api.getInstance()?.toggleModal(true);
+    }
   }, [regime]);
 
-  // The script may already be cached and executed on client-side navigations.
   useEffect(() => {
     if (window.silktideConsentManager) { setReady(true); initialise(); }
   }, [initialise]);
 
   useEffect(() => { if (ready) initialise(); }, [ready, initialise]);
 
-  // Footer "Cookie settings" link re-opens the preferences modal.
   useEffect(() => {
-    const open = () => window.silktideConsentManager?.getInstance()?.toggleModal(true);
+    const open = () => {
+      const instance = window.silktideConsentManager?.getInstance();
+      if (instance) instance.toggleModal(true);
+      else pendingOpen.current = true;
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key === null || event.key.startsWith(`stcm.${consentNamespace(regime)}.`)) initialise(true);
+    };
     window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
-    return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
-  }, []);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
+      window.removeEventListener("storage", storage);
+    };
+  }, [regime, initialise]);
 
   return (
     <>
       <link rel="stylesheet" href={SILKTIDE_STYLES} precedence="default" />
-      <Script src={SILKTIDE_SCRIPT} strategy="afterInteractive" onLoad={() => setReady(true)} onReady={() => setReady(true)} />
+      <Script src={SILKTIDE_SCRIPT} strategy="afterInteractive" onLoad={() => setReady(true)} onReady={() => setReady(true)} onError={() => setFailed(true)} />
+      {failed && <aside className="cookie-notice" role="status"><div className="cookie-notice-card"><p className="cookie-notice-text">Cookie settings could not load. Only strictly necessary storage is enabled; optional features remain off. Please reload to make a selection.</p><button className="btn btn-ink" onClick={() => window.location.reload()}>Reload settings</button></div></aside>}
     </>
   );
 }

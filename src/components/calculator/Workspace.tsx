@@ -6,6 +6,8 @@ import { ShareCopy, WakeLockToggle } from "@/components/tech/BrowserTools";
 import { safeEvaluate } from "@/lib/math";
 import { ExpressionAssist } from "@/components/tech/MlAssist";
 import { recordExpression } from "@/lib/ml/completion";
+import { functionalStorage } from "@/lib/privacy/browser-consent";
+import { useOptionalConsent } from "@/components/consent/use-consent";
 
 type Mode = "draw" | "type" | "erase";
 type Point = { x: number; y: number };
@@ -56,7 +58,7 @@ function newId() {
 function loadBoard(): { strokes: Stroke[]; notes: Note[] } {
   if (typeof window === "undefined") return { strokes: [], notes: [] };
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = functionalStorage()?.getItem(STORAGE_KEY);
     if (!raw) return { strokes: [], notes: [] };
     const parsed = JSON.parse(raw) as { strokes?: Stroke[]; notes?: Note[] };
     return {
@@ -69,13 +71,15 @@ function loadBoard(): { strokes: Stroke[]; notes: Note[] } {
 }
 
 export function CalculatorWorkspace() {
+  const functionalAllowed = useOptionalConsent("functional");
+  const [boardLoaded, setBoardLoaded] = useState(false);
   const [expression, setExpression] = useState("");
   const [mode, setMode] = useState<Mode>("draw");
   const [color, setColor] = useState<string>(CHALK[0].value);
   const [width, setWidth] = useState<number>(WIDTHS[1].value);
   const [noteSize, setNoteSize] = useState<number>(NOTE_SIZES[1].value);
-  const [strokes, setStrokes] = useState<Stroke[]>(() => loadBoard().strokes);
-  const [notes, setNotes] = useState<Note[]>(() => loadBoard().notes);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [ans, setAns] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -132,12 +136,21 @@ export function CalculatorWorkspace() {
   }, [redraw]);
 
   useEffect(() => {
+    if (!functionalAllowed) { setBoardLoaded(false); return; }
+    const board = loadBoard();
+    setStrokes((current) => current.length ? current : board.strokes);
+    setNotes((current) => current.length ? current : board.notes);
+    setBoardLoaded(true);
+  }, [functionalAllowed]);
+
+  useEffect(() => {
+    if (!functionalAllowed || !boardLoaded) return;
     const payload = JSON.stringify({ strokes, notes });
     const timer = window.setTimeout(() => {
-      try { window.localStorage.setItem(STORAGE_KEY, payload); } catch { /* quota or private mode */ }
+      try { functionalStorage()?.setItem(STORAGE_KEY, payload); } catch { /* quota or private mode */ }
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [notes, strokes]);
+  }, [notes, strokes, functionalAllowed, boardLoaded]);
 
   const toBoardPoint = (event: ReactPointerEvent) => {
     const board = boardRef.current;

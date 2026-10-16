@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { OPEN_COOKIE_SETTINGS_EVENT, STANDARD_NOTICE_KEY } from "./consent-events";
+import { STANDARD_NOTICE_KEY } from "./consent-events";
 import { SITE } from "@/lib/site";
 
 function dismissed(): boolean {
@@ -17,9 +17,7 @@ export function StandardCookieNotice() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => setOpen(!dismissed()), 400);
-    const reopen = () => setOpen(true);
-    window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
-    return () => { window.clearTimeout(timer); window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen); };
+    return () => window.clearTimeout(timer);
   }, []);
 
   const close = () => {

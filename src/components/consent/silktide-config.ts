@@ -1,9 +1,10 @@
-import type { ManagedConsentRegime } from "@/lib/privacy/consent-regime";
+import type { ConsentRegime, ManagedConsentRegime } from "@/lib/privacy/consent-regime";
+import { consentNamespace } from "@/lib/privacy/browser-consent";
 import { PRIVACY_CHOICES_PATH } from "@/lib/privacy/constants";
 import { SITE } from "@/lib/site";
 
 interface BuildOptions {
-  regime: ManagedConsentRegime;
+  regime: ConsentRegime;
   globalPrivacyControl: boolean;
   onOptOut: () => void;
 }
@@ -11,7 +12,7 @@ interface BuildOptions {
 const ESSENTIAL_DESCRIPTION =
   "<p>Needed for the site to work: security, load balancing, your privacy choices and this consent record (kept in your browser's local storage, not in a cookie). They cannot be switched off.</p>";
 const FUNCTIONAL_DESCRIPTION =
-  "<p>Remember settings you choose, such as light or dark appearance, your calculator workspace and saved formulas. Everything stays on this device.</p>";
+  "<p>Remember appearance, blackboard notes, voice follow-ups and on-device learning. This also enables a browser reference for formulas that you explicitly save to our server. With this off, calculations still work, but saved state, learning and formula saving are unavailable. Existing data can be managed on the Privacy Policy page.</p>";
 const ANALYTICS_DESCRIPTION =
   "<p>Would help us understand which tools and guides are useful. We do not currently load any analytics; if we ever introduce it, it will only run when this is on.</p>";
 const ADVERTISING_GDPR_DESCRIPTION =
@@ -21,7 +22,7 @@ const ADVERTISING_CCPA_DESCRIPTION =
 
 type RegionalRegime = Exclude<ManagedConsentRegime, "gdpr" | "ccpa">;
 
-/** Opt-in jurisdictions show a blocking, centred prompt with everything off by default. */
+/** Preserve the regional prompt positions without blocking ordinary browsing. */
 const OPT_IN_REGIMES = new Set<ManagedConsentRegime>(["gdpr", "lgpd", "pipeda", "dpdp"]);
 
 interface RegionalCopy {
@@ -88,7 +89,7 @@ const REGIONAL: Record<RegionalRegime, RegionalCopy> = {
     promptBody: "collects limited device and usage information to run the site and remember your settings. In line with APP 1 and APP 5 this notice explains what is collected and why; you can limit optional categories at any time and we do not use advertising cookies today.",
     preferencesTitle: "Cookie settings — Australia",
     preferencesBody: "Switch off any optional category you prefer not to use. Your choice is stored in this browser. You may contact us to access or correct personal information (APP 12 and 13), or complain to the Office of the Australian Information Commissioner.",
-    acceptText: "OK",
+    acceptText: "Accept optional",
     rejectText: "Essential only",
     preferencesButton: "Cookie settings",
     advertisingLabel: "Advertising",
@@ -105,7 +106,7 @@ const REGIONAL: Record<RegionalRegime, RegionalCopy> = {
     promptBody: "collects limited device and usage information to run the site and remember your settings. Under the PDPA we notify you of each purpose and rely on consent for optional categories; you may withdraw consent for any purpose with reasonable notice.",
     preferencesTitle: "Cookie settings — Singapore",
     preferencesBody: "Each category states its purpose. Switch off any purpose you do not consent to; your choice is stored in this browser. You may contact us to access or correct personal data, or raise a concern with the Personal Data Protection Commission.",
-    acceptText: "OK",
+    acceptText: "Accept optional",
     rejectText: "Essential only",
     preferencesButton: "Cookie settings",
     advertisingLabel: "Advertising",
@@ -151,11 +152,10 @@ const REGIONAL: Record<RegionalRegime, RegionalCopy> = {
 function buildRegional(
   regime: RegionalRegime,
   common: Pick<SilktideConsentConfig, "namespace" | "eventName" | "icon" | "backdrop" | "prompt">,
-  globalPrivacyControl: boolean,
   onOptOut: () => void,
 ): SilktideConsentConfig {
   const copy = REGIONAL[regime];
-  const defaultOn = !copy.optIn && !globalPrivacyControl;
+  const defaultOn = false;
   return {
     ...common,
     consentTypes: [
@@ -202,17 +202,17 @@ function buildRegional(
  * GDPR: opt-in, equal-prominence accept / reject, granular consent, withdrawal.
  * CCPA/CPRA: notice at collection, opt-out of sale/sharing, GPC honoured.
  */
-export function buildSilktideConfig({ regime, globalPrivacyControl, onOptOut }: BuildOptions): SilktideConsentConfig {
+function buildManagedConfig({ regime, globalPrivacyControl, onOptOut }: BuildOptions & { regime: ManagedConsentRegime }): SilktideConsentConfig {
   const common = {
-    namespace: `radixloom-${regime}`,
+    namespace: consentNamespace(regime),
     eventName: "stcm_consent_update",
     icon: { position: "bottomLeft" as const },
-    backdrop: { show: OPT_IN_REGIMES.has(regime) },
+    backdrop: { show: false },
     prompt: { position: OPT_IN_REGIMES.has(regime) ? ("bottomCenter" as const) : ("bottomRight" as const) },
   };
 
   if (regime in REGIONAL) {
-    return buildRegional(regime as RegionalRegime, common, globalPrivacyControl, onOptOut);
+    return buildRegional(regime as RegionalRegime, common, onOptOut);
   }
 
   if (regime === "gdpr") {
@@ -255,8 +255,8 @@ export function buildSilktideConfig({ regime, globalPrivacyControl, onOptOut }: 
     };
   }
 
-  // California (CCPA / CPRA): opt-out model.
-  const defaultOn = !globalPrivacyControl;
+  // The site requires an explicit choice for optional purposes in California too.
+  const defaultOn = false;
   return {
     ...common,
     consentTypes: [
@@ -279,8 +279,8 @@ export function buildSilktideConfig({ regime, globalPrivacyControl, onOptOut }: 
           `We do not sell or share personal information, and we honor Global Privacy Control${globalPrivacyControl ? " — your browser's GPC signal has been detected and applied" : ""}. ` +
           `You may still record an opt-out at any time. See <a href="/privacy#ccpa">Privacy Policy</a> and ` +
           `<a href="${PRIVACY_CHOICES_PATH}">Do Not Sell or Share My Personal Information</a>.</p>`,
-        acceptAllButtonText: "OK",
-        acceptAllButtonAccessibleLabel: "Acknowledge the notice and keep current settings",
+        acceptAllButtonText: "Accept optional",
+        acceptAllButtonAccessibleLabel: "Accept optional cookies and similar storage",
         rejectNonEssentialButtonText: "Do Not Sell or Share My Personal Information",
         rejectNonEssentialButtonAccessibleLabel: "Opt out of sale or sharing of personal information",
         preferencesButtonText: "Privacy settings",
@@ -302,4 +302,41 @@ export function buildSilktideConfig({ regime, globalPrivacyControl, onOptOut }: 
       },
     },
   };
+}
+
+
+const CHOICE_NOTICE =
+  "<p><strong>A selection is required before optional cookies or similar storage can support services and tools.</strong> Your choices affect data collection, processing, remembered preferences and the availability of related features. This notice stays available until you accept, reject or save a selection. If you continue browsing without choosing, the defaults for this notice apply: strictly necessary storage only; optional purposes stay off. Browsing is not consent. Basic calculations remain available.</p>";
+
+export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfig {
+  if (options.regime === "standard") {
+    // Do not replace or auto-open over the existing informational notice.
+    return {
+      namespace: consentNamespace("standard"),
+      autoShow: false,
+      backdrop: { show: false },
+      icon: { position: "bottomLeft" },
+      consentTypes: [
+        { id: "essential", label: "Strictly necessary", description: ESSENTIAL_DESCRIPTION, required: true },
+        { id: "functional", label: "Functional preferences", description: FUNCTIONAL_DESCRIPTION, defaultValue: false },
+      ],
+      text: {
+        prompt: { preferencesButtonAccessibleLabel: "Open cookie settings" },
+        preferences: {
+          title: "Cookie settings",
+          description: "<p>Cookie settings are available wherever you are. Options can differ by region; opening these settings does not change the cookie notice shown in your region. Essential-only defaults apply until you save a choice. Functional preferences enable remembered tool state and saved formulas; basic calculations do not require them. No advertising or analytics services are currently loaded.</p>",
+          saveButtonText: "Save choices",
+          saveButtonAccessibleLabel: "Save cookie settings and close",
+          rejectNonEssentialButtonText: "Essential only",
+          rejectNonEssentialButtonAccessibleLabel: "Reject all optional categories",
+          creditLinkText: "Consent tool by Silktide",
+          creditLinkAccessibleLabel: "Silktide Consent Manager, open source",
+        },
+      },
+    };
+  }
+  const config = buildManagedConfig({ ...options, regime: options.regime });
+  if (config.text?.prompt) config.text.prompt.description += CHOICE_NOTICE;
+  if (config.text?.preferences) config.text.preferences.description += CHOICE_NOTICE;
+  return config;
 }

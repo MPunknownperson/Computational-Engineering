@@ -10,8 +10,8 @@ import { announceConsentRegime } from "./consent-events";
  * Chooses the right consent experience for the visitor:
  * - GDPR regions, California, Brazil, Canada, Australia, Singapore, Japan and
  *   India get the Silktide Consent Manager v2.0 with jurisdiction-specific
- *   settings and text, plus a footer "Cookie settings" control.
- * - Everyone else gets a simple informational notice.
+ *   settings and text. The footer "Cookie settings" control is global.
+ * - Everyone else keeps the same informational notice and can open settings.
  * The server decides from a trusted edge location; when none is configured the
  * browser applies a conservative timezone fallback after hydration.
  */
@@ -34,6 +34,10 @@ export function ConsentManager({ serverRegime }: { serverRegime: ServerConsentRe
   }, [regime]);
 
   if (!regime) return null;
-  if (regime === "standard") return <StandardCookieNotice />;
-  return <SilktideConsent regime={regime} />;
+  return (
+    <>
+      {regime === "standard" && <StandardCookieNotice />}
+      <SilktideConsent regime={regime} />
+    </>
+  );
 }

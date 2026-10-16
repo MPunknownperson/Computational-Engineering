@@ -2,18 +2,21 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
+import { functionalStorage, subscribeConsentChange } from "@/lib/privacy/browser-consent";
 
 const KEY = "radix-loom-theme";
 const EVENT = "radix-loom-theme-change";
 type Appearance = "light" | "dark";
+let transientAppearance: Appearance | null = null;
 
 function systemAppearance(): Appearance {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function readAppearance(): Appearance {
+  if (transientAppearance) return transientAppearance;
   try {
-    const saved = window.localStorage.getItem(KEY);
+    const saved = functionalStorage()?.getItem(KEY);
     if (saved === "light" || saved === "dark") return saved;
   } catch {
     // Private browsing can disallow storage; follow the operating system instead.
@@ -42,7 +45,9 @@ function subscribe(notify: () => void): () => void {
   media.addEventListener("change", sync);
   window.addEventListener("storage", onStorage);
   window.addEventListener(EVENT, sync);
+  const unsubscribeConsent = subscribeConsentChange(sync);
   return () => {
+    unsubscribeConsent();
     media.removeEventListener("change", sync);
     window.removeEventListener("storage", onStorage);
     window.removeEventListener(EVENT, sync);
@@ -50,8 +55,9 @@ function subscribe(notify: () => void): () => void {
 }
 
 function chooseAppearance(mode: Appearance): void {
+  transientAppearance = mode;
   try {
-    window.localStorage.setItem(KEY, mode);
+    functionalStorage()?.setItem(KEY, mode);
   } catch {
     // The control still works for the current session when storage is unavailable.
   }
