@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import type { ConsentRegime } from "@/lib/privacy/consent-regime";
+import type { ManagedConsentRegime } from "@/lib/privacy/consent-regime";
 import { buildSilktideConfig } from "./silktide-config";
 import { OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
 
@@ -20,7 +20,7 @@ async function recordOptOut(): Promise<void> {
   }
 }
 
-export function SilktideConsent({ regime }: { regime: Exclude<ConsentRegime, "standard"> }) {
+export function SilktideConsent({ regime }: { regime: ManagedConsentRegime }) {
   const [ready, setReady] = useState(false);
   const initialised = useRef<string | null>(null);
 

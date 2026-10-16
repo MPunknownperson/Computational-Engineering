@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { regimeFromTimezone, type ConsentRegime, type ServerConsentRegime } from "@/lib/privacy/consent-regime";
 import { SilktideConsent } from "./SilktideConsent";
 import { StandardCookieNotice } from "./StandardCookieNotice";
+import { announceConsentRegime } from "./consent-events";
 
 /**
  * Chooses the right consent experience for the visitor:
- * - GDPR regions and California get the Silktide Consent Manager v2.0 with
- *   jurisdiction-specific settings and text.
+ * - GDPR regions, California, Brazil, Canada, Australia, Singapore, Japan and
+ *   India get the Silktide Consent Manager v2.0 with jurisdiction-specific
+ *   settings and text, plus a footer "Cookie settings" control.
  * - Everyone else gets a simple informational notice.
  * The server decides from a trusted edge location; when none is configured the
  * browser applies a conservative timezone fallback after hydration.
@@ -28,7 +30,7 @@ export function ConsentManager({ serverRegime }: { serverRegime: ServerConsentRe
   }, [regime]);
 
   useEffect(() => {
-    if (regime) document.documentElement.dataset.consentRegime = regime;
+    if (regime) announceConsentRegime(regime);
   }, [regime]);
 
   if (!regime) return null;

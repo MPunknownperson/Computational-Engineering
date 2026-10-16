@@ -55,12 +55,14 @@ export function SiteFooter() {
             <h2 className="mb-3 text-sm font-extrabold tracking-tight">{column.title}</h2>
             <ul className="space-y-2 text-sm">
               {column.items.map((item) => <li key={item.href}><Link href={item.href} className="font-semibold text-slate-600 hover:text-[color:var(--ink)] hover:underline">{item.label}</Link></li>)}
-              {column.title === "Information" && <li><CookieSettingsButton /></li>}
             </ul>
           </nav>
         ))}
       </div>
-      <div className="mx-auto max-w-7xl px-5 pb-6 text-sm text-[color:var(--ink)]"><PrivacyChoicesLink /></div>
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-5 pb-6 text-sm text-[color:var(--ink)]">
+        <PrivacyChoicesLink />
+        <CookieSettingsButton />
+      </div>
       <div className="border-t-2 border-[color:var(--line)] px-5 py-5 text-center text-xs font-semibold text-slate-500">
         © {new Date().getFullYear()} {SITE.name}. External reference information may be delayed, revised or unavailable.
       </div>
