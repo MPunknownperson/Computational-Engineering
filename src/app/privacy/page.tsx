@@ -4,6 +4,7 @@ import { GdprPolicy } from "@/components/legal/GdprPolicy";
 import { CcpaPolicy } from "@/components/legal/CcpaPolicy";
 import { InternationalPrivacy } from "@/components/legal/InternationalPrivacy";
 import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
+import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { metadataFor } from "@/lib/seo";
 import { SearchContext } from "@/components/search/SearchContext";
 import { SITE } from "@/lib/site";
@@ -135,6 +136,17 @@ const SECTIONS: LegalSection[] = [
     ],
   },
   {
+    id: "cookie-settings",
+    title: "Cookie settings, regional defaults and tool availability",
+    paragraphs: [
+      "Cookie settings are available to users in every region from the footer. The categories and options offered can differ by region. Making settings available worldwide does not replace or change the existing cookie notice shown outside the GDPR/CCPA jurisdictions, Brazil, Canada, Australia, Singapore, Japan and India.",
+      "For users receiving a GDPR/CCPA, Brazil, Canada, Australia, Singapore, Japan or India notice, a selection is required before optional cookies or similar storage are used to support services and tools. Accepting, rejecting optional purposes, or saving a custom selection all count as a choice. Closing the preferences panel without saving does not count: the notice returns and stays available until a choice is made.",
+      "Continuing to browse or use the site is not consent. Until you choose, this deployment applies strictly necessary storage only for each of those regional notices; optional purposes stay off. The same conservative optional-storage default applies when location is unknown. Security, delivery of requested content and recording privacy choices may still require strictly necessary processing.",
+      "Your choices affect more than cookies and collection: they also affect processing and the availability or operation of related features. Functional preferences enable remembered appearance, blackboard notes, a saved-formula workspace, voice follow-ups and on-device learning. With that category off, basic calculations and conversions remain available, appearance changes last only for the current page session, formula saving is disabled, and optional remembered state and learning are not used.",
+      "You can change or withdraw your choice at any time using Cookie settings. Withdrawing stops subsequent optional storage and use; it does not automatically erase formulas already saved on the server or previously stored browser data. Use the data-management controls or your browser's site-data controls to erase those. No analytics or advertising service is loaded in this deployment. Global Privacy Control keeps advertising and sale/sharing consent off even if you accept other optional purposes.",
+    ],
+  },
+  {
     id: "recipients",
     title: "Who receives information",
     paragraphs: [
@@ -232,7 +244,7 @@ export default function PrivacyPage() {
           <section id="privacy-choices" className="sketch scroll-mt-24" aria-labelledby="privacy-choices-title">
             <h2 id="privacy-choices-title" className="text-xl font-bold">Your privacy choices</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">You can review sale and sharing choices on the Do Not Sell or Share page. Browser controls may be available there. You can also contact us about a sale, sharing or related request.</p>
-            <PrivacyChoicesLink className="mt-4 text-sm text-[#194eb0]" />
+            <div className="mt-4 flex flex-wrap gap-5 text-sm text-[#194eb0]"><CookieSettingsButton /><PrivacyChoicesLink /></div>
           </section>
           <DataControls />
         </>

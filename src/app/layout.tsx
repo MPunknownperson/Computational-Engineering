@@ -1,6 +1,7 @@
 import type { Viewport } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import "@fontsource-variable/dm-sans";
 import "./globals.css";
 import { BrandMark, Wordmark } from "@/components/Brand";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -25,7 +26,7 @@ export const viewport: Viewport = {
 };
 
 // Runs before hydration so system-dark devices never flash the day palette.
-const appearanceScript = `(function(){try{var saved=localStorage.getItem('radix-loom-theme');var mode=(saved==='dark'||saved==='light')?saved:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;}catch(e){document.documentElement.dataset.theme='light';}})();`;
+const appearanceScript = `(function(){try{var r=document.documentElement.dataset.consentRegime;var p='stcm.radixloom-v2-'+r+'.';var allowed=localStorage.getItem(p+'hasConsented')==='1'&&localStorage.getItem(p+'consent.functional')==='true';var saved=allowed?localStorage.getItem('radix-loom-theme'):null;var mode=(saved==='dark'||saved==='light')?saved:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;}catch(e){document.documentElement.dataset.theme='light';}})();`;
 
 const NAV: Array<{ href: string; key: UiKey }> = [
   { href: "/", key: "nav.home" },
@@ -43,10 +44,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const rawTone = requestHeaders.get("x-page-tone") ?? "home";
   const tone = TONES.has(rawTone) ? rawTone : "home";
   const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
-  // GDPR regions and California get the Silktide Consent Manager; others a plain notice.
+  // Region-specific notices; cookie settings remain accessible worldwide.
   const consentRegime = regimeForArea(trustedPrivacyArea(requestHeaders));
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-consent-regime={consentRegime} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /></head>
       <body className={`tone-${tone} paper-bg flex min-h-screen flex-col text-[color:var(--ink)] antialiased`}>
         <a href="#main" className="skip-link">Skip to content</a>

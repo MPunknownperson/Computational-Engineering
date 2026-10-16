@@ -544,3 +544,11 @@ html[data-theme="dark"] .cookie-notice-card { background: #1b2941; }
 .cookie-notice-close:focus-visible, .cookie-notice-ok:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
 @keyframes cookieNoticeIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .cookie-notice-card { animation: none; } }
+
+
+/* Global settings do not replace the standard regional notice. */
+html[data-consent-regime="standard"] #stcm-icon { display: none !important; }
+body { font-family: "DM Sans Variable", Arial, sans-serif; }
+/* Managed prompts are non-blocking but always readable until a choice is made. */
+#stcm-banner { max-height: min(76vh, 680px); overflow-y: auto; }
+#stcm-modal { max-height: 90dvh; }

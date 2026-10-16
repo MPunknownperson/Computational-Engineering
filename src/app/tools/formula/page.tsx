@@ -11,6 +11,9 @@ import { WakeLockToggle, ShareCopy } from "@/components/tech/BrowserTools";
 import { SITE } from "@/lib/site";
 import { ExpressionAssist } from "@/components/tech/MlAssist";
 import { recordExpression } from "@/lib/ml/completion";
+import { functionalStorage, optionalPurposeAllowed } from "@/lib/privacy/browser-consent";
+import { useOptionalConsent } from "@/components/consent/use-consent";
+import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 
 type Formula = {
   id: string;
@@ -26,6 +29,7 @@ export default function FormulaPage() {
 }
 
 function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
+  const functionalAllowed = useOptionalConsent("functional");
   const [workspace, setWorkspace] = useState("");
   const [name, setName] = useState(initial?.name ?? "Compound interest");
   const [description, setDescription] = useState(initial?.description ?? "Future value with periodic compounding");
@@ -36,23 +40,26 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Read the current key, falling back to earlier brand keys so returning
-    // visitors keep the formulas they saved before the rename.
-    const existing =
-      localStorage.getItem(SITE.storageKeys[0].key) ||
-      SITE.legacyStorageKeys.map((k) => localStorage.getItem(k)).find(Boolean) ||
-      null;
-    const ws = existing || "ws_" + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem(SITE.storageKeys[0].key, ws);
-    setWorkspace(ws);
-  }, []);
+    if (!functionalAllowed) { setWorkspace(""); setSaved([]); return; }
+    const storage = functionalStorage();
+    if (!storage) return;
+    try {
+      const existing = storage.getItem(SITE.storageKeys[0].key) ||
+        SITE.legacyStorageKeys.map((key) => storage.getItem(key)).find(Boolean);
+      const ws = existing || "ws_" + crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+      storage.setItem(SITE.storageKeys[0].key, ws);
+      setWorkspace(ws);
+    } catch {
+      setStatus({ kind: "err", text: "Browser storage is unavailable. You can still evaluate formulas without saving them." });
+    }
+  }, [functionalAllowed]);
 
   const load = useCallback(async () => {
     if (!workspace) return;
     try {
       const r = await fetch(`/api/formulas?workspace=${encodeURIComponent(workspace)}`);
       const j = await r.json();
-      setSaved(j.items || []);
+      if (optionalPurposeAllowed("functional")) setSaved(j.items || []);
     } catch { /* noop */ }
   }, [workspace]);
 
@@ -80,6 +87,7 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
   useEffect(() => { if (gate.revealed) recordExpression(expression); }, [gate.revealed, expression]);
 
   const save = async () => {
+    if (!workspace || !optionalPurposeAllowed("functional")) return;
     setStatus(null);
     setSaving(true);
     try {
@@ -214,8 +222,12 @@ function FormulaWorkspace({ initial }: { initial?: ExpressionPreset }) {
             />
             </ConfirmForm>
 
+            {!functionalAllowed && <div className="rounded-lg border-2 border-dashed border-[color:var(--line)] p-3 text-sm" role="status">
+              <p>Formula saving is off. You can evaluate normally without optional storage. Enable Functional preferences to remember a workspace and save formulas to the server.</p>
+              <CookieSettingsButton className="mt-2 text-xs" />
+            </div>}
             <div className="flex flex-wrap items-center gap-3">
-              <button className="btn btn-primary" onClick={save} disabled={saving || !name.trim() || !expression.trim()}>
+              <button className="btn btn-primary" onClick={save} disabled={saving || !workspace || !functionalAllowed || !name.trim() || !expression.trim()}>
                 <Icon name="plus" size={17} />
                 {saving ? "Saving…" : "Save formula"}
               </button>
