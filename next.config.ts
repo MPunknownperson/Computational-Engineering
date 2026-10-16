@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { optimizePackageImports: ["mathjs"] },
-  serverExternalPackages: ["adm-zip", "tar"],
+  serverExternalPackages: ["adm-zip", "tar", "typescript"],
   // Let Next stream metadata to browsers; HTML-only bots get its default
   // blocking behavior. A blanket htmlLimitedBots regex delayed every route.
   async redirects() {
@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       { source: "/api/formulas", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       { source: "/api/contact", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       { source: "/api/workbench/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+      { source: "/api/workbench/code", headers: [{ key: "Cache-Control", value: "no-store" }, { key: "X-Content-Type-Options", value: "nosniff" }] },
       // Personalized choices and gated supplements must not enter shared caches.
       { source: "/privacy", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
       { source: "/do-not-sell-or-share", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
