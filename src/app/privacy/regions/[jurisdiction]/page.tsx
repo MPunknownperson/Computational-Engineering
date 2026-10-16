@@ -34,7 +34,7 @@ export default async function RegionalPrivacyPage({ params }: { params: Promise<
   const content = REGIONAL_SUPPLEMENTS[region.slug];
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
-      <Link href="/privacy#regional-supplements" className="text-sm font-semibold underline underline-offset-4">Privacy Policy / Regional supplements</Link>
+      <Link href="/privacy" className="text-sm font-semibold underline underline-offset-4">Privacy Policy</Link>
       <h1 className="h-title mt-5 text-3xl sm:text-4xl">{region.name} Privacy Supplement</h1>
       <p className="mt-4 text-sm font-semibold text-slate-600">{region.law} · Policy version {SITE.legalVersion} · Updated {SITE.legalUpdated}</p>
       <div className="mt-6 rounded-xl border-2 border-[color:var(--line)] bg-white p-5 text-sm leading-relaxed text-slate-700">
