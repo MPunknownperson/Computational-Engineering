@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandMark, Wordmark } from "./Brand";
 import { SITE } from "@/lib/site";
 import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
+import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 
 const COLS = [
   { title: "Calculate", items: [
@@ -52,7 +53,10 @@ export function SiteFooter() {
         {COLS.map((column) => (
           <nav key={column.title} aria-label={column.title}>
             <h2 className="mb-3 text-sm font-extrabold tracking-tight">{column.title}</h2>
-            <ul className="space-y-2 text-sm">{column.items.map((item) => <li key={item.href}><Link href={item.href} className="font-semibold text-slate-600 hover:text-[color:var(--ink)] hover:underline">{item.label}</Link></li>)}</ul>
+            <ul className="space-y-2 text-sm">
+              {column.items.map((item) => <li key={item.href}><Link href={item.href} className="font-semibold text-slate-600 hover:text-[color:var(--ink)] hover:underline">{item.label}</Link></li>)}
+              {column.title === "Information" && <li><CookieSettingsButton /></li>}
+            </ul>
           </nav>
         ))}
       </div>
