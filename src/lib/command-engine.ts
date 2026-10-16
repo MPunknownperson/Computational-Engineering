@@ -2,6 +2,7 @@ import { normalizeSpeech } from "@/lib/voice/parser";
 import { VoiceRuntime } from "@/lib/voice/pipeline";
 import { decode, encode, verify, type Program } from "@/lib/voice/ir";
 import { recordVoiceOutcome } from "@/lib/ml/intent";
+import { functionalStorage } from "@/lib/privacy/browser-consent";
 
 /**
  * Stage 6: client-side learning.
@@ -40,7 +41,7 @@ const MAX_MEMORY = 120;
 
 function storage(): Storage | null {
   try {
-    return typeof window !== "undefined" ? window.localStorage : null;
+    return functionalStorage();
   } catch {
     return null;
   }

@@ -56,6 +56,8 @@ interface SilktideConsentInstance {
   toggleModal(show: boolean): void;
   getConsentChoice(typeId: string): boolean | null;
   getHasConsented(): boolean;
+  setConsentChoice(typeId: string, accepted: boolean): void;
+  updateCheckboxState(save?: boolean): void;
   clearAllConsents(): void;
   destroy(): void;
 }

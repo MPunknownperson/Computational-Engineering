@@ -6,8 +6,8 @@ import type { PrivacyArea } from "./geo";
  * - `gdpr`     — EU/EEA, UK and Switzerland: prior opt-in consent for all
  *                non-essential storage (GDPR / UK GDPR / ePrivacy / FADP).
  * - `ccpa`     — California: notice at collection plus an opt-out of
- *                sale/sharing (CCPA/CPRA). Non-essential categories default on
- *                unless Global Privacy Control is present.
+ *                sale/sharing (CCPA/CPRA). The site keeps optional categories off until an explicit choice;
+ *                Global Privacy Control always restricts sale/sharing.
  * - `lgpd`     — Brazil: opt-in consent with purpose-specific categories (LGPD).
  * - `pipeda`   — Canada: meaningful consent; Quebec Law 25 requires opt-in for
  *                tracking, so non-essential categories default off.
@@ -17,7 +17,7 @@ import type { PrivacyArea } from "./geo";
  *                personally referable information (advertising identifiers).
  * - `dpdp`     — India: DPDP Act 2023 free, specific, informed opt-in consent
  *                with an equally easy withdrawal.
- * - `standard` — everywhere else: a simple informational notice, no settings.
+ * - `standard` — everywhere else: the existing informational notice, with settings available on demand.
  * - `unknown`  — the server could not establish a trusted location; the
  *                browser applies a conservative fallback.
  */
@@ -78,8 +78,9 @@ const TZ_REGIMES: Array<[RegExp, ManagedConsentRegime]> = [
 
 /**
  * Browser-side fallback used only when the server had no trusted location.
- * IANA timezones cannot be spoofed by a header and err toward the more
- * protective experience; they never unlock anything sensitive.
+ * Timezones are only a presentation hint, not proof of residence.
+ * All unresolved and resolved regions keep optional purposes off until chosen;
+ * this fallback never unlocks a private API or regional legal supplement.
  */
 export function regimeFromTimezone(timeZone: string | undefined, language?: string): ConsentRegime {
   const tz = (timeZone ?? "").trim();

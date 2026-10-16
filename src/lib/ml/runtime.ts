@@ -1,6 +1,7 @@
 "use client";
 
 import type * as TF from "@tensorflow/tfjs";
+import { functionalStorage, optionalPurposeAllowed, subscribeConsentChange } from "@/lib/privacy/browser-consent";
 
 /**
  * Shared TensorFlow.js runtime.
@@ -23,7 +24,7 @@ const MODEL_PREFIX = "radixloom-";
 let loading: Promise<Tf | null> | null = null;
 
 export function loadTf(): Promise<Tf | null> {
-  if (typeof window === "undefined") return Promise.resolve(null);
+  if (typeof window === "undefined" || !optionalPurposeAllowed("functional")) return Promise.resolve(null);
   loading ??= (async () => {
     try {
       const tf = await import("@tensorflow/tfjs");
@@ -50,6 +51,9 @@ export function serial<T>(job: () => Promise<T>): Promise<T> {
 }
 
 const instances = new Map<string, Promise<unknown>>();
+if (typeof window !== "undefined") subscribeConsentChange(() => {
+  if (!optionalPurposeAllowed("functional")) instances.clear();
+});
 /** Memoise a model for the lifetime of the page. */
 export function memo<T>(key: string, make: () => Promise<T>): Promise<T> {
   const existing = instances.get(key) as Promise<T> | undefined;
@@ -66,7 +70,7 @@ export function dropMemo(prefix: string) {
 
 function storage(): Storage | null {
   try {
-    return typeof window === "undefined" ? null : window.localStorage;
+    return functionalStorage();
   } catch {
     return null;
   }
@@ -117,6 +121,7 @@ export async function loadCached(tf: Tf, name: string, hash: string): Promise<{ 
 }
 
 export async function saveCached(name: string, hash: string, model: LayersModel, extra: unknown) {
+  if (!optionalPurposeAllowed("functional")) return;
   try {
     await model.save(`indexeddb://${MODEL_PREFIX}${name}`);
     writeJson(`model.${name}`, { hash, extra } satisfies Meta);
@@ -146,7 +151,9 @@ export function hasMlData(): boolean {
 
 /** Remove everything the on-device models learned, including cached weights. */
 export async function clearMlData(): Promise<void> {
-  const store = storage();
+  // Explicit data-deletion controls remain available even when consent is off.
+  let store: Storage | null = null;
+  try { store = window.localStorage; } catch { /* storage blocked */ }
   const names: string[] = [];
   if (store) {
     try {
@@ -162,7 +169,7 @@ export async function clearMlData(): Promise<void> {
   }
   instances.clear();
   if (names.length === 0) return;
-  const tf = await loadTf();
+  const tf = await import("@tensorflow/tfjs").catch(() => null);
   if (!tf) return;
   await Promise.all(names.map((name) => tf.io.removeModel(`indexeddb://${MODEL_PREFIX}${name}`).catch(() => undefined)));
 }

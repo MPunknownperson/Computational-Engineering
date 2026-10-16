@@ -1,6 +1,7 @@
 "use client";
 
 import { decode, encode, type Program } from "@/lib/voice/ir";
+import { functionalStorage } from "@/lib/privacy/browser-consent";
 
 /**
  * The last verified command is short-lived browser session state, not a voice
@@ -15,7 +16,7 @@ type Stored = { encoded: string; expiresAt: number };
 
 function store(): Storage | null {
   try {
-    return typeof window === "undefined" ? null : window.sessionStorage;
+    return functionalStorage("session");
   } catch {
     return null;
   }
