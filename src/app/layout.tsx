@@ -12,6 +12,9 @@ import { SITE } from "@/lib/site";
 import { defaultMetadata } from "@/lib/seo";
 import { headers } from "next/headers";
 import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
+import { trustedPrivacyArea } from "@/lib/privacy/geo";
+import { regimeForArea } from "@/lib/privacy/consent-regime";
+import { ConsentManager } from "@/components/consent/ConsentManager";
 
 export const generateMetadata = defaultMetadata;
 export const viewport: Viewport = {
@@ -40,6 +43,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const rawTone = requestHeaders.get("x-page-tone") ?? "home";
   const tone = TONES.has(rawTone) ? rawTone : "home";
   const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
+  // GDPR regions and California get the Silktide Consent Manager; others a plain notice.
+  const consentRegime = regimeForArea(trustedPrivacyArea(requestHeaders));
   return (
     <html lang="en" suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /></head>
@@ -59,6 +64,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <PageTransition>{children}</PageTransition>
         </main>
         <SiteFooter />
+        <ConsentManager serverRegime={consentRegime} />
       </body>
     </html>
   );

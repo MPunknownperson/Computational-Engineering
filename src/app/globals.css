@@ -459,3 +459,88 @@ html[data-theme="dark"] ::selection { color: #101a27; background: #c1df8f; }
   .theme-thumb { transition: none; }
   .nav-link { transition: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Cookie consent — Silktide Consent Manager v2.0 (GDPR / CCPA) restyled to the
+   site's ink-on-paper identity, plus the simple notice used elsewhere.
+   -------------------------------------------------------------------------- */
+#stcm-wrapper {
+  --fontFamily: inherit;
+  --primaryColor: var(--ink);
+  --backgroundColor: #fff;
+  --textColor: var(--ink);
+  --backdropBackgroundColor: rgba(11, 16, 32, .42);
+  --backdropBackgroundBlur: 2px;
+  --iconColor: var(--accent-3);
+  --iconBackgroundColor: #0b1020;
+  --boxShadow: var(--shadow-ink-lg);
+  font-family: inherit;
+}
+html[data-theme="dark"] #stcm-wrapper { --backgroundColor: #1b2941; --iconColor: #0b1020; --iconBackgroundColor: var(--accent-3); }
+#stcm-wrapper #stcm-banner, #stcm-wrapper #stcm-modal {
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow-ink-lg);
+  color: var(--textColor);
+  font-size: .95rem;
+  line-height: 1.55;
+}
+#stcm-wrapper #stcm-banner { padding: 24px 26px; width: 680px; }
+#stcm-wrapper #stcm-banner.stcm-pos-bottom-center { bottom: 16px; }
+#stcm-wrapper #stcm-banner p, #stcm-wrapper #stcm-modal p { color: var(--textColor); font-size: .95rem; line-height: 1.55; }
+#stcm-wrapper #stcm-banner a, #stcm-wrapper #stcm-modal a { color: var(--textColor); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--underline); border-radius: 4px; }
+#stcm-wrapper #stcm-banner a:hover, #stcm-wrapper #stcm-modal a:hover { background: var(--nav-hover); }
+#stcm-wrapper #stcm-banner a.stcm-logo { display: none; }
+#stcm-wrapper #stcm-banner strong { font-weight: 800; letter-spacing: -.01em; }
+body #stcm-wrapper .stcm-button {
+  display: inline-flex; min-height: 44px; align-items: center; justify-content: center;
+  padding: .55rem 1.05rem; font: inherit; font-size: .9rem; font-weight: 700;
+  border: 2px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-ink-sm);
+  background: #fff; color: #0b1020; transition: transform 140ms var(--ease), background-color 140ms;
+}
+body #stcm-wrapper .stcm-button:active { transform: translate(1px, 1px); }
+body #stcm-wrapper .stcm-button.stcm-accept-all, body #stcm-wrapper .stcm-button.stcm-modal-save { background: #0b1020; color: #fff; }
+body #stcm-wrapper .stcm-button.stcm-accept-all:hover, body #stcm-wrapper .stcm-button.stcm-modal-save:hover { background: #121a33; color: #fff; }
+body #stcm-wrapper .stcm-button.stcm-reject-all, body #stcm-wrapper .stcm-button.stcm-modal-reject-all { background: var(--accent-3); color: #0b1020; }
+body #stcm-wrapper .stcm-button.stcm-reject-all:hover, body #stcm-wrapper .stcm-button.stcm-modal-reject-all:hover { background: #fff3bd; color: #0b1020; }
+html[data-theme="dark"] #stcm-wrapper .stcm-button.stcm-accept-all, html[data-theme="dark"] #stcm-wrapper .stcm-button.stcm-modal-save { background: var(--ink); color: #0b1020; }
+html[data-theme="dark"] #stcm-wrapper .stcm-button.stcm-accept-all:hover, html[data-theme="dark"] #stcm-wrapper .stcm-button.stcm-modal-save:hover { background: #fff; }
+#stcm-wrapper #stcm-banner .stcm-preferences-button { font: inherit; font-size: .9rem; font-weight: 700; color: var(--textColor); background: transparent; border: 0; cursor: pointer; }
+#stcm-wrapper #stcm-banner .stcm-preferences-button span { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--underline); }
+#stcm-wrapper #stcm-banner .stcm-actions { gap: 14px; }
+#stcm-wrapper #stcm-banner .stcm-actions-row { gap: 10px; flex-wrap: wrap; }
+#stcm-wrapper #stcm-modal { padding: 26px 28px; width: 760px; }
+#stcm-wrapper #stcm-modal h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; }
+#stcm-wrapper #stcm-modal .stcm-modal-close { color: var(--textColor); border: 2px solid var(--line); border-radius: 12px; background: transparent; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+#stcm-wrapper #stcm-modal .stcm-modal-close svg { fill: currentColor; }
+#stcm-wrapper #stcm-modal fieldset { border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 0 0 12px; background: var(--paper); }
+html[data-theme="dark"] #stcm-wrapper #stcm-modal fieldset { background: #141d30; }
+#stcm-wrapper #stcm-modal legend { font-weight: 800; font-size: 1rem; padding: 0 6px; }
+#stcm-wrapper #stcm-modal .stcm-consent-description p { font-size: .9rem; }
+#stcm-wrapper #stcm-modal .stcm-toggle-track { background: var(--paper-2); border: 2px solid var(--line); box-sizing: border-box; }
+#stcm-wrapper #stcm-modal .stcm-toggle input:checked + .stcm-toggle-track { background: var(--accent-4); }
+#stcm-wrapper #stcm-modal .stcm-toggle-thumb { background: #0b1020; }
+#stcm-wrapper #stcm-modal .stcm-toggle-off, #stcm-wrapper #stcm-modal .stcm-toggle-on { font-weight: 700; color: var(--textColor); }
+#stcm-wrapper #stcm-modal footer { border-top: 2px solid var(--line); padding-top: 16px; margin-top: 8px; gap: 10px; flex-wrap: wrap; }
+#stcm-wrapper #stcm-modal footer a.stcm-credit-link { font-size: .75rem; font-weight: 600; opacity: .75; text-decoration: none; }
+#stcm-wrapper #stcm-icon { width: 52px; height: 52px; border: 2px solid var(--line); box-shadow: var(--shadow-ink-sm); bottom: 14px; left: 14px; }
+#stcm-wrapper #stcm-icon svg { width: 26px; height: 26px; }
+#stcm-wrapper a:focus-visible, #stcm-wrapper button:focus-visible, #stcm-wrapper #stcm-icon:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; border-radius: 12px; }
+@media (max-width: 640px) {
+  #stcm-wrapper #stcm-banner { padding: 18px; bottom: 8px; max-width: calc(100% - 16px); }
+  #stcm-wrapper .stcm-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { #stcm-wrapper #stcm-banner, #stcm-wrapper #stcm-modal, #stcm-wrapper #stcm-icon { animation: none; opacity: 1; transform: none; } }
+
+/* Simple notice (regions outside GDPR / CCPA). */
+.cookie-notice { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 0 12px 12px; pointer-events: none; }
+.cookie-notice-card { pointer-events: auto; position: relative; margin: 0 auto; max-width: 56rem; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding: .9rem 2.9rem .9rem 1rem; background: #fff; border: 2px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-ink); animation: cookieNoticeIn 260ms var(--ease) both; }
+html[data-theme="dark"] .cookie-notice-card { background: #1b2941; }
+.cookie-notice-mark { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border: 2px solid var(--line); border-radius: 12px; background: var(--accent-3); color: #0b1020; flex: none; }
+.cookie-notice-text { flex: 1 1 18rem; margin: 0; font-size: .9rem; line-height: 1.5; color: var(--ink); }
+.cookie-notice-ok { flex: none; }
+.cookie-notice-close { position: absolute; top: .55rem; right: .55rem; display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border: 2px solid transparent; border-radius: 10px; background: transparent; color: var(--ink); cursor: pointer; }
+.cookie-notice-close:hover { border-color: var(--line); background: var(--nav-hover); }
+.cookie-notice-close:focus-visible, .cookie-notice-ok:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+@keyframes cookieNoticeIn { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cookie-notice-card { animation: none; } }
