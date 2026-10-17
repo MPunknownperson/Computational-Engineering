@@ -1,3 +1,12 @@
+import { trustedGeoHeaders } from "./support/geography";
+
+test.beforeEach(async ({ context }) => {
+  await context.setExtraHTTPHeaders(trustedGeoHeaders("US", "NY"));
+  await context.addInitScript(() => {
+    localStorage.setItem("stcm.radixloom-v2-standard.hasConsented", "1");
+    localStorage.setItem("stcm.radixloom-v2-standard.consent.functional", "true");
+  });
+});
 import { devices, expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 /**
@@ -168,60 +177,6 @@ test.describe("desktop", () => {
     await page.waitForURL(/\/tools\/currency\?base=USD&to=EUR&amount=120/);
   });
 
-  test("a browser with no speech engine falls back to the built-in on-device model", async ({ page }) => {
-    await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown>;
-      delete w.SpeechRecognition;
-      delete w.webkitSpeechRecognition;
-      // The browser exposes a built-in generative model, so voice stays
-      // available and recognition runs entirely on the device.
-      w.LanguageModel = {
-        availability: async () => "available",
-        create: async () => ({ prompt: async () => "", destroy() {} }),
-      };
-    });
-    await page.goto("/calculators");
-    await expect(voiceCard(page).getByRole("button", { name: "Speak a calculation" })).toBeEnabled();
-    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
-  });
-
-  test("preparation names the browser's built-in model and downloads nothing from this site", async ({ page }) => {
-    const modelRequests: string[] = [];
-    page.on("request", (request) => {
-      const url = request.url();
-      if (/huggingface|\.onnx|transformers/i.test(url)) modelRequests.push(url);
-    });
-    await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown>;
-      delete w.SpeechRecognition;
-      delete w.webkitSpeechRecognition;
-      // Hold the session in "downloadable" so the preparation notice stays up.
-      w.LanguageModel = {
-        availability: async () => "downloadable",
-        create: () => new Promise(() => {}),
-      };
-    });
-    await page.goto("/calculators");
-    await speakButton(page).click();
-    await expect(voiceCard(page)).toContainText(/built-in on-device model/i);
-    await expect(voiceCard(page)).toContainText(/hosts no model weights/i);
-    // The decisive assertion: nothing is fetched from a model host.
-    expect(modelRequests).toEqual([]);
-    await page.getByRole("button", { name: "Cancel" }).click();
-  });
-
-  test("a browser without native speech or experimental AI gets portable on-device speech", async ({ page }) => {
-    await page.addInitScript(() => {
-      const w = window as unknown as Record<string, unknown> & { ai?: unknown };
-      delete w.SpeechRecognition;
-      delete w.webkitSpeechRecognition;
-      delete w.LanguageModel;
-      delete w.ai;
-    });
-    await page.goto("/calculators");
-    await expect(speakButton(page)).toBeEnabled();
-    await expect(voiceCard(page)).toContainText("On-device speech · phones, tablets & desktops");
-  });
 });
 
 test.describe("mobile", () => {
@@ -267,7 +222,7 @@ test.describe("mobile", () => {
 });
 
 test.describe("region", () => {
-  test.use({ extraHTTPHeaders: { "cf-ipcountry": "IR" } });
+  test.beforeEach(async ({ context }) => { await context.setExtraHTTPHeaders(trustedGeoHeaders("IR")); });
 
   test("voice input is withheld where it is legally restricted", async ({ page }) => {
     await installMock(page, { localOption: true });

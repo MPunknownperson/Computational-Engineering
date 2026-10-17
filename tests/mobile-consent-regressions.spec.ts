@@ -1,77 +1,53 @@
 import { devices, expect, test } from "@playwright/test";
-import { regimeFromTimezone } from "@/lib/privacy/consent-regime";
-import { decideVoiceProcessing } from "@/lib/voice/policy";
-
-const regimes = [
-  ["gdpr", "GDPR", "Europe/Berlin"], ["ccpa", "California", "America/Los_Angeles"],
-  ["lgpd", "Brazil", "America/Sao_Paulo"], ["pipeda", "Canada", "America/Toronto"],
-  ["au", "Australia", "Australia/Sydney"], ["pdpa", "Singapore", "Asia/Singapore"],
-  ["appi", "Japan", "Asia/Tokyo"], ["dpdp", "India", "Asia/Kolkata"],
-] as const;
+import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-regime";
+import { trustedGeoHeaders } from "./support/geography";
 
 const settings = (page: import("@playwright/test").Page) => page.getByRole("contentinfo").getByRole("button", { name: "Cookie settings", exact: true });
 
-test("missing timezones, language lists, aliases and portable policy are handled", () => {
-  expect(regimeFromTimezone(undefined, ["en-US", "pt-BR"])).toBe("lgpd");
-  expect(regimeFromTimezone("UTC", ["en-US", "fr-CA"])).toBe("pipeda");
-  expect(regimeFromTimezone(undefined, "en-AU")).toBe("au");
-  expect(regimeFromTimezone("UTC", "zh-Hans-SG")).toBe("pdpa");
-  expect(regimeFromTimezone(undefined, "ja-JP")).toBe("appi");
-  expect(regimeFromTimezone("UTC", "ta-IN")).toBe("dpdp");
-  expect(regimeFromTimezone(undefined, "de-DE")).toBe("gdpr");
-  expect(regimeFromTimezone("Asia/Calcutta", "en-US")).toBe("dpdp");
-  expect(regimeFromTimezone("US/Pacific", "en-US")).toBe("ccpa");
-  const input = { speechApi: false, os: "ios" as const, device: "tablet" as const, browser: "safari" as const, browserCloud: false, local: "unavailable" as const, region: "CN", language: "zh-CN", canRunPortableModel: true };
-  expect(decideVoiceProcessing(input)).toMatchObject({ available: true, mode: "portable", rule: "local-only" });
-  expect(decideVoiceProcessing({ ...input, region: "IR" })).toMatchObject({ available: false, reason: "region" });
-  expect(decideVoiceProcessing({ ...input, region: "US", overrides: { US: "cloud-only" } })).toMatchObject({ available: false, reason: "no-cloud" });
+test("only server-verified country and subdivision determine the notice", () => {
+  expect(regimeForArea({ country: "BR", region: null })).toBe("lgpd");
+  expect(regimeForArea({ country: "US", region: "CA" })).toBe("ccpa");
+  expect(regimeForArea({ country: "US", region: "NY" })).toBe("standard");
+  expect(regimeForArea(null)).toBe("unknown");
+  expect(protectiveConsentRegime("unknown")).toBe("gdpr");
 });
 
-for (const [country, headers, regime] of [
-  ["Brazil", { "cf-ipcountry": "BR" }, "lgpd"],
-  ["India", { "x-vercel-ip-country": "IN" }, "dpdp"],
-  ["California", { "cloudfront-viewer-country": "US", "cloudfront-viewer-country-region": "CA" }, "ccpa"],
-  ["Canada", { "x-appengine-country": "CA" }, "pipeda"],
-  ["Australia", { "fastly-client-country": "AU" }, "au"],
-  ["Japan", { "fly-client-country": "JP" }, "appi"],
-] as Array<[string, Record<string, string>, string]>) {
-  test(`${country} hosting hints select the managed notice without provider configuration`, async ({ browser }) => {
-    const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US", extraHTTPHeaders: headers });
+for (const [country, region, regime] of [
+  ["DE", undefined, "gdpr"], ["US", "CA", "ccpa"], ["BR", undefined, "lgpd"],
+  ["CA", undefined, "pipeda"], ["AU", undefined, "au"], ["SG", undefined, "pdpa"],
+  ["JP", undefined, "appi"], ["IN", undefined, "dpdp"],
+] as const) {
+  test(`${country}: verified country wins over unrelated timezone, locale and old settings`, async ({ browser }) => {
+    const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US", extraHTTPHeaders: trustedGeoHeaders(country, region) });
+    await context.addInitScript(() => localStorage.setItem("radixloom.consent-region.v1", "standard"));
     const page = await context.newPage();
     try {
-      await page.goto("/");
+      await page.goto("/?country=KR&privacyRegion=standard");
       await expect(page.locator("html")).toHaveAttribute("data-consent-regime", regime);
       await expect(page.locator("#stcm-banner")).toBeVisible();
-      await expect(page.locator(".cookie-notice")).toHaveCount(0);
+      await settings(page).click();
+      await expect(page.locator("#stcm-modal")).toBeVisible();
+      await expect(page.getByLabel("Privacy region", { exact: true })).toHaveCount(0);
+      await expect(page.locator("#consent-region-selector")).toHaveCount(0);
+      await expect(page.locator("#consent-functional")).not.toBeChecked();
+      expect(await page.evaluate(() => localStorage.getItem("radixloom.consent-region.v1"))).toBeNull();
     } finally { await context.close(); }
   });
 }
 
-test("all eight regions can be corrected manually and persist without accepting cookies", async ({ browser }) => {
-  const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US" });
+test("unverified geography never trusts client-supplied country headers", async ({ browser }) => {
+  const context = await browser.newContext({ timezoneId: "Asia/Tokyo", locale: "ja-JP", extraHTTPHeaders: { "cf-ipcountry": "JP", "x-country-code": "JP" } });
   const page = await context.newPage();
   try {
-    await page.goto("/"); await settings(page).click();
-    for (const [regime, name] of regimes) {
-      await page.getByLabel("Privacy region", { exact: true }).selectOption(regime);
-      await expect(page.locator("html")).toHaveAttribute("data-consent-regime", regime);
-      await expect(page.locator("#stcm-modal")).toBeVisible();
-      await expect(page.locator("#consent-region-help")).toContainText(name);
-      await expect(page.locator("#consent-functional")).not.toBeChecked();
-      expect(await page.evaluate((r) => localStorage.getItem(`stcm.radixloom-v2-${r}.hasConsented`), regime)).toBeNull();
-    }
-    await page.reload();
-    await expect(page.locator("html")).toHaveAttribute("data-consent-regime", "dpdp");
-    await expect(page.locator("#stcm-banner")).toContainText("DPDP");
-    await settings(page).click();
-    await page.getByLabel("Privacy region", { exact: true }).selectOption("auto");
-    await expect(page.locator("html")).toHaveAttribute("data-consent-regime", "standard");
-    for (const purpose of ["essential", "functional", "analytics", "advertising"]) await expect(page.locator(`#consent-${purpose}`)).toBeChecked();
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("data-consent-regime", "gdpr");
+    await expect(page.locator("html")).toHaveAttribute("data-consent-location", "unverified");
+    expect((await page.request.get("/privacy/regions/japan")).status()).toBe(403);
   } finally { await context.close(); }
 });
 
 test("standard saved rejections survive reload and are not reset to defaults", async ({ browser }) => {
-  const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US" });
+  const context = await browser.newContext({ extraHTTPHeaders: trustedGeoHeaders("KR"), timezoneId: "Asia/Seoul", locale: "en-US" });
   const page = await context.newPage();
   try {
     await page.goto("/"); await settings(page).click();
@@ -87,7 +63,7 @@ test("standard saved rejections survive reload and are not reset to defaults", a
 });
 
 test("standard advertising defaults honour GPC", async ({ browser }) => {
-  const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US" });
+  const context = await browser.newContext({ extraHTTPHeaders: trustedGeoHeaders("KR"), timezoneId: "Asia/Seoul", locale: "en-US" });
   await context.addInitScript(() => Object.defineProperty(navigator, "globalPrivacyControl", { value: true }));
   const page = await context.newPage();
   try {
@@ -102,7 +78,7 @@ test("standard advertising defaults honour GPC", async ({ browser }) => {
 for (const device of ["Desktop Chrome", "iPhone 13", "iPad (gen 7)"]) {
   test(`${device}: consent palette follows explicit theme, not OS preference`, async ({ browser }) => {
     const { defaultBrowserType: _unused, ...profile } = devices[device]; void _unused;
-    const context = await browser.newContext({ ...profile, timezoneId: "Asia/Seoul", locale: "en-US", colorScheme: "dark" });
+    const context = await browser.newContext({ extraHTTPHeaders: trustedGeoHeaders("KR"), ...profile, timezoneId: "Asia/Seoul", locale: "en-US", colorScheme: "dark" });
     const page = await context.newPage();
     try {
       await page.goto("/");
@@ -124,7 +100,7 @@ for (const device of ["Desktop Chrome", "iPhone 13", "iPad (gen 7)"]) {
 }
 
 test("consent controls have accessible names and AA contrast in both themes", async ({ browser }) => {
-  const context = await browser.newContext({ timezoneId: "Asia/Seoul", locale: "en-US", colorScheme: "light", reducedMotion: "reduce" });
+  const context = await browser.newContext({ extraHTTPHeaders: trustedGeoHeaders("KR"), timezoneId: "Asia/Seoul", locale: "en-US", colorScheme: "light", reducedMotion: "reduce" });
   const page = await context.newPage();
   try {
     await page.goto("/");

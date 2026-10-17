@@ -10,7 +10,7 @@ export default defineConfig({
   reporter: "list",
   projects: [
     { name: "chromium", use: { browserName: "chromium" } },
-    { name: "webkit", testMatch: /(voice-lifecycle|mobile-consent-regressions|portable-speech)\.spec\.ts/, use: { browserName: "webkit" } },
+    { name: "webkit", testMatch: /(voice-lifecycle|mobile-consent-regressions|browser-speech-only)\.spec\.ts/, use: { browserName: "webkit" } },
   ],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",

@@ -1,19 +1,6 @@
+import { trustedGeoHeaders } from "./support/geography";
 import { expect, test } from "@playwright/test";
 import { mediaAssets } from "@/lib/media/assets";
-import { supportsGenerativeSpeechLanguage } from "@/lib/voice/languages";
-import { decideVoiceProcessing } from "@/lib/voice/policy";
-
- test("generative audio is gated independently from text-language support", () => {
-  for (const locale of ["en", "en-US", "en-GB", "en_AU"]) expect(supportsGenerativeSpeechLanguage(locale)).toBe(true);
-  for (const locale of ["es-MX", "fr-FR", "de-DE", "zh-Hans-CN", "ja-JP"]) {
-    expect(supportsGenerativeSpeechLanguage(locale)).toBe(false);
-    const policy = decideVoiceProcessing({
-      speechApi: false, browserCloud: false, local: "unavailable", canRunLocalModel: true,
-      language: locale, os: "windows", device: "desktop", browser: "chrome", region: "US",
-    });
-    expect(policy.available).toBe(false);
-  }
-});
 
 test("guide art has hashed lossless variants with immutable caching", async ({ request }) => {
   const assets = mediaAssets("guides--meters-to-feet")!;
@@ -74,8 +61,8 @@ test("hover never places glow or sheen overlays over readable text", async ({ pa
 });
 
 for (const [locale, phrase] of [["es-MX", "70 kilos en libras"], ["fr-FR", "70 kilos en livres"], ["de-DE", "70 Kilo in Pfund"]]) {
-  test(`non-English browser speech keeps ${locale} and never invokes the English model`, async ({ browser }) => {
-    const context = await browser.newContext({ locale });
+  test(`non-English browser speech keeps ${locale} and does not invoke an alternate speech engine`, async ({ browser }) => {
+    const context = await browser.newContext({ locale, extraHTTPHeaders: trustedGeoHeaders("US", "NY") });
     const page = await context.newPage();
     try {
       await page.addInitScript(({ phrase }) => {
@@ -112,107 +99,3 @@ for (const [locale, phrase] of [["es-MX", "70 kilos en libras"], ["fr-FR", "70 k
   });
 }
 
-test("cancelled English model preparation never opens the microphone", async ({ page }) => {
-  await page.addInitScript(() => {
-    const w = window as unknown as Record<string, unknown>;
-    delete w.SpeechRecognition;
-    delete w.webkitSpeechRecognition;
-    const probe = { microphone: 0, aborted: false };
-    w.__cancelProbe = probe;
-    navigator.mediaDevices.getUserMedia = async () => {
-      probe.microphone++;
-      return {} as MediaStream;
-    };
-    w.LanguageModel = {
-      availability: async () => "downloadable",
-      create: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
-        signal.addEventListener("abort", () => { probe.aborted = true; reject(new DOMException("Cancelled", "AbortError")); });
-      }),
-    };
-  });
-  await page.goto("/calculators");
-  const card = page.locator("section[aria-labelledby='voice-heading']");
-  await expect(card.getByRole("button", { name: "Speak a calculation" })).toBeEnabled();
-  await card.getByRole("button", { name: "Speak a calculation" }).click();
-  await expect(card).toContainText("English speech");
-  await card.getByRole("button", { name: "Cancel" }).click();
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __cancelProbe: { aborted: boolean } }).__cancelProbe.aborted)).toBe(true);
-  expect(await page.evaluate(() => (window as unknown as { __cancelProbe: { microphone: number } }).__cancelProbe.microphone)).toBe(0);
-});
-
-test("an available text model cannot enable unsupported audio capture", async ({ page }) => {
-  await page.addInitScript(() => {
-    const w = window as unknown as Record<string, unknown>;
-    delete w.SpeechRecognition;
-    delete w.webkitSpeechRecognition;
-    const probe = { audioChecks: 0, creations: 0, microphone: 0 };
-    w.__audioProbe = probe;
-    navigator.mediaDevices.getUserMedia = async () => { probe.microphone++; return {} as MediaStream; };
-    w.LanguageModel = {
-      availability: async ({ expectedInputs }: { expectedInputs: Array<{ type: string }> }) => {
-        if (expectedInputs.some((input) => input.type === "audio")) { probe.audioChecks++; return "unavailable"; }
-        return "available";
-      },
-      create: async () => { probe.creations++; throw new Error("No audio support"); },
-    };
-  });
-  await page.goto("/calculators");
-  await expect(page.locator("section[aria-labelledby='voice-heading']").getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
-  const probe = await page.evaluate(() => (window as unknown as { __audioProbe: { audioChecks: number; creations: number; microphone: number } }).__audioProbe);
-  expect(probe.audioChecks).toBeGreaterThan(0);
-  expect(probe.creations).toBe(0);
-  expect(probe.microphone).toBe(0);
-});
-
-test("English generative recognition prepares the model before recording and releases it", async ({ page }) => {
-  await page.addInitScript(() => {
-    const w = window as unknown as Record<string, unknown>;
-    delete w.SpeechRecognition;
-    delete w.webkitSpeechRecognition;
-    const probe = { prepared: false, events: [] as string[], audioLanguage: "" };
-    w.__captureProbe = probe;
-    w.LanguageModel = {
-      availability: async () => "available",
-      create: async (options: { expectedInputs: Array<{ type: string; languages?: string[] }> }) => {
-        probe.audioLanguage = options.expectedInputs.find((input) => input.type === "audio")?.languages?.[0] ?? "";
-        probe.events.push("prepare");
-        await new Promise((resolve) => setTimeout(resolve, 40));
-        probe.prepared = true;
-        return {
-          prompt: async () => { probe.events.push("transcribe"); return "five miles to kilometers"; },
-          destroy() { probe.events.push("destroy"); },
-        };
-      },
-    };
-    navigator.mediaDevices.getUserMedia = async () => {
-      if (!probe.prepared) throw new Error("Microphone opened before model readiness");
-      probe.events.push("microphone");
-      return { getTracks: () => [{ stop() { probe.events.push("release"); } }] } as unknown as MediaStream;
-    };
-    class Recorder extends EventTarget {
-      state = "inactive";
-      mimeType = "audio/webm";
-      static isTypeSupported() { return true; }
-      start() { this.state = "recording"; probe.events.push("record"); setTimeout(() => this.stop(), 40); }
-      stop() {
-        if (this.state !== "recording") return;
-        this.state = "inactive";
-        const event = new Event("dataavailable");
-        Object.defineProperty(event, "data", { value: new Blob([new Uint8Array(2000)]) });
-        this.dispatchEvent(event);
-        this.dispatchEvent(new Event("stop"));
-      }
-    }
-    w.MediaRecorder = Recorder;
-  });
-  await page.goto("/calculators");
-  const button = page.locator("section[aria-labelledby='voice-heading']").getByRole("button", { name: "Speak a calculation" });
-  await expect(button).toBeEnabled();
-  await button.click();
-  await page.waitForURL(/\/tools\/units\?category=length&from=mi&to=km&value=5/);
-  const probe = await page.evaluate(() => (window as unknown as { __captureProbe: { events: string[]; audioLanguage: string } }).__captureProbe);
-  expect(probe.audioLanguage).toBe("en");
-  expect(probe.events.slice(0, 3)).toEqual(["prepare", "microphone", "record"]);
-  expect(probe.events.indexOf("release")).toBeLessThan(probe.events.indexOf("transcribe"));
-  expect(probe.events).toContain("destroy");
-});

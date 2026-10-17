@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { parseVoiceCommand } from "@/lib/voice/pipeline";
 
+test.use({ reducedMotion: "reduce" });
+
 const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "/tools/formula", "/guides", "/contact", "/terms", "/privacy", "/do-not-sell-or-share"];
 
 /**
@@ -15,6 +17,8 @@ const AUDIT_PATHS = ["/", "/calculators", "/tools/units", "/tools/scientific", "
 async function audit(page: Page, path: string) {
   await page.goto(path);
   await page.waitForLoadState("domcontentloaded");
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => Boolean(window.silktideConsentManager?.getInstance()?.config.namespace));
   const axePath = require.resolve("axe-core/axe.min.js");
   await page.addScriptTag({ path: axePath });
   const results = await page.evaluate(async () => {
@@ -55,7 +59,7 @@ test("voice entry is present and degrades safely when unsupported", async ({ pag
   const button = page.getByRole("button", { name: /Speak a calculation|Voice input unavailable/i });
   await expect(button).toBeVisible();
   if (await button.isDisabled()) {
-    await expect(page.locator("#voice-status")).toContainText(/Voice input is not available|try one of/i);
+    await expect(page.locator("#voice-status")).toContainText(/Voice input is not available|Voice input is unavailable|country or region could not be verified|try one of/i);
   }
 });
 

@@ -1,3 +1,12 @@
+import { trustedGeoHeaders } from "./support/geography";
+
+test.beforeEach(async ({ context }) => {
+  await context.setExtraHTTPHeaders(trustedGeoHeaders("US", "NY"));
+  await context.addInitScript(() => {
+    localStorage.setItem("stcm.radixloom-v2-standard.hasConsented", "1");
+    localStorage.setItem("stcm.radixloom-v2-standard.consent.functional", "true");
+  });
+});
 import { devices, expect, test, type Page } from "@playwright/test";
 import type { RecognitionInstance } from "@/lib/browser-tokens";
 
@@ -221,7 +230,7 @@ test("a privacy-filtered device list before permission does not disable voice", 
   await expect(speak(page)).toBeEnabled();
 });
 
-test("no native engine, browser model or portable runtime disables voice", async ({ page }) => {
+test("a browser without Web Speech API disables voice", async ({ page }) => {
   await setup(page, { noApi: true });
   await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
   await expect(card(page).getByRole("link", { name: /keyboard|teclado|clavier|tippen|键盘/i })).toHaveCount(0);
@@ -263,9 +272,8 @@ test("leaving the visible page aborts capture and does not restart in the backgr
 test("a local-only region never falls back to a cloud engine after a service error", async ({ page }) => {
   await setup(page, { region: "CN", local: true });
   await speak(page).click(); await emit(page, "error", "language-not-supported");
-  await expect(speak(page)).toBeEnabled();
-  await expect(card(page)).toContainText("On-device speech · phones, tablets & desktops");
-  await expect(card(page)).toContainText("audio will stay on this device");
+  await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
+  await expect(card(page).getByRole("alert")).toContainText("not available for this language");
   const p = await probe(page); expect(p.starts).toBe(1); expect(p.locals).toEqual([true]);
   await expect(card(page)).not.toContainText("browser provider's speech service");
 });

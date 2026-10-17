@@ -1,4 +1,5 @@
 import { expect, test, type Browser } from "@playwright/test";
+import { trustedGeoHeaders } from "./support/geography";
 
 const cases = [
   ["GDPR", "Europe/Berlin", "gdpr"],
@@ -12,7 +13,14 @@ const cases = [
 ] as const;
 
 async function regionalContext(browser: Browser, timezoneId: string) {
+  const locations: Record<string, [string, string?]> = {
+    "Europe/Berlin": ["DE"], "America/Los_Angeles": ["US", "CA"], "America/Sao_Paulo": ["BR"],
+    "America/Toronto": ["CA"], "Australia/Sydney": ["AU"], "Asia/Singapore": ["SG"],
+    "Asia/Tokyo": ["JP"], "Asia/Kolkata": ["IN"], "Asia/Seoul": ["KR"],
+  };
+  const [country, region] = locations[timezoneId];
   return browser.newContext({
+    extraHTTPHeaders: trustedGeoHeaders(country, region),
     timezoneId,
     locale: "en-US",
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",

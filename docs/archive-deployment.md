@@ -1,32 +1,26 @@
-# Archive replacement deployment
+# Radix Loom — Computational Engineering
 
-Source: https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/main.zip
+This deployment replaces the previous site with the project downloaded from:
+https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/main.zip
 
-Archive commit: `5f80d7bd983dc3459f1da7c9936f0731d338a48b`
+## Run
 
-The archive was downloaded to `/tmp/computational-engineering-main.zip`, checked for path traversal and symlinks, and extracted under `/tmp/computational-engineering-import/`. Application source, public assets, documentation, tests and configuration replace the previous Unpack application. The environment secrets and local PostgreSQL connection were preserved. Dependencies were installed with npm rather than copying the archive's package manifest over the host project's manifest.
+Install dependencies, set `DATABASE_URL`, apply the Drizzle schema with `npx drizzle-kit push`, then use `npm run dev` or build for production. Existing legacy database records are preserved, but their previous public application routes are removed. The health endpoint is `/api/health`.
 
-## Runtime updates
+## Current behavior
 
-The imported application was upgraded from Next.js 16.2.6 to 16.4.2 with matching `eslint-config-next` to address the framework's reported security advisories. `source-map-js` was updated to 1.2.2. The source archive's site layout and public routes are retained. The added `tests/cookie-consent.spec.ts` covers the eight managed notices, global settings, feature enablement/withdrawal, GPC, and removal of the previous public workspace APIs.
+- The imported calculators, unit/currency converters, formula library, guides, contact form, theme, search and private engineering workbench are retained.
+- Cookie notices are assigned by server-verified country/subdivision. There is no manual location setting and no language/timezone fallback for authorization.
+- Speech input uses only the browser Web Speech API. Android phones/tablets are supported through Chrome with GMS and Google speech recognition; iPhone/iPad are supported only through Safari with Apple’s system Siri speech-to-text.
+- A microphone request requires an explicit tap. Audio is handled by the browser service, not uploaded to this application. Vendor processing may be remote unless a verified browser-managed local mode is selected.
+- Unknown location fails closed for geographically restricted resources and voice input; ordinary typed tools remain available. The consent notice uses protective opt-in defaults.
 
-## Public and private surfaces
+## Deployment geography
 
-The public site is Radix Loom, including its calculators, converters, guides, contact form and privacy controls. The administrative `/api/workbench/*` routes remain disabled unless a server-side `WORKBENCH_API_KEY` of at least 32 bytes is configured, and callers authenticate with it. There is no public shell or software installer.
+See `docs/privacy-operations.md`. This preview uses `PRIVACY_GEO_PROVIDER=signed-header` and a server-only random signing secret. A real trusted upstream must supply authentic location assertions. Vercel or Cloudflare deployments can use their matching provider after securing the origin trust boundary. Never expose the signing secret to a client bundle or invent a country when location is unavailable.
 
-## Consent changes in this deployment
+Private workbench APIs require a server-configured `WORKBENCH_API_KEY` of at least 32 bytes; they remain hidden when unconfigured. Public site functions do not require that key.
 
-- The footer Cookie settings button is available globally.
-- Visitors outside the managed regions retain the original informational notice, text and dismissal behavior. Their settings panel is opened only on request; the floating vendor icon is not added to their notice.
-- The managed notices cover GDPR/UK, California CCPA/CPRA, Brazil, Canada, Australia, Singapore, Japan and India. Optional purposes are off until an explicit accept, reject or save action.
-- A notice remains available until a choice is made, including after closing preferences without saving. Browsing does not count as consent. Ordinary browsing and basic calculations stay available under essential-only defaults.
-- The v2 consent namespace requires a fresh choice rather than reusing older defaults as affirmative consent.
-- Functional preferences govern optional persistent appearance, blackboard notes, saved-formula references, voice session/memory and on-device model learning/cache. Existing saved data is not silently erased on withdrawal; privacy deletion/export controls remain usable.
-- GPC restricts advertising/sale-sharing even after an Accept action. No analytics or advertising service is actually installed.
-- Only configured trusted edge headers provide authoritative regional signals; the existing browser-timezone fallback is a presentation hint, not proof of residence or an access-control boundary. Unknown locations use conservative optional-storage defaults. See `privacy-operations.md` for edge configuration.
+## Validation
 
-This implementation describes site behavior, not a guarantee of legal compliance. Deployment-specific privacy disclosures and jurisdictional obligations still need operator review.
-
-## Current mobile and consent repair
-
-See `mobile-consent-release.md` for the current portable speech fallback, self-hosted model assets, region correction, four-category standard defaults and explicit-theme consent styling. These changes supersede the earlier behavior notes above where they differ.
+Run `npx next typegen`, `npm exec tsc -- --noEmit --pretty false`, and `npm run build`. Geography/browser regression tests are in `tests/browser-speech-only.spec.ts`, `tests/mobile-consent-regressions.spec.ts`, `tests/cookie-consent.spec.ts` and `tests/privacy-policy.spec.ts`. Headless tests mock recognition services; real speech quality and availability still depend on the user’s physical device and provider.

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { LANGUAGE_PACKS, PACK_IDS, parseAcceptLanguage, recognitionLocale, selectPack, t } from "@/lib/i18n";
 import { parseVoiceCommand } from "@/lib/voice/pipeline";
-import { decideVoiceProcessing, regionFromLocale, type PolicyInput } from "@/lib/voice/policy";
+import { decideVoiceProcessing, type PolicyInput } from "@/lib/voice/policy";
 
 function params(href: string | undefined) {
   expect(href, "expected a destination").toBeTruthy();
@@ -102,20 +102,18 @@ test.describe("automatic processing assignment", () => {
     expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", browser: "safari", local: "available" })).toMatchObject({ mode: "local" });
   });
 
-  test("a downloadable local model is prepared automatically", () => {
+  test("a browser-managed language pack can be prepared after a gesture", () => {
     expect(decideVoiceProcessing({ ...base, os: "android", device: "phone", local: "downloadable" }))
       .toMatchObject({ mode: "local", prepareLocal: true });
   });
 
   test("browsers without cloud speech use local; devices can use permitted browser speech when local support is absent", () => {
     expect(decideVoiceProcessing({ ...base, browserCloud: false })).toMatchObject({ mode: "local" });
-    expect(decideVoiceProcessing({ ...base, browserCloud: false, local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
-    expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
+    expect(decideVoiceProcessing({ ...base, browserCloud: false, local: "unavailable" })).toMatchObject({ available: false, reason: "no-cloud" });
+    expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", browser: "safari", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, os: "android", device: "tablet", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
-    expect(decideVoiceProcessing({ ...base, os: "ipados", device: "tablet", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
+    expect(decideVoiceProcessing({ ...base, os: "ipados", device: "tablet", browser: "safari", local: "unavailable" })).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, speechApi: false })).toMatchObject({ available: false, reason: "no-api" });
-    expect(decideVoiceProcessing({ ...base, canRunLocalModel: true, language: "en-US" })).toMatchObject({ available: true, mode: "cloud" });
-    expect(decideVoiceProcessing({ ...base, speechApi: false, canRunLocalModel: true, language: "en-US" })).toMatchObject({ mode: "local-model" });
   });
 
   test("regional rules restrict or disable processing", () => {
@@ -126,8 +124,5 @@ test.describe("automatic processing assignment", () => {
       .toMatchObject({ mode: "cloud", rule: "cloud-only" });
     expect(decideVoiceProcessing({ ...base, region: "DE", overrides: { DE: "none" } })).toMatchObject({ available: false, reason: "region" });
     expect(decideVoiceProcessing({ ...base, region: "HK" })).toMatchObject({ available: true, mode: "cloud", rule: "any" });
-    expect(regionFromLocale("zh-Hant-HK")).toBe("HK");
-    expect(regionFromLocale("zh-Hans-CN")).toBe("CN");
-    expect(regionFromLocale("en")).toBeNull();
   });
 });

@@ -10,20 +10,18 @@ Code: `src/lib/ml/*`, UI helpers: `src/components/tech/MlAssist.tsx`.
 
 | Capability | Where it appears | Model |
 | --- | --- | --- |
-| Speech recognition / voice command understanding | Voice card (`SpeakCalc`). When the deterministic grammar and on-device repair cannot read a command, an intent model proposes the closest tool ("best guess", the visitor decides). Learns from phrases the visitor actually used, including mis-hearings. | `ml/intent.ts` – hashed word/bigram/char-trigram features → dense → softmax |
-| Audio classification | On-device speech-model recording (`local-model.ts`). Classifies live spectrum frames as silence / speech / noise / tone: recording ends shortly after the speaker pauses, and a noisy room is flagged. No audio is kept. | `ml/audio.ts` – trained in-browser on spectra synthesised from acoustic rules |
+| Recognised-text command understanding | Voice card (`SpeakCalc`). After the browser returns text, deterministic grammar interprets the command. If it cannot find a match, an intent model may propose the closest tool ("best guess", the visitor decides). It receives words, not audio. | `ml/intent.ts` – hashed word/bigram/char-trigram features → dense → softmax |
 | Text generation & completion | Expression inputs in the calculator, formula tool and scientific calculator: next-token chips and a generated completion; variables are filled in from the tool's own values. Contact message: next-word chips. | `ml/sequence.ts` (one-hot context → dense → softmax) used by `ml/completion.ts`, `ml/contact.ts` |
 | NLP / text classification | Contact form suggests a topic from the message (never stored, never trained on). | `ml/classifier.ts` via `ml/contact.ts` |
 | Traditional ML + personalised tools | Unit and currency converters open on the visitor's usual conversion (when no URL parameters are given) and offer "Your usual" picks. Features: hour of day, weekday/weekend, previous tool. | `ml/preferences.ts` – softmax regression trained on demand |
 
-## Why no pretrained speech-commands model
+## Separation from browser speech recognition
 
-Published TF.js keyword models are downloaded from a third-party host and would
-contradict the site's "this site hosts no model weights / recordings stay on this
-device" statements. Audio features are therefore classified by a model trained
-locally, and native `SpeechRecognition` sessions are not given a second
-microphone capture (a known mobile start-up failure documented in
-`speech-recognition-research.md`).
+These optional text models never process microphone audio. Speech recognition is
+performed only by the browser’s Web Speech API and its configured system/vendor
+service. That service can involve remote processing. Native recognition owns the
+microphone; the page does not open a second capture stream. See
+`speech-recognition-research.md` for platform, privacy and lifecycle details.
 
 ## Privacy and control
 
