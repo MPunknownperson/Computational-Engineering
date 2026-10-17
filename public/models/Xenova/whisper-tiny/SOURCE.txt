@@ -1,0 +1,4 @@
+Model: Xenova/whisper-tiny
+Revision: 5332fcc35e32a33b86612b9a57a89be7906102b1
+License: Apache-2.0 (OpenAI Whisper / Xenova ONNX conversion).
+https://huggingface.co/Xenova/whisper-tiny/tree/5332fcc35e32a33b86612b9a57a89be7906102b1

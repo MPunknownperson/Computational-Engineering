@@ -2,7 +2,7 @@
 
 Source: https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/main.zip
 
-Archive commit: `99a72bc61f764894cc0245552bc2003d29c5ee25`
+Archive commit: `5f80d7bd983dc3459f1da7c9936f0731d338a48b`
 
 The archive was downloaded to `/tmp/computational-engineering-main.zip`, checked for path traversal and symlinks, and extracted under `/tmp/computational-engineering-import/`. Application source, public assets, documentation, tests and configuration replace the previous Unpack application. The environment secrets and local PostgreSQL connection were preserved. Dependencies were installed with npm rather than copying the archive's package manifest over the host project's manifest.
 
@@ -26,3 +26,7 @@ The public site is Radix Loom, including its calculators, converters, guides, co
 - Only configured trusted edge headers provide authoritative regional signals; the existing browser-timezone fallback is a presentation hint, not proof of residence or an access-control boundary. Unknown locations use conservative optional-storage defaults. See `privacy-operations.md` for edge configuration.
 
 This implementation describes site behavior, not a guarantee of legal compliance. Deployment-specific privacy disclosures and jurisdictional obligations still need operator review.
+
+## Current mobile and consent repair
+
+See `mobile-consent-release.md` for the current portable speech fallback, self-hosted model assets, region correction, four-category standard defaults and explicit-theme consent styling. These changes supersede the earlier behavior notes above where they differ.
