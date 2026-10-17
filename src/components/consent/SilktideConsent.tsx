@@ -5,7 +5,7 @@ import Script from "next/script";
 import type { ConsentRegime } from "@/lib/privacy/consent-regime";
 import { announceConsentChange, consentNamespace } from "@/lib/privacy/browser-consent";
 import { buildSilktideConfig } from "./silktide-config";
-import { OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
+import { CHANGE_CONSENT_REGION_EVENT, OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
 
 async function recordOptOut(): Promise<void> {
   try {
@@ -20,7 +20,7 @@ async function recordOptOut(): Promise<void> {
   }
 }
 
-export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
+export function SilktideConsent({ regime, regionPreference = "auto" }: { regime: ConsentRegime; regionPreference?: ConsentRegime | "auto" }) {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const initialised = useRef<string | null>(null);
@@ -28,13 +28,26 @@ export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
 
   const initialise = useCallback((force = false) => {
     const api = window.silktideConsentManager;
-    if (!api || (!force && initialised.current === regime)) return;
-    initialised.current = regime;
+    const configurationKey = `${regime}:${regionPreference}`;
+    if (!api || (!force && initialised.current === configurationKey)) return;
+    initialised.current = configurationKey;
     const gpc = navigator.globalPrivacyControl === true;
     const namespace = consentNamespace(regime);
     const sync = () => {
       const instance = api.getInstance();
       if (!instance || instance.config.namespace !== namespace) return;
+      // Vendor toggles contain only aria-hidden ON/OFF text. Give every
+      // checkbox a real accessible name and its purpose description.
+      for (const type of instance.config.consentTypes) {
+        const checkbox = document.getElementById(`consent-${type.id}`) as HTMLInputElement | null;
+        if (!checkbox) continue;
+        checkbox.setAttribute("aria-label", type.required ? `${type.label} (always on)` : type.label);
+        const description = checkbox.closest("fieldset")?.querySelector(".stcm-consent-description");
+        if (description) {
+          description.id = `consent-description-${type.id}`;
+          checkbox.setAttribute("aria-describedby", description.id);
+        }
+      }
       if (gpc) {
         for (const type of instance.config.consentTypes) {
           if (["advertising", "sale-sharing", "third-party-provision"].includes(type.id)) {
@@ -49,6 +62,7 @@ export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
     const scheduleSync = () => queueMicrotask(sync);
     const config = buildSilktideConfig({
       regime,
+      regionPreference,
       globalPrivacyControl: gpc,
       onOptOut: () => {
         if (regime === "ccpa") void recordOptOut();
@@ -78,11 +92,12 @@ export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
     api.init(config);
     sync();
     if (gpc && regime === "ccpa") void recordOptOut();
-    if (pendingOpen.current) {
+    if (pendingOpen.current || document.documentElement.dataset.cookieSettingsPending === "1") {
       pendingOpen.current = false;
+      delete document.documentElement.dataset.cookieSettingsPending;
       api.getInstance()?.toggleModal(true);
     }
-  }, [regime]);
+  }, [regime, regionPreference]);
 
   useEffect(() => {
     if (window.silktideConsentManager) { setReady(true); initialise(); }
@@ -93,15 +108,23 @@ export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
   useEffect(() => {
     const open = () => {
       const instance = window.silktideConsentManager?.getInstance();
-      if (instance) instance.toggleModal(true);
+      if (instance) { delete document.documentElement.dataset.cookieSettingsPending; instance.toggleModal(true); }
       else pendingOpen.current = true;
     };
+    const changeRegion = (event: Event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLSelectElement) || target.id !== "consent-region-selector") return;
+      pendingOpen.current = true;
+      window.dispatchEvent(new CustomEvent(CHANGE_CONSENT_REGION_EVENT, { detail: target.value }));
+    };
+    document.addEventListener("change", changeRegion);
     const storage = (event: StorageEvent) => {
       if (event.key === null || event.key.startsWith(`stcm.${consentNamespace(regime)}.`)) initialise(true);
     };
     window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
     window.addEventListener("storage", storage);
     return () => {
+      document.removeEventListener("change", changeRegion);
       window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
       window.removeEventListener("storage", storage);
     };

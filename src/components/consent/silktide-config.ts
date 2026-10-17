@@ -5,6 +5,7 @@ import { SITE } from "@/lib/site";
 
 interface BuildOptions {
   regime: ConsentRegime;
+  regionPreference?: ConsentRegime | "auto";
   globalPrivacyControl: boolean;
   onOptOut: () => void;
 }
@@ -308,7 +309,7 @@ function buildManagedConfig({ regime, globalPrivacyControl, onOptOut }: BuildOpt
 const CHOICE_NOTICE =
   "<p><strong>A selection is required before optional cookies or similar storage can support services and tools.</strong> Your choices affect data collection, processing, remembered preferences and the availability of related features. This notice stays available until you accept, reject or save a selection. If you continue browsing without choosing, the defaults for this notice apply: strictly necessary storage only; optional purposes stay off. Browsing is not consent. Basic calculations remain available.</p>";
 
-export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfig {
+function buildBaseSilktideConfig(options: BuildOptions): SilktideConsentConfig {
   if (options.regime === "standard") {
     // Do not replace or auto-open over the existing informational notice.
     return {
@@ -318,13 +319,15 @@ export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfi
       icon: { position: "bottomLeft" },
       consentTypes: [
         { id: "essential", label: "Strictly necessary", description: ESSENTIAL_DESCRIPTION, required: true },
-        { id: "functional", label: "Functional preferences", description: FUNCTIONAL_DESCRIPTION, defaultValue: false },
+        { id: "functional", label: "Functional preferences", description: FUNCTIONAL_DESCRIPTION, defaultValue: true },
+        { id: "analytics", label: "Analytics", description: ANALYTICS_DESCRIPTION, defaultValue: true, gtag: "analytics_storage" },
+        { id: "advertising", label: "Advertising", description: "<p>Controls whether advertising cookies or identifiers may be used. We do not currently load advertising services or sell or share personal information. You can switch this off at any time.</p>", defaultValue: !options.globalPrivacyControl, gtag: ["ad_storage", "ad_user_data", "ad_personalization"] },
       ],
       text: {
         prompt: { preferencesButtonAccessibleLabel: "Open cookie settings" },
         preferences: {
           title: "Cookie settings",
-          description: "<p>Cookie settings are available wherever you are. Options can differ by region; opening these settings does not change the cookie notice shown in your region. Essential-only defaults apply until you save a choice. Functional preferences enable remembered tool state and saved formulas; basic calculations do not require them. No advertising or analytics services are currently loaded.</p>",
+          description: "<p>Choose how cookies and similar storage support your experience. All categories are selected initially for the standard notice; you can switch off any optional category before saving. These selections are not permission to use optional storage until you save them. No analytics or advertising services are currently loaded. Regional notices use the same purpose categories with the applicable local protections.</p>",
           saveButtonText: "Save choices",
           saveButtonAccessibleLabel: "Save cookie settings and close",
           rejectNonEssentialButtonText: "Essential only",
@@ -338,5 +341,35 @@ export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfi
   const config = buildManagedConfig({ ...options, regime: options.regime });
   if (config.text?.prompt) config.text.prompt.description += CHOICE_NOTICE;
   if (config.text?.preferences) config.text.preferences.description += CHOICE_NOTICE;
+  return config;
+}
+
+const REGION_OPTIONS: Array<[ConsentRegime | "auto", string]> = [
+  ["auto", "Automatic — hosting location / device region"],
+  ["gdpr", "Europe, EEA, UK & Switzerland — GDPR"],
+  ["ccpa", "California, USA — CCPA / CPRA"],
+  ["lgpd", "Brazil — LGPD"], ["pipeda", "Canada — PIPEDA / Law 25"],
+  ["au", "Australia — Privacy Act / APPs"], ["pdpa", "Singapore — PDPA"],
+  ["appi", "Japan — APPI"], ["dpdp", "India — DPDP"],
+  ["standard", "Other regions — standard settings"],
+];
+
+export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfig {
+  const config = buildBaseSilktideConfig(options);
+  // New categories are not retroactive consent from a returning visitor.
+  if (options.regime === "standard" && typeof window !== "undefined") {
+    try {
+      const prefix = `stcm.${consentNamespace("standard")}.`;
+      if (localStorage.getItem(prefix + "hasConsented") === "1") {
+        for (const type of config.consentTypes) {
+          if (!type.required && localStorage.getItem(prefix + "consent." + type.id) === null) type.defaultValue = false;
+        }
+      }
+    } catch { /* UI defaults are still not a saved choice. */ }
+  }
+  const selected = options.regionPreference ?? "auto";
+  const name = REGION_OPTIONS.find(([id]) => id === options.regime)?.[1] ?? "Standard settings";
+  const picker = `<div class="consent-region-control"><label for="consent-region-selector">Privacy region</label><select id="consent-region-selector" aria-describedby="consent-region-help">${REGION_OPTIONS.map(([value, label]) => `<option value="${value}"${value === selected ? " selected" : ""}>${label}</option>`).join("")}</select><p id="consent-region-help">Current notice: <strong>${name}</strong>. Location hints can be inaccurate, especially with VPNs or shared timezones. Choose your region to correct the notice. This does not accept cookies or grant access to protected pages.</p></div>`;
+  if (config.text?.preferences) config.text.preferences.description = (config.text.preferences.description ?? "") + picker;
   return config;
 }

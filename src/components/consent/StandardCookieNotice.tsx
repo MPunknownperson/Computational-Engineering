@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { STANDARD_NOTICE_KEY } from "./consent-events";
+import { openCookieSettings, STANDARD_NOTICE_KEY } from "./consent-events";
 import { SITE } from "@/lib/site";
 
 function dismissed(): boolean {
@@ -38,6 +38,7 @@ export function StandardCookieNotice() {
           {SITE.name} uses essential cookies and local storage to run the site and remember your settings. We do not use advertising trackers.{" "}
           <Link href="/privacy" className="font-semibold underline underline-offset-4">Privacy Policy</Link>
         </p>
+        <button type="button" onClick={openCookieSettings} className="btn cookie-notice-settings">Cookie settings</button>
         <button type="button" onClick={close} className="btn btn-ink cookie-notice-ok">I understand</button>
         <button type="button" onClick={close} aria-label="Close cookie notice" className="cookie-notice-close"><X size={18} aria-hidden="true" /></button>
       </div>

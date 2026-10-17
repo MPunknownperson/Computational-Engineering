@@ -1,43 +1,67 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { regimeFromTimezone, type ConsentRegime, type ServerConsentRegime } from "@/lib/privacy/consent-regime";
+import { isManagedRegime, regimeFromTimezone, type ConsentRegime, type ServerConsentRegime } from "@/lib/privacy/consent-regime";
 import { SilktideConsent } from "./SilktideConsent";
 import { StandardCookieNotice } from "./StandardCookieNotice";
-import { announceConsentRegime } from "./consent-events";
+import { announceConsentRegime, CHANGE_CONSENT_REGION_EVENT, CONSENT_REGION_PREFERENCE_KEY } from "./consent-events";
 
-/**
- * Chooses the right consent experience for the visitor:
- * - GDPR regions, California, Brazil, Canada, Australia, Singapore, Japan and
- *   India get the Silktide Consent Manager v2.0 with jurisdiction-specific
- *   settings and text. The footer "Cookie settings" control is global.
- * - Everyone else keeps the same informational notice and can open settings.
- * The server decides from a trusted edge location; when none is configured the
- * browser applies a conservative timezone fallback after hydration.
- */
+export type ConsentRegionPreference = ConsentRegime | "auto";
+
+function validPreference(value: unknown): value is ConsentRegionPreference {
+  return value === "auto" || value === "standard" || isManagedRegime(value);
+}
+
 export function ConsentManager({ serverRegime }: { serverRegime: ServerConsentRegime }) {
-  const [regime, setRegime] = useState<ConsentRegime | null>(serverRegime === "unknown" ? null : serverRegime);
+  // Resolve before mounting either notice. Never briefly display the standard
+  // notice to a managed-region visitor during hydration or script loading.
+  const [regime, setRegime] = useState<ConsentRegime | null>(null);
+  const [preference, setPreference] = useState<ConsentRegionPreference>("auto");
 
   useEffect(() => {
-    if (regime) return;
-    let resolved: ConsentRegime = "standard";
-    try {
-      resolved = regimeFromTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.language);
-    } catch {
-      resolved = "standard";
-    }
-    setRegime(resolved);
-  }, [regime]);
+    const resolve = (choice: ConsentRegionPreference) => {
+      let resolved: ConsentRegime;
+      if (choice !== "auto") resolved = choice;
+      else if (serverRegime !== "unknown") resolved = serverRegime;
+      else {
+        let timezone: string | undefined;
+        try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* Locale hints still work without Intl timezone support. */ }
+        resolved = regimeFromTimezone(timezone, navigator.languages?.length ? navigator.languages : navigator.language);
+      }
+      setPreference(choice);
+      announceConsentRegime(resolved);
+      setRegime(resolved);
+    };
+    let stored: unknown = "auto";
+    try { stored = localStorage.getItem(CONSENT_REGION_PREFERENCE_KEY) || "auto"; } catch { /* Privacy settings work without persistent storage. */ }
+    resolve(validPreference(stored) ? stored : "auto");
 
-  useEffect(() => {
-    if (regime) announceConsentRegime(regime);
-  }, [regime]);
+    const change = (event: Event) => {
+      const choice: unknown = (event as CustomEvent).detail;
+      if (!validPreference(choice)) return;
+      try {
+        if (choice === "auto") localStorage.removeItem(CONSENT_REGION_PREFERENCE_KEY);
+        else localStorage.setItem(CONSENT_REGION_PREFERENCE_KEY, choice);
+      } catch { /* Keep this page's selection in memory. */ }
+      resolve(choice);
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key === CONSENT_REGION_PREFERENCE_KEY || event.key === null) {
+        const choice = event.newValue;
+        resolve(validPreference(choice) ? choice : "auto");
+      }
+    };
+    window.addEventListener(CHANGE_CONSENT_REGION_EVENT, change);
+    window.addEventListener("storage", storage);
+    return () => {
+      window.removeEventListener(CHANGE_CONSENT_REGION_EVENT, change);
+      window.removeEventListener("storage", storage);
+    };
+  }, [serverRegime]);
 
   if (!regime) return null;
-  return (
-    <>
-      {regime === "standard" && <StandardCookieNotice />}
-      <SilktideConsent regime={regime} />
-    </>
-  );
+  return <>
+    {regime === "standard" && <StandardCookieNotice />}
+    <SilktideConsent regime={regime} regionPreference={preference} />
+  </>;
 }

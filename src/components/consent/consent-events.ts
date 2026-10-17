@@ -3,10 +3,13 @@ export const OPEN_COOKIE_SETTINGS_EVENT = "radixloom:cookie-settings";
 /** Fired by the ConsentManager once the visitor's consent regime is resolved. */
 export const CONSENT_REGIME_EVENT = "radixloom:consent-regime";
 export const STANDARD_NOTICE_KEY = "radixloom.cookie-notice";
+export const CONSENT_REGION_PREFERENCE_KEY = "radixloom.consent-region.v1";
+export const CHANGE_CONSENT_REGION_EVENT = "radixloom:change-consent-region";
 export const SILKTIDE_SCRIPT = "/vendor/silktide/silktide-consent-manager.js";
 export const SILKTIDE_STYLES = "/vendor/silktide/silktide-consent-manager.css";
 
 export function openCookieSettings(): void {
+  document.documentElement.dataset.cookieSettingsPending = "1";
   window.dispatchEvent(new CustomEvent(OPEN_COOKIE_SETTINGS_EVENT));
 }
 
