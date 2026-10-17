@@ -15,7 +15,7 @@ import { defaultMetadata } from "@/lib/seo";
 import { headers } from "next/headers";
 import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
 import { consentAreaFromHeaders } from "@/lib/privacy/consent-location";
-import { regimeForArea } from "@/lib/privacy/consent-regime";
+import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-regime";
 import { ConsentManager } from "@/components/consent/ConsentManager";
 
 export const generateMetadata = defaultMetadata;
@@ -46,9 +46,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const tone = TONES.has(rawTone) ? rawTone : "home";
   const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
   // Region-specific notices; cookie settings remain accessible worldwide.
-  const consentRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
+  const serverRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
+  const consentRegime = protectiveConsentRegime(serverRegime);
   return (
-    <html lang="en" data-consent-regime={consentRegime} suppressHydrationWarning>
+    <html lang="en" data-consent-regime={consentRegime} data-consent-location={serverRegime === "unknown" ? "unverified" : "verified"} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /></head>
       <body className={`tone-${tone} paper-bg flex min-h-screen flex-col text-[color:var(--ink)] antialiased`}>
         <a href="#main" className="skip-link">Skip to content</a>
@@ -66,7 +67,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <PageTransition>{children}</PageTransition>
         </main>
         <SiteFooter />
-        <ConsentManager serverRegime={consentRegime} />
+        <ConsentManager serverRegime={serverRegime} />
       </body>
     </html>
   );
