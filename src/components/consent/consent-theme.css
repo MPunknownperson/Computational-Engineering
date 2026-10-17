@@ -88,10 +88,6 @@ html body #stcm-wrapper #stcm-modal .stcm-modal-close { flex-shrink: 0; width: 4
 html body #stcm-wrapper #stcm-modal .stcm-modal-close svg { fill: currentColor; width: 16px; height: 16px; }
 html body #stcm-wrapper #stcm-modal footer { border-top: 2px solid var(--consent-line); padding-top: 17px; margin-top: 9px; gap: 12px; flex-wrap: wrap; background: var(--backgroundColor); }
 html body #stcm-wrapper #stcm-modal footer a.stcm-credit-link { color: var(--consent-muted); font-size: 11px; opacity: 1; }
-html body #stcm-wrapper .consent-region-control { padding: 16px; margin: 20px 0 0; border: 2px solid var(--consent-line); border-radius: 13px; background: var(--consent-paper); }
-html body #stcm-wrapper .consent-region-control label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 8px; color: var(--textColor); }
-html body #stcm-wrapper .consent-region-control select { display: block; width: 100%; min-height: 44px; padding: 9px 30px 9px 11px; border: 2px solid var(--consent-line); border-radius: 10px; background: var(--backgroundColor); color: var(--textColor); font: inherit; font-size: 13px; cursor: pointer; }
-html body #stcm-wrapper #stcm-modal .consent-region-control p { margin: 10px 0 0; color: var(--consent-muted); font-size: 12px; line-height: 1.6; }
 html body #stcm-wrapper button:focus-visible,
 html body #stcm-wrapper a:focus-visible,
 html body #stcm-wrapper select:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; }
@@ -103,8 +99,6 @@ html body #stcm-wrapper .stcm-toggle:focus-within { outline: 3px solid var(--acc
   html body #stcm-wrapper #stcm-modal footer { flex-direction: column; align-items: stretch; }
   html body #stcm-wrapper .stcm-button { width: 100%; }
   html body #stcm-wrapper #stcm-modal footer a.stcm-credit-link { margin: 5px 0 0; text-align: center; }
-  html body #stcm-wrapper .consent-region-control { padding: 13px; }
-  html body #stcm-wrapper .consent-region-control select { font-size: 16px; }
   .cookie-notice-card { padding-bottom: 16px; }
   .cookie-notice-settings, .cookie-notice-ok { flex: 1 1 10rem; }
 }

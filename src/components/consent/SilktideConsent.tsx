@@ -5,7 +5,7 @@ import Script from "next/script";
 import type { ConsentRegime } from "@/lib/privacy/consent-regime";
 import { announceConsentChange, consentNamespace } from "@/lib/privacy/browser-consent";
 import { buildSilktideConfig } from "./silktide-config";
-import { CHANGE_CONSENT_REGION_EVENT, OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
+import { OPEN_COOKIE_SETTINGS_EVENT, SILKTIDE_SCRIPT, SILKTIDE_STYLES } from "./consent-events";
 
 async function recordOptOut(): Promise<void> {
   try {
@@ -20,7 +20,7 @@ async function recordOptOut(): Promise<void> {
   }
 }
 
-export function SilktideConsent({ regime, regionPreference = "auto" }: { regime: ConsentRegime; regionPreference?: ConsentRegime | "auto" }) {
+export function SilktideConsent({ regime }: { regime: ConsentRegime }) {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const initialised = useRef<string | null>(null);
@@ -28,7 +28,7 @@ export function SilktideConsent({ regime, regionPreference = "auto" }: { regime:
 
   const initialise = useCallback((force = false) => {
     const api = window.silktideConsentManager;
-    const configurationKey = `${regime}:${regionPreference}`;
+    const configurationKey = regime;
     if (!api || (!force && initialised.current === configurationKey)) return;
     initialised.current = configurationKey;
     const gpc = navigator.globalPrivacyControl === true;
@@ -62,7 +62,6 @@ export function SilktideConsent({ regime, regionPreference = "auto" }: { regime:
     const scheduleSync = () => queueMicrotask(sync);
     const config = buildSilktideConfig({
       regime,
-      regionPreference,
       globalPrivacyControl: gpc,
       onOptOut: () => {
         if (regime === "ccpa") void recordOptOut();
@@ -97,7 +96,7 @@ export function SilktideConsent({ regime, regionPreference = "auto" }: { regime:
       delete document.documentElement.dataset.cookieSettingsPending;
       api.getInstance()?.toggleModal(true);
     }
-  }, [regime, regionPreference]);
+  }, [regime]);
 
   useEffect(() => {
     if (window.silktideConsentManager) { setReady(true); initialise(); }
@@ -111,20 +110,12 @@ export function SilktideConsent({ regime, regionPreference = "auto" }: { regime:
       if (instance) { delete document.documentElement.dataset.cookieSettingsPending; instance.toggleModal(true); }
       else pendingOpen.current = true;
     };
-    const changeRegion = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLSelectElement) || target.id !== "consent-region-selector") return;
-      pendingOpen.current = true;
-      window.dispatchEvent(new CustomEvent(CHANGE_CONSENT_REGION_EVENT, { detail: target.value }));
-    };
-    document.addEventListener("change", changeRegion);
     const storage = (event: StorageEvent) => {
       if (event.key === null || event.key.startsWith(`stcm.${consentNamespace(regime)}.`)) initialise(true);
     };
     window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
     window.addEventListener("storage", storage);
     return () => {
-      document.removeEventListener("change", changeRegion);
       window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, open);
       window.removeEventListener("storage", storage);
     };

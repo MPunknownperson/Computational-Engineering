@@ -7,27 +7,24 @@ import { Icon } from "@/components/Icons";
 import {
   installLocalSpeech, localSpeechAvailability,
   speechRecognitionAvailability, supportsOnDeviceSpeech, vibrate,
-  type MicrophoneStatus,
 } from "@/lib/browser-tokens";
-import { canUsePortableSpeech, createPortableSpeechEngine, type PortableSpeechEngine } from "@/lib/voice/portable-speech";
+import { browserSpeechGuidance } from "@/lib/voice/browser-support";
 import { createNativeSession, type NativeSession } from "@/lib/voice/native-session";
 import { useMicrophoneEligibility, within, type MicrophoneProblem } from "@/lib/voice/use-microphone";
-import { localModelReady, createLocalModelEngine, type LocalModelEngine, type ModelAssetProgress } from "@/lib/voice/local-model";
 import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type CommandRoute, type WeightedHypothesis } from "@/lib/command-engine";
-import { repairCommandOnDevice } from "@/lib/ai/on-device";
 import { guessDestination, recordVoiceOutcome } from "@/lib/ml/intent";
 import { clearMlData } from "@/lib/ml/runtime";
 import { LANGUAGE_PACKS, packOrder, recognitionLocale, t, type PackId, type UiKey } from "@/lib/i18n";
 import { withSystemVocabulary } from "@/lib/i18n/system-lexicon";
 import { detectPlatformProfile } from "@/lib/platform";
-import { decideVoiceProcessing, regionFromLocale, regionRule, type RegionRule, type UnavailableReason, type VoiceDecision } from "@/lib/voice/policy";
+import { decideVoiceProcessing, regionRule, type RegionRule, type UnavailableReason, type VoiceDecision } from "@/lib/voice/policy";
 import { VoiceRuntime } from "@/lib/voice/pipeline";
 import { clearVoiceSession, loadVoiceSession, saveVoiceSession } from "@/lib/voice/session";
 
 type Phase = "checking" | "ready" | "unavailable" | "preparing" | "requesting" | "starting" | "listening" | "processing" | "opening";
 const ACTIVE_PHASES: Phase[] = ["preparing", "requesting", "starting", "listening", "processing", "opening"];
 const UNAVAILABLE_KEY: Record<UnavailableReason, UiKey> = {
-  "no-api": "unavailable.noApi", region: "unavailable.region", "no-local": "unavailable.noLocal", "no-cloud": "unavailable.noCloud",
+  "no-api": "unavailable.noApi", browser: "unavailable.noApi", location: "unavailable.location", region: "unavailable.region", "no-local": "unavailable.noLocal", "no-cloud": "unavailable.noCloud",
 };
 const MIC_KEY: Record<MicrophoneProblem, UiKey> = {
   denied: "mic.denied", "no-device": "mic.noDevice", "in-use": "mic.inUse",
@@ -66,14 +63,11 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const [checkVersion, setCheckVersion] = useState(0);
   const [learned, setLearned] = useState(0);
   const [guessed, setGuessed] = useState(false);
-  const [modelProgress, setModelProgress] = useState<ModelAssetProgress | null>(null);
+  const [platformNote, setPlatformNote] = useState("");
   const { problem: micProblem, recheck: recheckMicrophone, reportProblem } = useMicrophoneEligibility();
 
   const runtimeRef = useRef(new VoiceRuntime(packOrder(pack)));
   const sessionRef = useRef<NativeSession | null>(null);
-  const modelRef = useRef<LocalModelEngine | null>(null);
-  const portableRef = useRef<PortableSpeechEngine | null>(null);
-  const repairRef = useRef<AbortController | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const phaseRef = useRef<Phase>("checking");
   const generation = useRef(0);
@@ -85,15 +79,10 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     ++generation.current;
     sessionRef.current?.cancel();
     sessionRef.current = null;
-    repairRef.current?.abort();
-    repairRef.current = null;
-    modelRef.current?.dispose();
-    modelRef.current = null;
-    portableRef.current?.cancel();
     if (openTimer.current !== null) clearTimeout(openTimer.current);
     openTimer.current = null;
   }, []);
-  useEffect(() => () => { teardown(); portableRef.current?.dispose(); portableRef.current = null; }, [teardown]);
+  useEffect(() => teardown, [teardown]);
 
   // Eligibility checks never activate a microphone and cannot hold up a tap.
   useEffect(() => {
@@ -105,26 +94,20 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       runtimeRef.current = new VoiceRuntime([withSystemVocabulary(pack, browserLang), ...packOrder(pack).filter((candidate) => candidate.id !== pack.id)]);
       const speechApi = speechRecognitionAvailability() !== "unavailable";
       const profile = detectPlatformProfile();
-      // Enable the microphone button immediately on phones and tablets. The
-      // SpeechRecognition constructor is enough; do not wait for geo, local
-      // model probes or a Permissions query before the visitor can tap.
+      setPlatformNote(browserSpeechGuidance(profile));
       // Resolve policy before enabling any cloud capture. A slow geo request
       // must never briefly bypass a local-only regional policy.
-      const portableAvailable = canUsePortableSpeech(browserLang);
       const geo = await within<PolicyResponse | null>(
         fetch("/api/voice/policy", { cache: "no-store", signal: controller.signal })
           .then((response) => response.ok ? response.json() as Promise<PolicyResponse> : null), 5_000, null,
       );
       controller.abort();
-      const region = geo?.country ?? regionFromLocale(navigator.language);
+      const region = geo?.country ?? null;
       const rule = regionRule(region, geo?.overrides ?? {});
-      const [local, browserCloud, modelReady] = await Promise.all([
-        speechApi && rule !== "none" && rule !== "cloud-only" && supportsOnDeviceSpeech()
-          ? within(localSpeechAvailability(browserLang), 2_500, "unknown" as const)
-          : Promise.resolve("unavailable" as const),
-        speechApi ? Promise.resolve(true) : Promise.resolve(false),
-        !speechApi && rule !== "none" && rule !== "cloud-only" ? within(localModelReady(browserLang), 5_000, false) : Promise.resolve(false),
-      ]);
+      const local = speechApi && rule !== "none" && rule !== "cloud-only" && supportsOnDeviceSpeech()
+        ? await within(localSpeechAvailability(browserLang), 2_500, "unknown" as const)
+        : "unavailable" as const;
+      const browserCloud = speechApi;
       if (!active) return;
       cloudAvailable.current = browserCloud || speechApi;
       // Prefer the browser speech service unless an on-device pack is already
@@ -132,7 +115,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       const next = decideVoiceProcessing({
         speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: browserCloud || speechApi,
         local: rule === "any" && local !== "available" ? "unavailable" : local,
-        region, overrides: geo?.overrides ?? {}, canRunLocalModel: modelReady, canRunPortableModel: portableAvailable, language: browserLang,
+        region, overrides: geo?.overrides ?? {},
       });
       const previous = loadVoiceSession();
       if (previous) runtimeRef.current.restore(previous);
@@ -142,7 +125,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       if (active) {
         const profile = detectPlatformProfile();
         const speechApi = speechRecognitionAvailability() !== "unavailable";
-        setDecision(decideVoiceProcessing({ speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: speechApi, local: "unavailable", region: regionFromLocale(navigator.language), canRunPortableModel: canUsePortableSpeech(langRef.current), language: langRef.current }));
+        setDecision(decideVoiceProcessing({ speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: speechApi, local: "unavailable", region: null }));
       }
     });
     return () => { active = false; controller.abort(); };
@@ -196,20 +179,9 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     const route = routeHypotheses(hypotheses, runtimeRef.current);
     setHeard(route.heard);
     if (route.action && route.program) { commitRoute(route); return; }
-    repairRef.current?.abort();
-    const repair = new AbortController();
-    repairRef.current = repair;
     const attempt = generation.current;
     setPhaseBoth("processing");
     void (async () => {
-      const repaired = await within(repairCommandOnDevice(route.heard, { language: langRef.current, signal: repair.signal }), 6_000, null);
-      if (repair.signal.aborted) return;
-      repair.abort();
-      repairRef.current = null;
-      if (repaired) {
-        const retry = routeHypotheses([repaired], runtimeRef.current);
-        if (retry.action && retry.program) { commitRoute(retry); return; }
-      }
       // Last resort before giving up: the TensorFlow.js intent model reads the
       // same words and proposes the closest tool. It only suggests; the visitor
       // decides whether to open it.
@@ -235,7 +207,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     teardown();
     const attempt = generation.current;
     const current = () => generation.current === attempt;
-    setError(null); setNotice(null); setHeard(""); setMatchedLabel(null); setNavigateTo(null); setModelProgress(null); setGuessed(false);
+    setError(null); setNotice(null); setHeard(""); setMatchedLabel(null); setNavigateTo(null); setGuessed(false);
     try { window.speechSynthesis?.cancel(); } catch { /* Speech output is optional, never required for input. */ }
 
     if (decision.mode === "local" && decision.prepareLocal) {
@@ -247,73 +219,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         setNotice(t(pack, "voice.localReady"));
         setPhaseBoth("ready"); // A new tap, not an async automatic start.
       });
-      return;
-    }
-
-    if (decision.mode === "portable") {
-      const engine = portableRef.current ??= createPortableSpeechEngine();
-      if (!engine.ready) {
-        setPhaseBoth("preparing");
-        void engine.prepare((progress) => { if (current()) setModelProgress(progress); }).then(() => {
-          if (!current()) return;
-          setDecision({ ...decision, prepareLocal: false });
-          setNotice("On-device speech is ready. Tap Speak a calculation to start the microphone.");
-          setPhaseBoth("ready");
-        }).catch(() => { if (current()) fail("unavailable.noModel"); });
-        return;
-      }
-      void engine.start({
-        language: langRef.current,
-        onStatus: (status) => { if (current()) setPhaseBoth(status === "recording" ? "listening" : status === "decoding" ? "processing" : "requesting"); },
-        onText: (text) => { if (current()) handleTranscript([{ text, confidence: .65 }]); },
-      }).catch((cause: unknown) => {
-        if (!current()) return;
-        const message = cause instanceof Error ? cause.message : "";
-        if (message.startsWith("microphone:")) {
-          const problem = message.split(":")[1] as MicrophoneStatus;
-          if (problem === "denied" || problem === "insecure") reportProblem(problem);
-          fail(MIC_KEY[problem] ?? "speech.audio");
-        } else fail(message === "speech-timeout" ? "speech.startTimeout" : message === "no-speech" ? "speech.noSpeech" : message === "audio-capture" ? "speech.audio" : "unavailable.noModel");
-      });
-      return;
-    }
-
-    if (decision.mode === "local-model") {
-      setPhaseBoth("preparing");
-      void (async () => {
-        try {
-          const engine = createLocalModelEngine({
-            language: "en",
-            onStatus: (status) => {
-              if (!current()) return;
-              if (status === "recording") setPhaseBoth("listening");
-              else if (status === "requesting") setPhaseBoth("requesting");
-              else if (status === "decoding") setPhaseBoth("processing");
-              else if (status === "loading") setPhaseBoth("preparing");
-            },
-            onProgress: (progress) => { if (current()) setModelProgress(progress); },
-            onHint: () => { if (current()) setNotice(t(pack, "voice.noisy")); },
-            onText: (text) => { if (current()) handleTranscript([{ text, confidence: 0.5 }]); },
-          });
-          modelRef.current = engine;
-          if (!engine) { fail("unavailable.noModel", true); return; }
-          await engine.start();
-        } catch (cause) {
-          if (!current()) return;
-          const message = cause instanceof Error ? cause.message : "";
-          const reason = message.split(":")[1] as MicrophoneStatus;
-          if (message.startsWith("microphone:")) {
-            if (reason === "denied" || reason === "no-device" || reason === "insecure" || reason === "unsupported") reportProblem(reason);
-            fail(MIC_KEY[reason] ?? "mic.unsupported");
-          } else {
-            if (message !== "no-speech" && canUsePortableSpeech(langRef.current)) {
-              setDecision({ ...decision, mode: "portable", prepareLocal: true });
-              setNotice("Your browser model could not start. Your next tap prepares our portable on-device speech engine.");
-            }
-            fail(message === "speech-timeout" ? "speech.startTimeout" : message === "no-speech" ? "speech.noSpeech" : message === "audio-capture" ? "speech.audio" : "unavailable.noModel");
-          }
-        }
-      })();
       return;
     }
 
@@ -337,12 +242,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           fail(speechErrorKey(code));
           return;
         }
-        if ((serviceError || code === "unsupported") && decision.rule !== "cloud-only" && canUsePortableSpeech(langRef.current)) {
-          setDecision({ ...decision, mode: "portable", prepareLocal: true });
-          setNotice("The browser speech service is unavailable. Your next tap prepares our on-device speech engine; audio will stay on this device.");
-          fail(speechErrorKey(code));
-          return;
-        }
         if (code === "not-allowed") reportProblem("denied");
         if (code === "no-device") reportProblem("no-device");
         if (code === "audio-capture") void recheckMicrophone();
@@ -355,14 +254,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
 
   const stop = useCallback(() => {
     if (phaseRef.current === "listening" && sessionRef.current) { sessionRef.current.stop(); return; }
-    if (phaseRef.current === "listening" && decision?.available && decision.mode === "portable") {
-      portableRef.current?.stop(); setPhaseBoth("processing"); return;
-    }
-    if (phaseRef.current === "listening" && modelRef.current) {
-      modelRef.current.stop();
-      setPhaseBoth("processing");
-      return;
-    }
     teardown();
     setHeard("");
     setPhaseBoth(decision?.available && !micProblem && !runtimeBlock ? "ready" : "unavailable");
@@ -389,10 +280,10 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     : phase === "opening" && matchedLabel ? t(pack, "voice.opening", { label: matchedLabel }) : null;
   const disclosureKey: UiKey | null = !decision?.available ? null
     : decision.mode === "local" ? "voice.disclosureLocal"
-    : decision.mode === "cloud" ? "voice.disclosureCloud" : decision.mode === "portable" ? null : "voice.disclosureOnDeviceModel";
+    : "voice.disclosureCloud";
 
   return (
-    <section className="sketch" aria-labelledby="voice-heading" lang={pack.id} data-voice-phase={phase}>
+    <section className="sketch" aria-labelledby="voice-heading" lang={pack.id} data-voice-phase={phase} data-speech-engine="web-speech">
       <div className="flex flex-wrap items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[color:var(--line)] bg-[color:var(--accent-3)] shadow-[2px_2px_0_0_var(--line)]">
           <Icon name="mic" size={18} />
@@ -436,20 +327,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         </div>
       )}
 
-      {decision?.available && decision.mode === "portable" && <div className="mt-3 rounded-xl border-2 border-[color:var(--line)] bg-[color:var(--paper)] px-3.5 py-3 text-xs leading-relaxed" role="status">
-        <p className="font-bold">On-device speech · phones, tablets & desktops</p>
-        <p className="mt-1.5">{phase === "preparing" ? modelProgress?.percent != null ? `Preparing speech model — ${modelProgress.percent}%.` : "Preparing the speech engine…" : "First tap prepares a multilingual model (about 45 MB plus the runtime) from this website. A second tap starts recording. No microphone audio is uploaded."}</p>
-        {phase === "preparing" && modelProgress?.percent != null && <progress className="mt-2 h-2 w-full" max={100} value={modelProgress.percent} aria-label="Preparing on-device speech" />}
-        <p className="mt-1.5">The first preparation can take a moment on a mobile connection. Use Stop listening when you finish. <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Voice privacy</Link></p>
-      </div>}
-      {decision?.available && decision.mode === "local-model" && phase === "preparing" && (
-        <div className="mt-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--paper)] px-3.5 py-3 text-xs leading-relaxed text-slate-600" role="status">
-          <p className="font-semibold">English speech · browser&rsquo;s built-in on-device model</p>
-          <p className="mt-1.5">{modelProgress?.percent != null ? `Your browser is preparing its built-in model — ${modelProgress.percent}%.` : t(pack, "voice.preparing")}</p>
-          {modelProgress?.percent != null && <progress className="mt-2 h-1.5 w-full accent-[color:var(--accent)]" max={100} value={modelProgress.percent} aria-label="Browser is preparing its built-in model" />}
-          <p className="mt-1.5">The generative speech path supports English only. Your browser may need to download its model on first use; this path uses the browser-provided model, separate from our portable fallback. Recordings stay on this device.</p>
-        </div>
-      )}
       {matchedLabel && (
         <div className="mt-3 rounded-2xl border-2 border-[color:var(--line)] bg-[color:var(--paper)] p-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -458,7 +335,8 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
           </div>
         </div>
       )}
-      <p className="mt-3 text-xs leading-relaxed text-slate-600">{decision?.available && decision.mode === "portable" ? "The portable model recognises your browser language. Calculator commands are interpreted using the site’s supported language packs." : t(pack, "voice.modelLanguageNote")}</p>
+      <p className="mt-3 text-xs leading-relaxed text-slate-600">{t(pack, "voice.languageNote")}</p>
+      {platformNote && <p className="mt-2 text-xs leading-relaxed text-slate-600" data-browser-speech-guidance>{platformNote}</p>}
       {disclosureKey && (
         <p className="mt-3 text-xs leading-relaxed text-slate-500">
           {t(pack, disclosureKey)}{" "}<Link href="/privacy#voice" className="font-bold underline underline-offset-4">{t(pack, "voice.privacyLink")}</Link>

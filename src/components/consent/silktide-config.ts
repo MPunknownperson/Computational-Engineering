@@ -5,7 +5,6 @@ import { SITE } from "@/lib/site";
 
 interface BuildOptions {
   regime: ConsentRegime;
-  regionPreference?: ConsentRegime | "auto";
   globalPrivacyControl: boolean;
   onOptOut: () => void;
 }
@@ -235,9 +234,9 @@ function buildManagedConfig({ regime, globalPrivacyControl, onOptOut }: BuildOpt
           acceptAllButtonText: "Accept all",
           acceptAllButtonAccessibleLabel: "Accept all cookies and similar storage",
           rejectNonEssentialButtonText: "Reject non-essential",
-          rejectNonEssentialButtonAccessibleLabel: "Reject all non-essential cookies and similar storage",
+          rejectNonEssentialButtonAccessibleLabel: "Reject non-essential cookies and similar storage",
           preferencesButtonText: "Manage preferences",
-          preferencesButtonAccessibleLabel: "Open cookie preferences",
+          preferencesButtonAccessibleLabel: "Manage preferences — open cookie preferences",
         },
         preferences: {
           title: "Cookie preferences",
@@ -344,16 +343,6 @@ function buildBaseSilktideConfig(options: BuildOptions): SilktideConsentConfig {
   return config;
 }
 
-const REGION_OPTIONS: Array<[ConsentRegime | "auto", string]> = [
-  ["auto", "Automatic — hosting location / device region"],
-  ["gdpr", "Europe, EEA, UK & Switzerland — GDPR"],
-  ["ccpa", "California, USA — CCPA / CPRA"],
-  ["lgpd", "Brazil — LGPD"], ["pipeda", "Canada — PIPEDA / Law 25"],
-  ["au", "Australia — Privacy Act / APPs"], ["pdpa", "Singapore — PDPA"],
-  ["appi", "Japan — APPI"], ["dpdp", "India — DPDP"],
-  ["standard", "Other regions — standard settings"],
-];
-
 export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfig {
   const config = buildBaseSilktideConfig(options);
   // New categories are not retroactive consent from a returning visitor.
@@ -367,9 +356,5 @@ export function buildSilktideConfig(options: BuildOptions): SilktideConsentConfi
       }
     } catch { /* UI defaults are still not a saved choice. */ }
   }
-  const selected = options.regionPreference ?? "auto";
-  const name = REGION_OPTIONS.find(([id]) => id === options.regime)?.[1] ?? "Standard settings";
-  const picker = `<div class="consent-region-control"><label for="consent-region-selector">Privacy region</label><select id="consent-region-selector" aria-describedby="consent-region-help">${REGION_OPTIONS.map(([value, label]) => `<option value="${value}"${value === selected ? " selected" : ""}>${label}</option>`).join("")}</select><p id="consent-region-help">Current notice: <strong>${name}</strong>. Location hints can be inaccurate, especially with VPNs or shared timezones. Choose your region to correct the notice. This does not accept cookies or grant access to protected pages.</p></div>`;
-  if (config.text?.preferences) config.text.preferences.description = (config.text.preferences.description ?? "") + picker;
   return config;
 }

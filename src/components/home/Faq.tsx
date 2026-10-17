@@ -21,7 +21,7 @@ const ITEMS: Item[] = [
   },
   {
     q: "What does “Preparing voice recognition…” mean?",
-    a: "The feature is selecting the processing path for your browser, device and region. A browser-provided on-device language pack may need preparing. If this browser lacks a usable speech engine, English can use the browser's built-in audio model. Other languages use supported browser speech engines. The browser may download its own model or language pack after you press Speak; this site hosts no model weights. This prepares software only: the microphone is requested afterwards, and audio never leaves the device.",
+    a: "The browser may need to prepare a native Web Speech API language pack when explicit on-device recognition is supported and required. Preparation needs a tap, and a fresh tap starts the microphone after it is ready. If no compatible browser speech service is available, voice stays unavailable; you can always type values instead.",
   },
   {
     q: "Why does it say “Waiting for microphone permission…”?",
@@ -29,12 +29,12 @@ const ITEMS: Item[] = [
   },
   {
     q: "Why is voice input unavailable on this device, browser or region?",
-    a: "Voice needs a secure HTTPS page, a microphone, and a usable recognition path. Phones and tablets are kept on an explicitly local path; if neither the browser nor the device can provide one, the feature remains unavailable rather than sending audio elsewhere. Desktop browsers normally use their own managed recognition service. Some countries or regions are limited to local processing or have the feature withheld. The calculator tools continue to work without voice.",
+    a: "Voice needs HTTPS, microphone permission, a verified country or region, and a working Web Speech API service. On Android phones and tablets, use Chrome with Google Mobile Services (GMS) and Google speech recognition enabled. On iPhone and iPad, this site supports voice only in Safari with Apple’s system Siri speech-to-text technology. Availability depends on service, language, network and regional rules. The typed tools remain available.",
   },
   {
     q: "Where is my audio processed?",
     a: <>
-      The page chooses a processing route automatically. An explicit local route keeps audio on the device. A desktop browser may use its own managed speech service; the site does not receive or store that audio. If the browser has no usable speech engine, English may use its built-in on-device audio model; other languages are not sent to an English-only model. The browser may prepare its own model on first use. Read the full details in the <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Voice input section of the Privacy Policy</Link>.
+      Voice is recognised only through your browser’s Web Speech API. Chrome on Android uses the Google speech service through GMS; Safari on iPhone/iPad uses Apple’s system Siri speech-to-text. These services may send audio to their provider, so native recognition is not an offline guarantee. An explicitly supported local-only browser mode must keep processing on-device. This website does not receive or store microphone audio. Read the full details in the <Link href="/privacy#voice" className="font-bold underline underline-offset-4">Voice input section of the Privacy Policy</Link>.
     </>,
   },
   {
@@ -43,7 +43,7 @@ const ITEMS: Item[] = [
   },
   {
     q: "Why can speech recognition still get a number or word wrong?",
-    a: "Recognition is best-effort: accents, background sound, microphone quality and a browser's language model all affect the transcript. On the English-only built-in-model fallback, your browser's own on-device model transcribes the recording and may also be asked to restate a misheard sentence as a command; any such suggestion still has to pass the same checks as anything you type. The page shows both the transcript and the tool interpretation before it opens, and repeated recogniser mishearings can be corrected by a later hypothesis and remembered on this device. Check the amount, currency/unit and direction in the opened tool before confirming.",
+    a: "Recognition is best-effort: accents, background noise, microphone quality, language and the browser’s speech service can affect the transcript. The site interprets the returned text as a verified calculator command. A later recognition hypothesis may correct a mishearing, and phrase memory is optional. Always check the amount, currency or unit, and conversion direction in the opened tool.",
   },
   {
     q: "Will the voice feature learn from me?",

@@ -8,7 +8,7 @@ import type { PackId } from "@/lib/i18n";
  * Deferred voice entry.
  *
  * The voice card pulls in the language packs, the command grammar, the IR
- * encoder and the on-device AI bridge — a meaningful amount of JavaScript for
+ * encoder and the browser recognition controller — a meaningful amount of JavaScript for
  * a control most visitors scroll past. It is therefore:
  *
  *   1. code-split out of the page bundle (`next/dynamic`, client-only), and
