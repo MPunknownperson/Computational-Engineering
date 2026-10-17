@@ -1,7 +1,7 @@
 /**
  * Normalisation and tolerant matching for spoken text.
  *
- * Recognisers — especially small on-device models — return text that is
+ * Browser recognisers can return text that is
  * *phonetically* right but spelled or segmented wrong: "kihlograms", "dolars",
  * "euross", "one point five" written as "1 5". Exact dictionary matching then
  * fails and the visitor sees a transcript that "doesn't match" what they said.

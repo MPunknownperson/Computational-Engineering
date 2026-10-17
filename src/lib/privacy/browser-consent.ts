@@ -1,4 +1,4 @@
-import { isManagedRegime, regimeFromTimezone, type ConsentRegime } from "./consent-regime";
+import { isManagedRegime, type ConsentRegime } from "./consent-regime";
 
 export const CONSENT_CHANGED_EVENT = "radixloom:consent-changed";
 export const CONSENT_REGIME_EVENT = "radixloom:consent-regime";
@@ -14,11 +14,7 @@ export function browserConsentRegime(): ConsentRegime | null {
   if (typeof window === "undefined") return null;
   const resolved = document.documentElement.dataset.consentRegime;
   if (resolved === "standard" || isManagedRegime(resolved)) return resolved;
-  try {
-    return regimeFromTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.languages?.length ? navigator.languages : navigator.language);
-  } catch {
-    return "standard";
-  }
+  return null;
 }
 
 export function hasConsentSelection(regime = browserConsentRegime()): boolean {

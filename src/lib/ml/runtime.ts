@@ -13,7 +13,7 @@ import { functionalStorage, optionalPurposeAllowed, subscribeConsentChange } fro
  * weights are downloaded from a third party.
  *
  * TensorFlow.js itself is code-split: nothing loads until a feature that needs
- * it is actually used (speech fallback, predictive input, personalisation).
+ * it is actually used (recognised-text intent suggestions, predictive input, personalisation).
  */
 export type Tf = typeof TF;
 export type LayersModel = TF.LayersModel;

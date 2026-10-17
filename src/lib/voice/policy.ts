@@ -1,86 +1,47 @@
-import { supportsGenerativeSpeechLanguage } from "./languages";
-import type { BrowserFamily, DeviceKind, OperatingSystem } from "@/lib/platform";
+import { speechBrowserAllowed, type BrowserFamily, type DeviceKind, type OperatingSystem } from "@/lib/platform";
 
-/**
- * Region policy is always enforced first. Native SpeechRecognition is used
- * whenever the browser exposes it; the user agent chooses and detects the
- * spoken language. Generative AUDIO is an English-only fallback, and only
- * when there is no native speech engine. It is never required for English
- * when the browser already supports speech recognition.
- */
-
+/** Only browser-managed Web Speech API recognition is supported. */
 export type RegionRule = "any" | "local-only" | "cloud-only" | "none";
-export type ProcessingMode = "local" | "cloud" | "local-model" | "portable";
+export type ProcessingMode = "local" | "cloud";
 export type LocalSupport = "available" | "downloadable" | "downloading" | "unavailable" | "unknown";
-
-export type UnavailableReason = "no-api" | "region" | "no-local" | "no-cloud";
-
+export type UnavailableReason = "no-api" | "browser" | "location" | "region" | "no-local" | "no-cloud";
 export type VoiceDecision =
   | { available: true; mode: ProcessingMode; prepareLocal: boolean; region: string | null; rule: RegionRule }
   | { available: false; reason: UnavailableReason; region: string | null; rule: RegionRule };
 
-/**
- * Default regional availability. These defaults reflect common constraints on
- * speech services and cross-border audio transfer; operators must review them
- * with counsel and can override any entry with the VOICE_REGION_POLICY
- * environment variable (JSON, e.g. {"DE":"local-only","XX":"none"}).
- */
+/** Operator policy, not a claim that a country universally prohibits speech input. */
 export const DEFAULT_REGION_RULES: Record<string, RegionRule> = {
-  // Hong Kong is a distinct jurisdiction: do not inherit mainland restrictions.
-  // Hosting/CDN country headers should supply HK for Hong Kong visitors.
-  HK: "any",
-  // Mainland China: keep recognition on-device by default.
-  CN: "local-only",
-  // Personal-data localisation requirements: keep audio on the device.
-  RU: "local-only",
-  // Comprehensively embargoed jurisdictions where browser speech services are
-  // not offered and providing the feature may be prohibited.
-  CU: "none",
-  IR: "none",
-  KP: "none",
-  SY: "none",
+  HK: "any", CN: "local-only", RU: "local-only",
+  CU: "none", IR: "none", KP: "none", SY: "none",
 };
 
 export function normalizeRegion(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const code = value.trim().toUpperCase();
-  // XX/T1/ZZ are "unknown" / Tor markers used by CDNs.
-  if (!/^[A-Z]{2}$/.test(code) || code === "XX" || code === "T1" || code === "ZZ") return null;
-  return code;
+  const code = value?.trim().toUpperCase();
+  return code && /^[A-Z]{2}$/.test(code) && !["XX", "T1", "ZZ", "EU"].includes(code) ? code : null;
 }
 
 export function parseRegionOverrides(raw: string | null | undefined): Record<string, RegionRule> {
   if (!raw) return {};
   try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     const result: Record<string, RegionRule> = {};
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(parsed)) {
       const region = normalizeRegion(key);
-      if (region && (value === "any" || value === "local-only" || value === "cloud-only" || value === "none")) {
-        result[region] = value;
-      }
+      if (region && ["any", "local-only", "cloud-only", "none"].includes(String(value))) result[region] = value as RegionRule;
     }
     return result;
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
 export function regionRule(region: string | null, overrides: Record<string, RegionRule> = {}): RegionRule {
-  if (!region) return "any";
-  return overrides[region] ?? DEFAULT_REGION_RULES[region] ?? "any";
-}
-
-/** Region from a locale tag such as "en-US" or "zh-Hans-CN"; a weak fallback when no geo signal exists. */
-export function regionFromLocale(locale: string | null | undefined): string | null {
-  if (!locale) return null;
-  const parts = locale.split(/[-_]/).slice(1);
-  return normalizeRegion(parts.find((part) => /^[A-Za-z]{2}$/.test(part)) ?? null);
+  // No locale or user selection can unlock a service for an unknown location.
+  if (!normalizeRegion(region)) return "none";
+  return overrides[region!] ?? DEFAULT_REGION_RULES[region!] ?? "any";
 }
 
 export function isMobile(os: OperatingSystem, device: DeviceKind): boolean {
-  return os === "android" || os === "ios" || os === "ipados" || device === "phone" || device === "tablet";
+  return ["android", "ios", "ipados"].includes(os) || device === "phone" || device === "tablet";
 }
 
 export interface PolicyInput {
@@ -88,66 +49,30 @@ export interface PolicyInput {
   os: OperatingSystem;
   device: DeviceKind;
   browser: BrowserFamily;
-  /** Does the browser provide a server-side recognition service? */
   browserCloud: boolean;
-  /** On-device recognition state for the recognition language. */
   local: LocalSupport;
-  /** Probed audio capability of the browser-provided model. */
-  language?: string;
-  canRunLocalModel?: boolean;
-  /** Portable, self-hosted WASM speech engine; no browser-vendor model needed. */
-  canRunPortableModel?: boolean;
   region: string | null;
   overrides?: Record<string, RegionRule>;
 }
 
-function localUsable(local: LocalSupport): boolean {
-  return local === "available" || local === "downloadable" || local === "downloading";
-}
-
 export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
-  const region = input.region;
+  const region = normalizeRegion(input.region);
   const rule = regionRule(region, input.overrides);
-  const canModel = !!input.canRunLocalModel && supportsGenerativeSpeechLanguage(input.language ?? "en-US");
-  const portable = (): VoiceDecision => ({ available: true, mode: "portable", prepareLocal: true, region, rule });
+  if (!region) return { available: false, reason: "location", region, rule };
   if (rule === "none") return { available: false, reason: "region", region, rule };
+  if (!speechBrowserAllowed(input.os, input.browser)) return { available: false, reason: "browser", region, rule };
+  if (!input.speechApi) return { available: false, reason: "no-api", region, rule };
 
-  // No native speech engine: English generative audio only, and only if probed.
-  if (!input.speechApi) {
-    if (rule === "cloud-only") return { available: false, reason: "no-cloud", region, rule };
-    if (canModel) {
-      return { available: true, mode: "local-model", prepareLocal: true, region, rule };
-    }
-    if (input.canRunPortableModel) return portable();
-    return { available: false, reason: "no-api", region, rule };
-  }
-
-  const canLocal = localUsable(input.local);
-  const canCloud = input.browserCloud;
+  const canLocal = ["available", "downloadable", "downloading"].includes(input.local);
   const local = (): VoiceDecision => ({
-    available: true,
-    mode: "local",
-    prepareLocal: input.local === "downloadable" || input.local === "downloading",
-    region,
-    rule,
+    available: true, mode: "local", prepareLocal: input.local !== "available", region, rule,
   });
   const cloud = (): VoiceDecision => ({ available: true, mode: "cloud", prepareLocal: false, region, rule });
 
-  if (rule === "local-only") {
-    if (canLocal) return local();
-    if (input.canRunPortableModel) return portable();
-    return { available: false, reason: "no-local", region, rule };
-  }
-  if (rule === "cloud-only") return canCloud || input.speechApi ? cloud() : { available: false, reason: "no-cloud", region, rule };
-
-  // Phones, tablets and desktops all use the browser's native speech engine
-  // when it exists. Prefer a truly-installed on-device pack on handhelds, but
-  // never tell the visitor the device "does not support voice input" just
-  // because they are on a phone or tablet — the SpeechRecognition constructor
-  // is the capability signal, not the form factor.
+  if (rule === "local-only") return canLocal ? local() : { available: false, reason: "no-local", region, rule };
+  if (rule === "cloud-only") return input.browserCloud ? cloud() : { available: false, reason: "no-cloud", region, rule };
   if (isMobile(input.os, input.device) && canLocal) return local();
-  if (canCloud) return cloud();
+  if (input.browserCloud) return cloud();
   if (canLocal) return local();
-  if (input.speechApi) return cloud();
   return { available: false, reason: "no-cloud", region, rule };
 }

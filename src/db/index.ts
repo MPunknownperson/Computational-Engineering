@@ -22,5 +22,4 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.__arenaNextJsPostgresqlPool = pool;
 }
 
-// Register the imported schema for relational job and tool queries.
 export const db = drizzle(pool, { schema });

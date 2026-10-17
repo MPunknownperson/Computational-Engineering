@@ -134,13 +134,23 @@ function classifier(): Promise<TextClassifier | null> {
  * model is not confident enough — a wrong confident answer is worse than none.
  */
 export async function guessDestination(hypotheses: string[]): Promise<DestinationGuess | null> {
+  // A classifier always has a top class, including for unrelated everyday speech.
+  // Require real tool vocabulary or a previously verified phrase before loading it.
+  const ignored = new Set("a an the is are was what how much many in to for of on at by with from my me i you it this that another some just do open show read want learn about today".split(" "));
+  const words = new Set(Object.values(SEEDS).flat().flatMap(text => text.toLowerCase().match(/[a-z]{2,}/g) ?? []).filter(word => !ignored.has(word)));
+  const learned = readJson<Outcome[]>("voice", []);
+  const relevant = hypotheses.slice(0, 5).filter(text =>
+    (text.toLowerCase().match(/[a-z]{2,}/g) ?? []).some(word => words.has(word)) ||
+    (Array.isArray(learned) && learned.some(item => item.text.toLowerCase() === text.trim().toLowerCase())),
+  );
+  if (!relevant.length) return null;
   const model = await classifier();
   if (!model) return null;
   let best: DestinationGuess | null = null;
   let runnerUp = 0;
-  hypotheses.slice(0, 5).forEach((text, rank) => {
-    if (text.trim().length < 2) return;
+  relevant.forEach((text, rank) => {
     const [first, second] = model.predict(text);
+    if (!first) return;
     const adjusted = first.probability - rank * 0.03;
     if (!best || adjusted > best.probability) {
       best = { path: first.label, label: DESTINATIONS[first.label] ?? first.label, probability: adjusted };

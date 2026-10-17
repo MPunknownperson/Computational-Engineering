@@ -31,10 +31,10 @@ export type UiKey =
   | "voice.checking" | "voice.starting" | "voice.processing" | "voice.localReady" | "voice.recheck" | "voice.help" | "voice.helpBrowser" | "voice.helpPrivacy" | "mic.policy" | "speech.startTimeout" | "speech.startFailed" | "speech.interrupted" | "speech.browserRetry"
   | "voice.understoodAs" | "voice.retryHint"
   | "voice.open" | "voice.noMatch" | "voice.tryOne" | "voice.learned" | "voice.forget" | "voice.noisy" | "voice.guess"
-  | "voice.disclosureLocal" | "voice.disclosureCloud" | "voice.disclosureOnDeviceModel"
-  | "voice.modelLanguageNote"
-  | "voice.privacyLink" | "unavailable.noModel"
-  | "unavailable.noApi" | "unavailable.region" | "unavailable.noLocal" | "unavailable.noCloud"
+  | "voice.disclosureLocal" | "voice.disclosureCloud"
+  | "voice.languageNote"
+  | "voice.privacyLink"
+  | "unavailable.noApi" | "unavailable.location" | "unavailable.region" | "unavailable.noLocal" | "unavailable.noCloud"
   | "mic.denied" | "mic.noDevice" | "mic.inUse" | "mic.insecure" | "mic.unsupported"
   | "speech.noSpeech" | "speech.network" | "speech.service" | "speech.language" | "speech.audio"
   | "speech.busy" | "speech.generic"
@@ -244,11 +244,12 @@ const en: LanguagePack = {
     "voice.noisy": "It is noisy around you. Move closer to the microphone or speak a little louder.",
     "voice.guess": "Best guess from this device's model. Check it before opening.",
     "voice.disclosureLocal": "Speech is recognised on this device; audio is not sent to a server.",
-    "voice.disclosureCloud": "Speech is recognised by your browser provider's speech service (Google for Chrome). This site does not receive or store audio.",
+    "voice.disclosureCloud": "Speech is recognised by your browser provider's speech service (Google for Chrome; Apple for Safari). Audio may be processed by that provider. This site does not receive or store audio.",
     "voice.privacyLink": "Privacy Policy",
     "unavailable.noApi": "Voice input is not available in this browser.",
+    "unavailable.location": "Your country or region could not be verified. Voice input is unavailable until a trusted location is provided. You can still type values in any tool.",
     "unavailable.region": "Voice input is not available in your country or region.",
-    "unavailable.noLocal": "Voice input is not available on this device.",
+    "unavailable.noLocal": "Your region requires on-device recognition, but a compatible browser language pack is unavailable. You can still type your calculation.",
     "unavailable.noCloud": "Voice input is not available in this browser.",
     "mic.denied": "Microphone access is blocked. Allow the microphone from the address bar, then try again.",
     "mic.noDevice": "No microphone was found.",
@@ -267,9 +268,7 @@ const en: LanguagePack = {
     "topic.formula": "Formula tool", "topic.inflation": "Inflation rate", "topic.gdp": "GDP per person",
     "topic.bitcoin": "Bitcoin price", "topic.crypto": "Digital-asset prices", "topic.currency": "Currency converter",
     "topic.units": "Unit converter",
-    "voice.disclosureOnDeviceModel": "English speech can use the browser’s built-in on-device model; recordings stay on this device.",
-    "voice.modelLanguageNote": "Generative speech supports English only. Other languages use browser speech recognition when supported and permitted.",
-    "unavailable.noModel": "Voice input could not be prepared on this device.",
+    "voice.languageNote": "Voice input uses browser speech recognition only. Recognition languages depend on your browser and its speech service; calculator commands use the site’s supported language packs.",
     "label.currency": "Currency converter: {amount} {from} → {to}",
     "label.units": "Unit converter: {amount} {from} → {to}",
   },
@@ -423,6 +422,7 @@ const es: LanguagePack = {
     "voice.disclosureCloud": "La voz la reconoce el servicio de tu navegador (Google en Chrome). Este sitio no recibe ni guarda audio.",
     "voice.privacyLink": "Política de privacidad",
     "unavailable.noApi": "La entrada de voz no está disponible en este navegador.",
+    "unavailable.location": "No se pudo verificar tu país o región. La entrada de voz no está disponible; puedes escribir los valores.",
     "unavailable.region": "La entrada de voz no está disponible en tu país o región.",
     "unavailable.noLocal": "La entrada de voz no está disponible en este dispositivo.",
     "unavailable.noCloud": "La entrada de voz no está disponible en este navegador.",
@@ -443,9 +443,7 @@ const es: LanguagePack = {
     "topic.formula": "Herramienta de fórmulas", "topic.inflation": "Tasa de inflación", "topic.gdp": "PIB per cápita",
     "topic.bitcoin": "Precio de bitcoin", "topic.crypto": "Precios de criptoactivos", "topic.currency": "Conversor de divisas",
     "topic.units": "Conversor de unidades",
-    "voice.disclosureOnDeviceModel": "El habla en inglés puede usar el modelo integrado del navegador; las grabaciones permanecen en este dispositivo.",
-    "voice.modelLanguageNote": "El reconocimiento generativo solo admite inglés. Otros idiomas usan el reconocimiento del navegador cuando está disponible y permitido.",
-    "unavailable.noModel": "No se pudo preparar la entrada de voz en este dispositivo.",
+    "voice.languageNote": "La entrada de voz utiliza únicamente el reconocimiento del navegador. Los idiomas disponibles dependen del navegador y de su servicio de voz.",
     "label.currency": "Conversor de divisas: {amount} {from} → {to}",
     "label.units": "Conversor de unidades: {amount} {from} → {to}",
   },
@@ -594,6 +592,7 @@ const fr: LanguagePack = {
     "voice.disclosureCloud": "La voix est reconnue par le service de votre navigateur (Google pour Chrome). Ce site ne reçoit ni ne conserve l'audio.",
     "voice.privacyLink": "Politique de confidentialité",
     "unavailable.noApi": "La saisie vocale n'est pas disponible dans ce navigateur.",
+    "unavailable.location": "Votre pays ou région n’a pas pu être vérifié. La saisie vocale est indisponible ; vous pouvez saisir les valeurs.",
     "unavailable.region": "La saisie vocale n'est pas disponible dans votre pays ou région.",
     "unavailable.noLocal": "La saisie vocale n'est pas disponible sur cet appareil.",
     "unavailable.noCloud": "La saisie vocale n'est pas disponible dans ce navigateur.",
@@ -614,9 +613,7 @@ const fr: LanguagePack = {
     "topic.formula": "Outil de formules", "topic.inflation": "Taux d'inflation", "topic.gdp": "PIB par habitant",
     "topic.bitcoin": "Cours du bitcoin", "topic.crypto": "Cours des cryptoactifs", "topic.currency": "Convertisseur de devises",
     "topic.units": "Convertisseur d'unités",
-    "voice.disclosureOnDeviceModel": "La parole anglaise peut utiliser le modèle intégré du navigateur ; les enregistrements restent sur cet appareil.",
-    "voice.modelLanguageNote": "La reconnaissance générative est réservée à l’anglais. Les autres langues utilisent celle du navigateur si elle est disponible et autorisée.",
-    "unavailable.noModel": "La saisie vocale n'a pas pu etre preparee sur cet appareil.",
+    "voice.languageNote": "La saisie vocale utilise uniquement la reconnaissance du navigateur. Les langues disponibles dépendent du navigateur et de son service vocal.",
     "label.currency": "Convertisseur de devises : {amount} {from} → {to}",
     "label.units": "Convertisseur d'unités : {amount} {from} → {to}",
   },
@@ -766,6 +763,7 @@ const de: LanguagePack = {
     "voice.disclosureCloud": "Sprache wird vom Sprachdienst Ihres Browsers erkannt (bei Chrome: Google). Diese Website empfängt und speichert kein Audio.",
     "voice.privacyLink": "Datenschutzerklärung",
     "unavailable.noApi": "Spracheingabe ist in diesem Browser nicht verfügbar.",
+    "unavailable.location": "Dein Land oder deine Region konnte nicht verifiziert werden. Die Spracheingabe ist nicht verfügbar; du kannst Werte eingeben.",
     "unavailable.region": "Spracheingabe ist in Ihrem Land oder Ihrer Region nicht verfügbar.",
     "unavailable.noLocal": "Spracheingabe ist auf diesem Gerät nicht verfügbar.",
     "unavailable.noCloud": "Spracheingabe ist in diesem Browser nicht verfügbar.",
@@ -786,9 +784,7 @@ const de: LanguagePack = {
     "topic.formula": "Formelwerkzeug", "topic.inflation": "Inflationsrate", "topic.gdp": "BIP pro Kopf",
     "topic.bitcoin": "Bitcoin-Kurs", "topic.crypto": "Kurse digitaler Vermögenswerte", "topic.currency": "Währungsrechner",
     "topic.units": "Einheitenrechner",
-    "voice.disclosureOnDeviceModel": "Englische Sprache kann das integrierte Modell des Browsers nutzen; Aufnahmen bleiben auf diesem Gerät.",
-    "voice.modelLanguageNote": "Generative Spracherkennung unterstützt nur Englisch. Andere Sprachen verwenden die Browser-Erkennung, sofern verfügbar und erlaubt.",
-    "unavailable.noModel": "Spracheingabe konnte auf diesem Gerat nicht vorbereitet werden.",
+    "voice.languageNote": "Die Spracheingabe verwendet ausschließlich die Spracherkennung des Browsers. Verfügbare Sprachen hängen vom Browser und seinem Sprachdienst ab.",
     "label.currency": "Währungsrechner: {amount} {from} → {to}",
     "label.units": "Einheitenrechner: {amount} {from} → {to}",
   },
@@ -929,6 +925,7 @@ const zh: LanguagePack = {
     "voice.disclosureCloud": "语音由你的浏览器提供商的语音服务识别（Chrome 为 Google）。本网站不接收也不存储音频。",
     "voice.privacyLink": "隐私政策",
     "unavailable.noApi": "此浏览器不支持语音输入。",
+    "unavailable.location": "无法验证您所在的国家或地区，暂时无法使用语音输入。您仍可手动输入数值。",
     "unavailable.region": "你所在的国家或地区不提供语音输入。",
     "unavailable.noLocal": "此设备不支持语音输入。",
     "unavailable.noCloud": "此浏览器不支持语音输入。",
@@ -949,9 +946,7 @@ const zh: LanguagePack = {
     "topic.formula": "公式工具", "topic.inflation": "通胀率", "topic.gdp": "人均GDP",
     "topic.bitcoin": "比特币价格", "topic.crypto": "数字资产价格", "topic.currency": "汇率换算",
     "topic.units": "单位换算",
-    "voice.disclosureOnDeviceModel": "英语语音可使用浏览器内置的设备端模型；录音不会离开本机。",
-    "voice.modelLanguageNote": "生成式语音识别仅支持英语。其他语言在可用且允许时使用浏览器语音识别。",
-    "unavailable.noModel": "无法在此设备上准备语音输入。",
+    "voice.languageNote": "语音输入仅使用浏览器语音识别。可识别的语言取决于浏览器及其语音服务；计算指令使用本站支持的语言包。",
     "label.currency": "汇率换算：{amount} {from} → {to}",
     "label.units": "单位换算：{amount} {from} → {to}",
   },

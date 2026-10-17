@@ -120,3 +120,20 @@ export const legacyWorkspaceOperations = pgTable("workspace_operations", {
   status: varchar("status", { length: 16 }).notNull().default("success"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [index("workspace_operations_workspace_idx").on(table.workspaceId)]);
+
+/** Legacy unpack records are preserved, but not exposed by this site. */
+export const legacyUnpackActivity = pgTable("unpack_activity", {
+  id: serial("id").primaryKey(),
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  detail: text("detail").notNull().default(""),
+  status: text("status").notNull().default("success"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const legacyUnpackSettings = pgTable("unpack_settings", {
+  id: integer("id").primaryKey().default(1),
+  name: text("name").notNull().default("My workspace"),
+  autoExtract: boolean("auto_extract").notNull().default(false),
+  showHidden: boolean("show_hidden").notNull().default(false),
+});

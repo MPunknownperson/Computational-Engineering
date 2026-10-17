@@ -1,3 +1,5 @@
+import { detectBrowser, detectOperatingSystem, speechBrowserAllowed } from "@/lib/platform";
+
 /**
  * Lightweight helper for OS- and browser-level APIs that are often overlooked.
  *
@@ -53,7 +55,7 @@ export type SpeechAvailability = "on-device" | "cloud" | "unavailable";
 
 /** The SpeechRecognition constructor exposed by this browser, if any. */
 function recognitionCtor(): SpeechConstructor | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !speechBrowserAllowed(detectOperatingSystem(), detectBrowser())) return null;
   const scope = window as unknown as Record<string, unknown>;
   // Some WebKit shells expose a placeholder under the standard name. Do not
   // let a non-callable value hide the working prefixed constructor.
@@ -209,7 +211,7 @@ export type MicrophoneAccess =
   | { status: MicrophoneStatus; stream: null };
 
 /**
- * Capture for MediaRecorder/local audio models only. Native SpeechRecognition
+ * Generic explicit media capture helper. Native SpeechRecognition
  * requests and owns its own microphone. The signal releases late-granted
  * streams even if the visitor cancels while a permission prompt is open.
  */

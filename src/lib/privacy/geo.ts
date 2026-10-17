@@ -12,12 +12,12 @@ export interface PrivacyArea {
 
 function normalizeCountry(value: string | null): string | null {
   const country = value?.trim().toUpperCase();
-  return country && /^[A-Z]{2}$/.test(country) && !["XX", "ZZ", "EU"].includes(country) ? country : null;
+  return country && /^[A-Z]{2}$/.test(country) && !["XX", "ZZ", "EU", "T1"].includes(country) ? country : null;
 }
 
 function normalizeRegion(value: string | null): string | null {
-  const region = value?.trim().toUpperCase();
-  return region && /^[A-Z]{2,3}$/.test(region) ? region : null;
+  const region = value?.trim().toUpperCase().replace(/^[A-Z]{2}-/, "");
+  return region && /^[A-Z0-9]{1,3}$/.test(region) ? region : null;
 }
 
 function signaturesMatch(expected: Buffer, signature: string): boolean {
@@ -55,7 +55,7 @@ function signedPayload(
 export function trustedPrivacyCountry(
   headers: Pick<Headers, "get">,
   config: GeoConfiguration = {
-    provider: process.env.PRIVACY_GEO_PROVIDER,
+    provider: process.env.PRIVACY_GEO_PROVIDER ?? (process.env.VERCEL === "1" ? "vercel" : undefined),
     signingSecret: process.env.PRIVACY_GEO_SIGNING_SECRET,
   },
   now = Date.now(),
@@ -66,7 +66,7 @@ export function trustedPrivacyCountry(
 export function trustedPrivacyArea(
   headers: Pick<Headers, "get">,
   config: GeoConfiguration = {
-    provider: process.env.PRIVACY_GEO_PROVIDER,
+    provider: process.env.PRIVACY_GEO_PROVIDER ?? (process.env.VERCEL === "1" ? "vercel" : undefined),
     signingSecret: process.env.PRIVACY_GEO_SIGNING_SECRET,
   },
   now = Date.now(),

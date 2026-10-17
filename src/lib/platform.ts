@@ -73,9 +73,10 @@ export function detectOperatingSystem(ua = userAgent()): OperatingSystem {
 
 export function detectBrowser(ua = userAgent()): BrowserFamily {
   const value = ua.toLowerCase();
-  if (/edg\//.test(value)) return "edge";
-  if (/opr\//.test(value)) return "opera";
-  if (/firefox\//.test(value)) return "firefox";
+  if (/edg(?:a|ios)?\//.test(value)) return "edge";
+  if (/opr\/|opios\//.test(value)) return "opera";
+  if (/firefox\/|fxios\//.test(value)) return "firefox";
+  if (/samsungbrowser|ucbrowser|yabrowser|; wv\)|version\/.*chrome/.test(value)) return "unknown";
   if (/chrome\//.test(value) || /crios\//.test(value)) return "chrome";
   if (/safari\//.test(value) && !/chrome|crios|android/.test(value)) return "safari";
   return "unknown";
@@ -209,4 +210,11 @@ export function browserLabel(browser: BrowserFamily): string {
     opera: "Opera",
     unknown: "this browser",
   }[browser];
+}
+
+/** Mobile recognition is supported only through the platform service browser. */
+export function speechBrowserAllowed(os: OperatingSystem, browser: BrowserFamily): boolean {
+  if (os === "android") return browser === "chrome";
+  if (os === "ios" || os === "ipados") return browser === "safari";
+  return true;
 }
