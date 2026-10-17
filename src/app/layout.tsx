@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import "@fontsource-variable/dm-sans";
 import "./globals.css";
+import "@/components/consent/consent-theme.css";
 import { BrandMark, Wordmark } from "@/components/Brand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageTransition } from "@/components/Motion";
@@ -13,7 +14,7 @@ import { SITE } from "@/lib/site";
 import { defaultMetadata } from "@/lib/seo";
 import { headers } from "next/headers";
 import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
-import { trustedPrivacyArea } from "@/lib/privacy/geo";
+import { consentAreaFromHeaders } from "@/lib/privacy/consent-location";
 import { regimeForArea } from "@/lib/privacy/consent-regime";
 import { ConsentManager } from "@/components/consent/ConsentManager";
 
@@ -45,7 +46,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const tone = TONES.has(rawTone) ? rawTone : "home";
   const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
   // Region-specific notices; cookie settings remain accessible worldwide.
-  const consentRegime = regimeForArea(trustedPrivacyArea(requestHeaders));
+  const consentRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
   return (
     <html lang="en" data-consent-regime={consentRegime} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /></head>
