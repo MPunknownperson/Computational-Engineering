@@ -1,14 +1,26 @@
 /// <reference lib="webworker" />
-import { pipeline } from "@huggingface/transformers";
+import { env, pipeline } from "@huggingface/transformers";
+
+// Same-origin, pinned model and runtime assets. No audio or model request is
+// sent to a vendor. One WASM thread also works without cross-origin isolation.
+env.allowRemoteModels = false;
+env.allowLocalModels = true;
+env.localModelPath = "/models/";
+env.useBrowserCache = false;
+if (env.backends.onnx.wasm) {
+  env.backends.onnx.wasm.numThreads = 1;
+  env.backends.onnx.wasm.wasmPaths = "/vendor/onnx/";
+  env.backends.onnx.wasm.proxy = false;
+}
 import { whisperLanguage } from "@/lib/voice/whisper-language";
 
 /**
- * Background worker. Model: Xenova/whisper-base (multilingual, Apache-2.0).
- * Host: Hugging Face Hub. Model/config/tokenizer files are fetched separately,
- * one at a time by Transformers.js and cached in browser storage. Microphone
+ * Background worker. Model: Xenova/whisper-tiny (multilingual, Apache-2.0).
+ * Host: same-origin /models, pinned at deployment. Model files are cached only
+ * when functional storage has been accepted. Microphone
  * audio is transferred from the page to this same-origin worker only.
  */
-const MODEL_ID = "Xenova/whisper-base";
+const MODEL_ID = "Xenova/whisper-tiny";
 
 interface ProgressInfo {
   status?: string;
@@ -26,6 +38,7 @@ interface Incoming {
   type: "prepare" | "transcribe";
   id: string;
   device?: "webgpu" | "wasm";
+  cache?: boolean;
   audio?: ArrayBuffer;
   language?: string;
 }
@@ -102,6 +115,8 @@ self.addEventListener("message", (event: MessageEvent<Incoming>) => {
   if (!message?.id) return;
 
   if (message.type === "prepare") {
+    env.useBrowserCache = message.cache === true;
+    env.useWasmCache = message.cache === true;
     void loadModel(message.device ?? "wasm")
       .then(() => post({ type: "ready", id: message.id }))
       .catch((error: unknown) => post({ type: "error", id: message.id, message: error instanceof Error ? error.message : String(error) }));
@@ -115,7 +130,7 @@ self.addEventListener("message", (event: MessageEvent<Incoming>) => {
       task: "transcribe",
       // Beam search and repetition guards are measurably steadier on short
       // number/currency phrases than greedy decoding, at a modest latency cost.
-      num_beams: 3,
+      num_beams: 1,
       max_new_tokens: 96,
       no_repeat_ngram_size: 3,
       repetition_penalty: 1.05,

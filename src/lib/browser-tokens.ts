@@ -54,10 +54,14 @@ export type SpeechAvailability = "on-device" | "cloud" | "unavailable";
 /** The SpeechRecognition constructor exposed by this browser, if any. */
 function recognitionCtor(): SpeechConstructor | null {
   if (typeof window === "undefined") return null;
-  const ctor =
-    (window as unknown as Record<string, unknown>)["SpeechRecognition"] ??
-    (window as unknown as Record<string, unknown>)["webkitSpeechRecognition"];
-  return typeof ctor === "function" ? (ctor as SpeechConstructor) : null;
+  const scope = window as unknown as Record<string, unknown>;
+  // Some WebKit shells expose a placeholder under the standard name. Do not
+  // let a non-callable value hide the working prefixed constructor.
+  for (const name of ["SpeechRecognition", "webkitSpeechRecognition"]) {
+    const ctor = scope[name];
+    if (typeof ctor === "function") return ctor as SpeechConstructor;
+  }
+  return null;
 }
 
 /**

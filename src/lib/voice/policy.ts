@@ -10,7 +10,7 @@ import type { BrowserFamily, DeviceKind, OperatingSystem } from "@/lib/platform"
  */
 
 export type RegionRule = "any" | "local-only" | "cloud-only" | "none";
-export type ProcessingMode = "local" | "cloud" | "local-model";
+export type ProcessingMode = "local" | "cloud" | "local-model" | "portable";
 export type LocalSupport = "available" | "downloadable" | "downloading" | "unavailable" | "unknown";
 
 export type UnavailableReason = "no-api" | "region" | "no-local" | "no-cloud";
@@ -95,18 +95,21 @@ export interface PolicyInput {
   /** Probed audio capability of the browser-provided model. */
   language?: string;
   canRunLocalModel?: boolean;
+  /** Portable, self-hosted WASM speech engine; no browser-vendor model needed. */
+  canRunPortableModel?: boolean;
   region: string | null;
   overrides?: Record<string, RegionRule>;
 }
 
 function localUsable(local: LocalSupport): boolean {
-  return local === "available" || local === "downloadable" || local === "downloading" || local === "unknown";
+  return local === "available" || local === "downloadable" || local === "downloading";
 }
 
 export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const region = input.region;
   const rule = regionRule(region, input.overrides);
   const canModel = !!input.canRunLocalModel && supportsGenerativeSpeechLanguage(input.language ?? "en-US");
+  const portable = (): VoiceDecision => ({ available: true, mode: "portable", prepareLocal: true, region, rule });
   if (rule === "none") return { available: false, reason: "region", region, rule };
 
   // No native speech engine: English generative audio only, and only if probed.
@@ -115,6 +118,7 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
     if (canModel) {
       return { available: true, mode: "local-model", prepareLocal: true, region, rule };
     }
+    if (input.canRunPortableModel) return portable();
     return { available: false, reason: "no-api", region, rule };
   }
 
@@ -131,6 +135,7 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
 
   if (rule === "local-only") {
     if (canLocal) return local();
+    if (input.canRunPortableModel) return portable();
     return { available: false, reason: "no-local", region, rule };
   }
   if (rule === "cloud-only") return canCloud || input.speechApi ? cloud() : { available: false, reason: "no-cloud", region, rule };

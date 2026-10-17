@@ -82,9 +82,11 @@ const TZ_REGIMES: Array<[RegExp, ManagedConsentRegime]> = [
  * All unresolved and resolved regions keep optional purposes off until chosen;
  * this fallback never unlocks a private API or regional legal supplement.
  */
-export function regimeFromTimezone(timeZone: string | undefined, language?: string): ConsentRegime {
-  const tz = (timeZone ?? "").trim();
-  if (!tz) return "standard";
+export function regimeFromTimezone(timeZone: string | undefined, language?: string | readonly string[]): ConsentRegime {
+  let tz = (timeZone ?? "").trim();
+  // Canonicalise legacy timezone aliases used by Android and older WebKit.
+  if (tz) { try { tz = new Intl.DateTimeFormat("en", { timeZone: tz }).resolvedOptions().timeZone; } catch { /* Match the original alias below. */ } }
+  const languages = typeof language === "string" ? [language] : language ?? [];
   if (tz === "America/Los_Angeles" || tz === "US/Pacific" || tz === "PST8PDT") return "ccpa";
   if (tz.startsWith("Europe/")) {
     // Europe/* also includes Istanbul, Moscow, Minsk, Kyiv etc. Exclude a few
@@ -96,15 +98,15 @@ export function regimeFromTimezone(timeZone: string | undefined, language?: stri
     return nonGdpr.has(tz) ? "standard" : "gdpr";
   }
   if (tz === "Atlantic/Reykjavik" || tz === "Atlantic/Canary" || tz === "Atlantic/Madeira" || tz === "Atlantic/Azores" || tz === "Atlantic/Faroe") return "gdpr";
-  if (tz === "Asia/Nicosia" || tz === "Asia/Famagusta") return "gdpr";
+  if (tz === "Asia/Nicosia" || tz === "Asia/Famagusta" || tz === "Europe/Nicosia") return "gdpr";
   for (const [pattern, regime] of TZ_REGIMES) if (pattern.test(tz)) return regime;
-  // A UK or Irish locale on an unrecognised zone still gets the protective default.
-  if (language && /^(en-GB|en-IE|ga-IE|cy-GB|gd-GB)$/i.test(language)) return "gdpr";
-  if (language && /^pt-BR$/i.test(language)) return "lgpd";
-  if (language && /^(en|fr)-CA$/i.test(language)) return "pipeda";
-  if (language && /^en-AU$/i.test(language)) return "au";
-  if (language && /^en-SG$/i.test(language)) return "pdpa";
-  if (language && /^ja(-JP)?$/i.test(language)) return "appi";
-  if (language && /^(en|hi)-IN$/i.test(language)) return "dpdp";
+  // All locale hints also work when timezone support is missing or returns UTC.
+  for (const language of languages) {
+    let country: string | undefined;
+    try { country = new Intl.Locale(language.replace(/_/g, "-")).region; } catch { /* Ignore invalid locale tags. */ }
+    if (country && GDPR_COUNTRIES.has(country)) return "gdpr";
+    if (country && COUNTRY_REGIMES[country]) return COUNTRY_REGIMES[country];
+    if (/^ja(?:-|$)/i.test(language)) return "appi";
+  }
   return "standard";
 }

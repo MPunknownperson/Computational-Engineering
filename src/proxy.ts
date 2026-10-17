@@ -87,5 +87,5 @@ function hiddenResponse() {
 }
 
 export const config = {
-  matcher: ["/api/workbench/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
+  matcher: ["/api/workbench/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|models|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
 };

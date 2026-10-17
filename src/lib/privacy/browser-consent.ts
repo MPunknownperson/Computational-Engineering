@@ -15,7 +15,7 @@ export function browserConsentRegime(): ConsentRegime | null {
   const resolved = document.documentElement.dataset.consentRegime;
   if (resolved === "standard" || isManagedRegime(resolved)) return resolved;
   try {
-    return regimeFromTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.language);
+    return regimeFromTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone, navigator.languages?.length ? navigator.languages : navigator.language);
   } catch {
     return "standard";
   }

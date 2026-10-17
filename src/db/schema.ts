@@ -1,5 +1,8 @@
 import {
   bigint,
+  serial,
+  varchar,
+  index,
   boolean,
   integer,
   jsonb,
@@ -105,3 +108,15 @@ export const privacyChoices = pgTable("privacy_choices", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
+
+/** Retained for non-destructive replacement of the previous application.
+ * No Radix Loom route reads or writes this legacy activity table. */
+export const legacyWorkspaceOperations = pgTable("workspace_operations", {
+  id: serial("id").primaryKey(),
+  workspaceId: varchar("workspace_id", { length: 64 }).notNull(),
+  type: varchar("type", { length: 24 }).notNull(),
+  title: text("title").notNull(),
+  detail: text("detail").notNull().default(""),
+  status: varchar("status", { length: 16 }).notNull().default("success"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("workspace_operations_workspace_idx").on(table.workspaceId)]);
