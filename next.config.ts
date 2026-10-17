@@ -28,6 +28,8 @@ const nextConfig: NextConfig = {
       { source: "/media/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400" }] },
       { source: "/media/:asset([a-z0-9-]+\\.[a-f0-9]{12}\\..+)", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       { source: "/icons/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
+      // Self-hosted portable speech assets, fetched only after an explicit tap.
+      { source: "/models/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400" }] },
       // Self-hosted Silktide Consent Manager v2.0 (no third-party CDN, no tracking).
       { source: "/vendor/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
       { source: "/favicon.svg", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },

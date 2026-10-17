@@ -210,7 +210,7 @@ test.describe("desktop", () => {
     await page.getByRole("button", { name: "Cancel" }).click();
   });
 
-  test("a browser with no engine and no model runtime has no voice input", async ({ page }) => {
+  test("a browser without native speech or experimental AI gets portable on-device speech", async ({ page }) => {
     await page.addInitScript(() => {
       const w = window as unknown as Record<string, unknown> & { ai?: unknown };
       delete w.SpeechRecognition;
@@ -219,8 +219,8 @@ test.describe("desktop", () => {
       delete w.ai;
     });
     await page.goto("/calculators");
-    await expect(voiceCard(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
-    await expect(page.locator("#voice-status")).toContainText("Voice input is not available in this browser.");
+    await expect(speakButton(page)).toBeEnabled();
+    await expect(voiceCard(page)).toContainText("On-device speech · phones, tablets & desktops");
   });
 });
 

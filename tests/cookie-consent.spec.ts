@@ -63,8 +63,10 @@ test("settings are global while the standard notice remains unchanged", async ({
     expect(await page.evaluate(() => localStorage.getItem("stcm.radixloom-v2-standard.hasConsented"))).toBeNull();
     await page.getByRole("contentinfo").getByRole("button", { name: "Cookie settings", exact: true }).click();
     await expect(page.locator("#stcm-modal")).toBeVisible();
-    await expect(page.locator("#stcm-modal")).toContainText("Options can differ by region");
-    await page.locator('label[for="consent-functional"]').click();
+    await expect(page.locator("#stcm-modal")).toContainText("All categories are selected initially");
+    for (const purpose of ["essential", "functional", "analytics", "advertising"]) {
+      await expect(page.locator(`#consent-${purpose}`)).toBeChecked();
+    }
     await page.locator("#stcm-modal").getByRole("button", { name: "Save cookie settings and close", exact: true }).click();
     await page.goto("/tools/formula");
     await expect(page.getByRole("button", { name: "Save formula", exact: true })).toBeEnabled();

@@ -93,10 +93,10 @@ test.describe("spoken commands", () => {
 test.describe("automatic processing assignment", () => {
   const base: PolicyInput = {
     speechApi: true, os: "windows", device: "desktop", browser: "chrome",
-    browserCloud: true, local: "unknown", region: "US",
+    browserCloud: true, local: "available", region: "US",
   };
 
-  test("desktop uses cloud; mobile uses on-device", () => {
+  test("desktop uses its provider; mobile prefers a confirmed installed local pack", () => {
     expect(decideVoiceProcessing(base)).toMatchObject({ available: true, mode: "cloud" });
     expect(decideVoiceProcessing({ ...base, os: "android", device: "phone" })).toMatchObject({ available: true, mode: "local" });
     expect(decideVoiceProcessing({ ...base, os: "ios", device: "phone", browser: "safari", local: "available" })).toMatchObject({ mode: "local" });

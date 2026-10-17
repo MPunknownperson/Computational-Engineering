@@ -5,6 +5,7 @@ type MockOptions = {
   permission?: PermissionState;
   microphone?: boolean;
   noApi?: boolean;
+  prefixedOnly?: boolean;
   local?: boolean;
   localStatus?: "available" | "unavailable" | "downloadable";
   region?: string;
@@ -78,9 +79,10 @@ async function setup(page: Page, options: MockOptions = {}) {
     if (opts.local) Object.defineProperty(MockRecognition.prototype, "processLocally", {
       get(this: MockRecognition) { return this.local; }, set(this: MockRecognition, value: boolean) { this.local = value; },
     });
-    w.SpeechRecognition = opts.noApi ? undefined : MockRecognition;
+    w.SpeechRecognition = opts.noApi ? undefined : opts.prefixedOnly ? {} : MockRecognition;
     w.webkitSpeechRecognition = opts.noApi ? undefined : MockRecognition;
     w.LanguageModel = undefined;
+    if (opts.noApi) w.Worker = undefined;
     w.__voiceTest = {
       probe,
       emit(event: EventName, text = "5 miles to kilometers") {
@@ -219,7 +221,7 @@ test("a privacy-filtered device list before permission does not disable voice", 
   await expect(speak(page)).toBeEnabled();
 });
 
-test("no native engine or verified audio model disables voice without a keyboard fallback", async ({ page }) => {
+test("no native engine, browser model or portable runtime disables voice", async ({ page }) => {
   await setup(page, { noApi: true });
   await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
   await expect(card(page).getByRole("link", { name: /keyboard|teclado|clavier|tippen|键盘/i })).toHaveCount(0);
@@ -261,9 +263,11 @@ test("leaving the visible page aborts capture and does not restart in the backgr
 test("a local-only region never falls back to a cloud engine after a service error", async ({ page }) => {
   await setup(page, { region: "CN", local: true });
   await speak(page).click(); await emit(page, "error", "language-not-supported");
-  await expect(card(page).getByRole("button", { name: "Voice input unavailable" })).toBeDisabled();
+  await expect(speak(page)).toBeEnabled();
+  await expect(card(page)).toContainText("On-device speech · phones, tablets & desktops");
+  await expect(card(page)).toContainText("audio will stay on this device");
   const p = await probe(page); expect(p.starts).toBe(1); expect(p.locals).toEqual([true]);
-  await expect(card(page)).not.toContainText("Your next tap");
+  await expect(card(page)).not.toContainText("browser provider's speech service");
 });
 
 test("page and backend retain database-backed formulas and private administrative routes", async ({ request }) => {
@@ -277,4 +281,14 @@ test("page and backend retain database-backed formulas and private administrativ
   expect((await list.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ id: item.id, expression: "2 + 3" })]));
   const removed = await request.delete(`/api/formulas?workspace=${workspace}&id=${item.id}`);
   expect((await removed.json()).removed).toBe(1);
+});
+
+
+test("a non-callable standard placeholder does not hide WebKit-prefixed speech", async ({ page }) => {
+  await setup(page, { prefixedOnly: true });
+  await expect(speak(page)).toBeEnabled();
+  await speak(page).click();
+  await emit(page, "start"); await emit(page, "audio"); await emit(page, "result");
+  await page.waitForURL(/\/tools\/units\?/);
+  expect((await probe(page)).starts).toBe(1);
 });
