@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { geoFromEdgeHeaders, resolvedGeoFromHeaders } from "./geo-resolver";
 
 export interface GeoConfiguration {
   provider?: string;
@@ -71,6 +72,12 @@ export function trustedPrivacyArea(
   },
   now = Date.now(),
 ): PrivacyArea | null {
+  // The proxy resolves the visitor's location once per request (edge headers
+  // or a cached IP lookup) and injects it after stripping client copies.
+  // That answer is authoritative for every provider mode.
+  const resolved = resolvedGeoFromHeaders(headers);
+  if (resolved) return { country: resolved.country, region: resolved.region };
+
   if (config.provider === "cloudflare") {
     const country = normalizeCountry(headers.get("cf-ipcountry"));
     return country ? { country, region: normalizeRegion(headers.get("cf-region-code")) } : null;
@@ -79,8 +86,16 @@ export function trustedPrivacyArea(
     const country = normalizeCountry(headers.get("x-vercel-ip-country"));
     return country ? { country, region: normalizeRegion(headers.get("x-vercel-ip-country-region")) } : null;
   }
-  if (config.provider !== "signed-header" || !config.signingSecret || config.signingSecret.length < 32) return null;
-  return signedPayload(headers, config.signingSecret, now);
+  if (config.provider === "signed-header") {
+    if (!config.signingSecret || config.signingSecret.length < 32) return null;
+    return signedPayload(headers, config.signingSecret, now);
+  }
+  // "auto" (default): accept whichever hosting edge is in front of the app, and a
+  // signed assertion when a secret is configured.
+  const edge = geoFromEdgeHeaders(headers);
+  if (edge) return { country: edge.country, region: edge.region };
+  if (config.signingSecret && config.signingSecret.length >= 32) return signedPayload(headers, config.signingSecret, now);
+  return null;
 }
 
 /** Browser preference controls on the choice page. Fail closed when location is unknown. */

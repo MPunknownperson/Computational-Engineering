@@ -54,15 +54,20 @@ export function regimeForArea(area: PrivacyArea | null): ServerConsentRegime {
   if (!area) return "unknown";
   if (GDPR_COUNTRIES.has(area.country)) return "gdpr";
   if (area.country === "US") {
-    if (area.region === "CA") return "ccpa";
-    // An unverified state must not be inferred from browser preferences.
-    if (!area.region) return "unknown";
-    return "standard";
+    // California gets the CCPA/CPRA experience; every other state (and a US
+    // visitor whose state could not be resolved) gets the standard US notice.
+    // The country is known, so a foreign regime must never be applied here.
+    return area.region === "CA" ? "ccpa" : "standard";
   }
   return COUNTRY_REGIMES[area.country] ?? "standard";
 }
 
-/** Unknown geography gets protective opt-in defaults, not an inferred location. */
+/**
+ * When no location could be established at all, show the neutral standard
+ * notice. Optional categories stay off until the visitor chooses, so this is
+ * still privacy-protective, but no jurisdiction-specific banner (GDPR, CCPA…)
+ * is forced on someone who may not be covered by it.
+ */
 export function protectiveConsentRegime(regime: ServerConsentRegime): ConsentRegime {
-  return regime === "unknown" ? "gdpr" : regime;
+  return regime === "unknown" ? "standard" : regime;
 }

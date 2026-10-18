@@ -5,6 +5,7 @@ import { pageDisposition } from "@/lib/public-routes";
 import { privacyRegion } from "@/lib/privacy/regions";
 import { trustedPrivacyCountry } from "@/lib/privacy/geo";
 import { PRIVACY_COOKIE_SECONDS, PRIVACY_GEO_VARY, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
+import { applyResolvedGeo, resolveVisitorGeo } from "@/lib/privacy/geo-resolver";
 
 const PRIVATE_API_PREFIX = "/api/workbench/";
 const PAGE_TONES: Array<[string, string]> = [
@@ -21,7 +22,7 @@ function toneForPathname(pathname: string): string {
   return PAGE_TONES.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`))?.[1] ?? "home";
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith(PRIVATE_API_PREFIX)) {
     const expected = process.env.WORKBENCH_API_KEY;
@@ -33,12 +34,24 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Resolve the visitor's country/region once per request from the hosting
+  // edge or a cached IP lookup, and pass it on as a trusted request header.
+  // Client-supplied copies of the internal header are discarded first.
+  const requestHeaders = new Headers(request.headers);
+  applyResolvedGeo(requestHeaders, null);
+  const geo = await resolveVisitorGeo(requestHeaders);
+  applyResolvedGeo(requestHeaders, geo);
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
   // These intentional private pages are not part of the public SEO catalog.
   // Gate document, HEAD and RSC requests before any content can be streamed.
   const regionalMatch = pathname.match(/^\/privacy\/regions\/([^/]+)\/?$/);
   const regional = regionalMatch ? privacyRegion(regionalMatch[1]) : undefined;
   if (regionalMatch && !regional) return missingPageResponse();
-  if (regional && trustedPrivacyCountry(request.headers) !== regional.country) {
+  if (regional && trustedPrivacyCountry(requestHeaders) !== regional.country) {
     return new NextResponse("This privacy supplement is unavailable for this location. Visit /privacy or /contact for assistance.", {
       status: 403,
       headers: {
@@ -54,7 +67,6 @@ export function proxy(request: NextRequest) {
   if (!regional && pageDisposition(pathname) === "missing") return missingPageResponse();
 
   // Supply this to the server layout as a REQUEST header, overriding spoofed input.
-  const requestHeaders = new Headers(request.headers);
   const tone = toneForPathname(pathname);
   requestHeaders.set("x-page-tone", tone);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
@@ -87,5 +99,5 @@ function hiddenResponse() {
 }
 
 export const config = {
-  matcher: ["/api/workbench/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
+  matcher: ["/api/workbench/:path*", "/api/voice/:path*", "/api/privacy/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
 };

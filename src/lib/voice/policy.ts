@@ -27,17 +27,23 @@ export function parseRegionOverrides(raw: string | null | undefined): Record<str
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     const result: Record<string, RegionRule> = {};
     for (const [key, value] of Object.entries(parsed)) {
-      const region = normalizeRegion(key);
+      const region = key.trim() === "*" ? "*" : normalizeRegion(key);
       if (region && ["any", "local-only", "cloud-only", "none"].includes(String(value))) result[region] = value as RegionRule;
     }
     return result;
   } catch { return {}; }
 }
 
+/**
+ * Operator rules only restrict specific countries. When the country could not
+ * be determined the default rule applies: voice stays available. Recognition
+ * is performed by the visitor's own browser (or an on-device model), so an
+ * unknown location is never a reason to withhold the feature.
+ */
 export function regionRule(region: string | null, overrides: Record<string, RegionRule> = {}): RegionRule {
-  // No locale or user selection can unlock a service for an unknown location.
-  if (!normalizeRegion(region)) return "none";
-  return overrides[region!] ?? DEFAULT_REGION_RULES[region!] ?? "any";
+  const code = normalizeRegion(region);
+  if (!code) return overrides["*"] ?? "any";
+  return overrides[code] ?? DEFAULT_REGION_RULES[code] ?? "any";
 }
 
 export function isMobile(os: OperatingSystem, device: DeviceKind): boolean {
@@ -58,7 +64,6 @@ export interface PolicyInput {
 export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const region = normalizeRegion(input.region);
   const rule = regionRule(region, input.overrides);
-  if (!region) return { available: false, reason: "location", region, rule };
   if (rule === "none") return { available: false, reason: "region", region, rule };
   if (!speechBrowserAllowed(input.os, input.browser)) return { available: false, reason: "browser", region, rule };
   if (!input.speechApi) return { available: false, reason: "no-api", region, rule };
