@@ -22,9 +22,27 @@ const EXAMPLES = [
   { label: "Root of a quadratic", expr: "x^2 - 5*x + 6", vars: "lower = 0; upper = 2.5" },
 ];
 
+const EXPRESSION_ALLOWED = /^[0-9a-zA-Z+\-*/^().,;%=\[\] ]{1,240}$/;
+
+/** A voice maths action arrives as ?expr=…&vars=…; anything else is ignored. */
+function initialFromSearch(search: URLSearchParams): ExpressionPreset | undefined {
+  const preset = findPreset(search.get("preset"));
+  if (preset) return preset;
+  const expr = search.get("expr");
+  if (!expr || !EXPRESSION_ALLOWED.test(expr)) return undefined;
+  const vars = search.get("vars");
+  return {
+    id: "voice",
+    name: "From voice input",
+    description: "Expression supplied by a verified voice maths action.",
+    expression: expr,
+    variables: vars && EXPRESSION_ALLOWED.test(vars) ? vars : "",
+  };
+}
+
 export default function ScientificPage() {
   const search = useSearchParams();
-  return <ScientificWorkspace key={search.toString()} initial={findPreset(search.get("preset"))} />;
+  return <ScientificWorkspace key={search.toString()} initial={initialFromSearch(new URLSearchParams(search.toString()))} />;
 }
 
 function ScientificWorkspace({ initial }: { initial?: ExpressionPreset }) {
