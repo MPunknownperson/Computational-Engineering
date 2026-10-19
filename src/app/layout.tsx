@@ -17,6 +17,8 @@ import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
 import { consentAreaFromHeaders } from "@/lib/privacy/consent-location";
 import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-regime";
 import { ConsentManager } from "@/components/consent/ConsentManager";
+import { FastGptWidget } from "@/components/tech/FastGptWidget";
+import { fastGptWidgetConfig } from "@/lib/agent/fastgpt";
 
 export const generateMetadata = defaultMetadata;
 export const viewport: Viewport = {
@@ -48,6 +50,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Region-specific notices; cookie settings remain accessible worldwide.
   const serverRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
   const consentRegime = protectiveConsentRegime(serverRegime);
+  // FastGPT's official embed loader; mounted only when a share link is configured.
+  const fastGpt = fastGptWidgetConfig();
   return (
     <html lang="en" data-consent-regime={consentRegime} data-consent-location={serverRegime === "unknown" ? "unverified" : "verified"} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: appearanceScript }} /></head>
@@ -68,6 +72,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </main>
         <SiteFooter />
         <ConsentManager serverRegime={serverRegime} />
+        {fastGpt && <FastGptWidget scriptSrc={fastGpt.scriptSrc} botSrc={fastGpt.botSrc} />}
       </body>
     </html>
   );
