@@ -24,3 +24,62 @@ Private workbench APIs require a server-configured `WORKBENCH_API_KEY` of at lea
 ## Validation
 
 Run `npx next typegen`, `npm exec tsc -- --noEmit --pretty false`, and `npm run build`. Geography/browser regression tests are in `tests/browser-speech-only.spec.ts`, `tests/mobile-consent-regressions.spec.ts`, `tests/cookie-consent.spec.ts` and `tests/privacy-policy.spec.ts`. Headless tests mock recognition services; real speech quality and availability still depend on the user’s physical device and provider.
+
+## NLU reliability work (post-deployment)
+
+The reported defect — a spoken **linear equation** being executed as a
+**currency conversion** — was systemic rather than isolated. Speech-to-text was
+accurate; the fault was entirely downstream.
+
+**Root causes found in this codebase**
+
+1. *No mathematical intent existed.* The IR had only `CONVERT`, `OPEN`,
+   `OPEN_PAGE` and `REPEAT`, so a numeric utterance could only ever be compiled
+   to a conversion.
+2. *Entity mis-mapping.* `semantics.buildProgram` preferred a currency reading
+   for any mention (`candidates.find(c => c.type === "currency") ?? …`) and
+   filled the missing side from `pack.defaultCurrency`, so bare numbers became
+   money amounts.
+3. *No dispatch validation.* Whatever the builder produced was executed.
+4. *Untyped context.* The runtime kept "the last program"; any later amount was
+   inherited by the last `CONVERT`, so a maths turn followed by a number
+   produced a conversion.
+5. *Speech normalisation destroyed operators.* `normalizeSpeech` strips `+`,
+   `=`, `*` and brackets, so "solve 3x + 5 = 20" was unreadable downstream.
+
+**Changes**
+
+- `src/lib/voice/math-intent.ts` — mathematical intent recognition, spoken-form
+  normalisation ("three x plus five equals twenty" → `3*x + 5 = 20`), typed
+  entities (`math.equation`, `math.expression`, `math.variable`, `math.number`)
+  and a linear/quadratic solver.
+- `src/lib/voice/ir.ts` — new `SOLVE` and `EVAL` opcodes with `expression` and
+  `variable` slots, validated by a closed character allow-list.
+- `src/lib/voice/vm.ts` — a maths executor that computes and returns the answer
+  instead of routing to a converter.
+- `src/lib/voice/semantics.ts` — mathematics is compiled first; cross-domain
+  ellipsis is refused; the currency default requires explicit currency evidence.
+- `src/lib/voice/dispatch-guard.ts` — type checking before execution. Blocks
+  `math-routed-to-conversion`, `conversion-without-currency-evidence`,
+  `conversion-without-unit-evidence`, `cross-domain-inheritance`,
+  `non-numeric-amount` and unsafe expressions.
+- `src/lib/voice/context.ts` — typed, time-bounded task context (3-minute TTL)
+  that biases but never overrides explicit evidence.
+- `src/lib/voice/pipeline.ts` — per-domain confidence thresholds (currency is
+  the strictest at 0.62), clarification instead of guessing on cross-domain
+  ambiguity, and a full decision trace.
+- `src/lib/voice/telemetry.ts` + `nlu_interactions` / `nlu_regression_runs`
+  tables — raw text, intent, entities, confidence, action and block reason are
+  logged for every turn.
+- `src/lib/voice/regression-suite.ts` and `POST /api/nlu/replay` — replayable
+  golden cases, including multi-turn dialogues for context leakage.
+- `src/lib/math.ts` is now isomorphic (the `"use client"` directive was removed)
+  so the server executor and the browser calculator share one safety policy.
+
+**Endpoints and UI**
+
+- `POST /api/nlu/interpret` — run the pipeline, log it, return the trace.
+- `GET  /api/nlu/logs` — recent interactions and per-domain aggregates.
+- `POST /api/nlu/replay` — run the regression suite and store the result.
+- `/voice-nlu` — diagnostics console: intent, entities, confidence, trace,
+  interaction log and one-click regression replay.
