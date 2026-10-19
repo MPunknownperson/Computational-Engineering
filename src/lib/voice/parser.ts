@@ -39,6 +39,16 @@ export interface AmountMatch {
 
 export interface Analysis {
   text: string;
+  /**
+   * Math-safe cleaning of the original transcript.
+   *
+   * `text` is speech-normalised, which deliberately strips every symbol that
+   * is not part of a word or a number — including `+`, `=`, `*`, `^` and
+   * brackets. A dictated or typed equation such as "solve 3x + 5 = 20" is
+   * therefore unreadable in `text`, so the mathematical recogniser reads this
+   * field instead.
+   */
+  raw: string;
   pack: LanguagePack;
   amount: AmountMatch | null;
   mentions: Mention[];
@@ -474,12 +484,28 @@ function hasAgain(text: string, pack: LanguagePack): boolean {
 /* ------------------------------------------------------------------ */
 
 /** Run stages 1–2: normalise, read the amount, find entities, topic and intent. */
+/** Lowercase and tidy a transcript while preserving mathematical symbols. */
+export function normaliseMathText(input: string): string {
+  return input
+    .normalize("NFKC")
+    .toLocaleLowerCase()
+    .replace(/[\u2212\u2013\u2014]/g, "-")
+    .replace(/[\u00d7]/g, "*")
+    .replace(/[\u00f7]/g, "/")
+    .replace(/[^\p{L}\p{N}\s+\-*/^().,%=]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
+}
+
 export function analyse(transcript: string, pack: LanguagePack): Analysis {
   const text = normaliseTranscript(transcript);
+  const raw = normaliseMathText(transcript);
   const amount = text.length >= 2 ? findAmount(text, pack) : null;
   const mentions = text.length >= 2 ? findMentions(text, pack, amount) : [];
   return {
     text,
+    raw,
     pack,
     amount,
     mentions,

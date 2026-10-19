@@ -6,6 +6,7 @@ import { presetHref } from "@/lib/presets";
 import { formatAmount } from "@/lib/voice/parser";
 import { contentById } from "@/lib/voice/site-content";
 import { decode, verify, type Program, type Slots, type VerifyError } from "@/lib/voice/ir";
+import { detectMathIntent, solveMath, type MathIntent } from "@/lib/voice/math-intent";
 
 /**
  * Stage 5: the executor — the site's "operating system" for voice.
@@ -25,11 +26,19 @@ export type ExecError =
   | "unknown-unit"
   | "unknown-topic"
   | "unknown-page"
-  | "nothing-to-repeat";
+  | "nothing-to-repeat"
+  | "unsolvable-math"
+  | "bad-expression";
 
 export interface ExecutedAction {
   href: string;
   label: string;
+  /** Which executor produced this action; used for logging and context typing. */
+  kind?: "convert" | "open" | "page" | "math";
+  /** Computed answer for maths actions, shown before any navigation happens. */
+  result?: string;
+  /** Longer explanation of the computation, for the transcript panel. */
+  detail?: string;
 }
 
 export interface Executed {
@@ -141,6 +150,50 @@ interface Built {
   error?: ExecError;
 }
 
+/**
+ * Maths executor. A SOLVE/EVAL program is computed here and the answer is
+ * carried back in the action, so the visitor is told the result instead of
+ * being sent to an unrelated converter.
+ */
+function buildMath(program: Program, slots: Slots, op: "SOLVE" | "EVAL"): Built {
+  const expression = slots.expression;
+  const variable = typeof slots.variable === "string" ? slots.variable : undefined;
+  if (typeof expression !== "string" || !expression.trim()) return { error: "missing-slots" };
+  if (op === "SOLVE" && !expression.includes("=")) return { error: "bad-expression" };
+
+  const intent = detectMathIntent(expression);
+  const resolved: MathIntent = intent ?? {
+    task: op === "SOLVE" ? "solve-equation" : "evaluate-expression",
+    canonical: expression,
+    variable: variable ?? "x",
+    entities: [],
+    confidence: 1,
+    signals: ["slot-supplied"],
+  };
+  const solution = solveMath({ ...resolved, variable: variable ?? resolved.variable });
+  if (!solution.ok) return { error: "unsolvable-math" };
+
+  // The maths workspace is the correct destination, pre-filled with the very
+  // expression that was heard — never the currency or unit converter.
+  const href = internalHref("/tools/scientific", {
+    expr: op === "SOLVE" ? expression.split("=")[0]?.trim() : expression,
+    // Only a single, unambiguous root is pre-filled as a variable value.
+    ...(op === "SOLVE" && variable && !solution.display.includes(" or ")
+      ? { vars: `${variable} = ${solution.display.split("= ")[1] ?? "0"}` }
+      : {}),
+  });
+  void program;
+  return {
+    action: {
+      href,
+      label: op === "SOLVE" ? solution.display : `${expression} = ${solution.display}`,
+      kind: "math",
+      result: solution.display,
+      detail: solution.detail,
+    },
+  };
+}
+
 /** Digital-asset ids are a fixed set in the catalogue; keep it closed. */
 function isCurrencySafe(asset: string): boolean {
   return /^[a-z0-9-]{3,20}$/.test(asset);
@@ -165,15 +218,17 @@ export function execute(input: unknown, previous: Program | null = null): Execut
   }
   if (!instruction.slots) return { ok: false, program, error: "missing-slots" };
 
-  const built = instruction.op === "OPEN_PAGE"
-    ? (() => {
+  const built: Built = instruction.op === "OPEN_PAGE"
+    ? ((): Built => {
         const id = instruction.slots?.pageId;
         const page = typeof id === "string" ? contentById(id) : null;
         return page ? { action: { href: page.path, label: page.label } } : { error: "unknown-page" as const };
       })()
-    : instruction.op === "CONVERT"
-      ? buildConvert(program, instruction.slots)
-      : buildOpen(program, instruction.slots);
+    : instruction.op === "SOLVE" || instruction.op === "EVAL"
+      ? buildMath(program, instruction.slots, instruction.op)
+      : instruction.op === "CONVERT"
+        ? buildConvert(program, instruction.slots)
+        : buildOpen(program, instruction.slots);
   if (built.error || !built.action) return { ok: false, program, error: built.error ?? "missing-slots" };
 
   // Defence in depth: whatever a builder produced must be a site-relative path.
@@ -181,7 +236,17 @@ export function execute(input: unknown, previous: Program | null = null): Execut
   if (!href.startsWith("/") || href.startsWith("//")) {
     return { ok: false, program, error: "missing-slots" };
   }
-  return { ok: true, program, action: { href, label: built.action.label } };
+  return {
+    ok: true,
+    program,
+    action: {
+      href,
+      label: built.action.label,
+      kind: built.action.kind ?? (instruction.op === "CONVERT" ? "convert" : instruction.op === "OPEN_PAGE" ? "page" : "open"),
+      ...(built.action.result !== undefined ? { result: built.action.result } : {}),
+      ...(built.action.detail !== undefined ? { detail: built.action.detail } : {}),
+    },
+  };
 }
 
 /** Load an encoded program (e.g. from local learning memory) and run it. */

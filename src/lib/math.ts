@@ -1,5 +1,6 @@
-"use client";
-
+// Pure computation: no React, no browser APIs. This module is deliberately
+// isomorphic so the voice maths executor on the server and the calculator UI
+// in the browser share exactly one expression-safety policy.
 import { all, create, type MathJsStatic } from "mathjs";
 
 // Use decimal arithmetic for literals and normal arithmetic wherever the maths

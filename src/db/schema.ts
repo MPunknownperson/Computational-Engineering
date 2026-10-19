@@ -137,3 +137,6 @@ export const legacyUnpackSettings = pgTable("unpack_settings", {
   autoExtract: boolean("auto_extract").notNull().default(false),
   showHidden: boolean("show_hidden").notNull().default(false),
 });
+
+// Natural-language understanding telemetry and regression tables.
+export * from "./nlu-schema";

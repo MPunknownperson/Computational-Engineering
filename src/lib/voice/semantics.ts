@@ -8,6 +8,8 @@ import {
   scoreAnalysis,
   type Analysis,
 } from "@/lib/voice/parser";
+import { detectMathIntent, hasMonetaryLanguage, type MathIntent } from "@/lib/voice/math-intent";
+import type { ConversationContext } from "@/lib/voice/context";
 import {
   IR_VERSION,
   MAX_INSTRUCTIONS,
@@ -52,7 +54,26 @@ export interface BuildResult {
 export interface BuildFailure {
   program?: undefined;
   score?: undefined;
-  error: "nothing-understood" | "malformed" | "no-previous-command";
+  error:
+    | "nothing-understood"
+    | "malformed"
+    | "no-previous-command"
+    | "ambiguous-domain";
+}
+
+/** Extra facts the builder reports so the dispatch guard can validate it. */
+export interface BuildEvidence {
+  math: MathIntent | null;
+  inherited: boolean;
+  currencyMentions: number;
+  unitMentions: number;
+}
+
+let lastEvidence: BuildEvidence = { math: null, inherited: false, currencyMentions: 0, unitMentions: 0 };
+
+/** Evidence gathered while building the most recent program. */
+export function evidenceOfLastBuild(): BuildEvidence {
+  return lastEvidence;
 }
 
 function program(lang: LanguagePack["id"], code: Instruction[]): Program {
@@ -90,10 +111,42 @@ export function previousConvert(program: Program | null | undefined): Slots | nu
 export function buildProgram(
   analysis: Analysis,
   previous: Program | null,
+  context?: ConversationContext,
 ): BuildResult | BuildFailure {
   const pack = analysis.pack;
   const amountSlot = analysis.amount ? Number(formatAmount(analysis.amount.value)) : undefined;
   const prior = previousConvert(previous);
+
+  // ---- Evidence -----------------------------------------------------------
+  const math = detectMathIntent(analysis.raw || analysis.text);
+  const currencyMentions = analysis.mentions.filter((mention) =>
+    mention.candidates.some((candidate) => candidate.type === "currency"),
+  ).length;
+  const unitMentions = analysis.mentions.filter((mention) =>
+    mention.candidates.some((candidate) => candidate.type === "unit"),
+  ).length;
+  lastEvidence = { math, inherited: false, currencyMentions, unitMentions };
+
+  // ---- Mathematics has priority ------------------------------------------
+  // A sentence containing an equation, or clearly arithmetic with no money
+  // words, is compiled to SOLVE/EVAL before any conversion reading is tried.
+  const monetary = hasMonetaryLanguage(analysis.raw || analysis.text);
+  const mathWins =
+    math !== null &&
+    (math.task === "solve-equation" || (!monetary && math.confidence >= 0.45 && currencyMentions === 0));
+  if (mathWins && math) {
+    const instruction: Instruction = {
+      op: math.task === "solve-equation" ? "SOLVE" : "EVAL",
+      slots: clean({
+        expression: math.canonical,
+        ...(math.variable ? { variable: math.variable } : {}),
+      }),
+    };
+    const result = program(pack.id, [instruction]);
+    return verify(result)
+      ? { error: "malformed" }
+      : { program: result, score: Math.max(scoreAnalysis(analysis), 1) + math.confidence };
+  }
 
   // Explicit content navigation is compiled to an opaque catalog id. The
   // executor, not the speech input, owns the final URL.
@@ -126,8 +179,24 @@ export function buildProgram(
     return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) };
   }
 
-  // Ellipsis: an amount with no entities repeats the previous direction.
+  // Ellipsis: an amount with no entities repeats the previous direction — but
+  // only when the previous turn really was a conversion of the same kind and
+  // the current sentence shows no mathematical intent. This is the specific
+  // path that used to turn a calculation result into a currency conversion.
+  const priorDomain: "currency" | "units" | null = prior
+    ? typeof prior.category === "string"
+      ? "units"
+      : "currency"
+    : null;
+  const inheritanceAllowed =
+    priorDomain !== null &&
+    math === null &&
+    (context ? context.mayInherit(priorDomain) : true);
   if (analysis.amount && !analysis.mentions.length && prior?.from && prior?.to) {
+    if (!inheritanceAllowed) {
+      return { error: "nothing-understood" };
+    }
+    lastEvidence = { ...lastEvidence, inherited: true };
     const slots: Slots = {
       amount: amountSlot,
       from: prior.from,
@@ -140,9 +209,16 @@ export function buildProgram(
 
   // One entity plus an amount: fill in the sensible other side.
   if (analysis.amount && analysis.mentions.length) {
-    const first = analysis.mentions[0].candidates.find((c) => c.type === "currency") ?? analysis.mentions[0].candidates[0];
+    // Previously this preferred a currency reading for *any* mention, which
+    // let non-monetary words drift into the money converter. The first
+    // candidate now wins unless the sentence actually mentions a currency.
+    const mention = analysis.mentions[0];
+    const first = (currencyMentions > 0
+      ? mention.candidates.find((c) => c.type === "currency")
+      : undefined) ?? mention.candidates[0];
     if (!first) return { error: "nothing-understood" };
     if (first.type === "currency") {
+      if (currencyMentions === 0) return { error: "nothing-understood" };
       const target =
         first.code === pack.defaultCurrency ? (first.code === "USD" ? "EUR" : "USD") : pack.defaultCurrency;
       const result = program(pack.id, [convert({ amount: amountSlot, from: first.code, to: target })]);

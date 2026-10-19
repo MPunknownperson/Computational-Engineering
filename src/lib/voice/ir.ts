@@ -18,7 +18,10 @@ import { PACK_IDS, type PackId } from "@/lib/i18n";
 
 export const IR_VERSION = 1;
 
-export const OPCODES = ["CONVERT", "OPEN", "OPEN_PAGE", "REPEAT"] as const;
+// SOLVE and EVAL make mathematics representable in its own right. Before they
+// existed every numeric utterance had to be compiled to CONVERT, which is how
+// a linear equation ended up being answered as a currency conversion.
+export const OPCODES = ["CONVERT", "OPEN", "OPEN_PAGE", "REPEAT", "SOLVE", "EVAL"] as const;
 export type Opcode = (typeof OPCODES)[number];
 
 export const SLOT_KEYS = [
@@ -31,6 +34,8 @@ export const SLOT_KEYS = [
   "economy",
   "indicator",
   "pageId",
+  "expression",
+  "variable",
 ] as const;
 export type SlotKey = (typeof SLOT_KEYS)[number];
 
@@ -75,6 +80,26 @@ function safeString(value: unknown): value is string {
   return !/[\s:;?#!\\<>%"'`]/.test(value) && !/[\u0000-\u001f]/.test(value);
 }
 
+/**
+ * Expression slots legitimately contain spaces, operators and an equals sign,
+ * so they cannot use `safeString`. They instead use a closed allow-list: any
+ * character outside basic arithmetic is rejected, which keeps URLs, call
+ * syntax and control characters out of the executor.
+ */
+export const MAX_EXPRESSION_LENGTH = 240;
+
+function safeExpression(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const text = value.trim();
+  if (text.length < 1 || text.length > MAX_EXPRESSION_LENGTH) return false;
+  if (!/^[0-9a-zA-Z+\-*/^().,%= ]+$/.test(text)) return false;
+  // At most one equality, and no empty side.
+  const equals = (text.match(/=/g) ?? []).length;
+  if (equals > 1) return false;
+  if (equals === 1 && text.split("=").some((side) => !side.trim())) return false;
+  return true;
+}
+
 /** Structural check. Returns null when the program is well formed. */
 export function verify(program: unknown): VerifyError | null {
   if (!program || typeof program !== "object") return "bad-shape";
@@ -94,6 +119,8 @@ export function verify(program: unknown): VerifyError | null {
       if (value === null || value === undefined) return "bad-slot-value";
       if (key === "amount") {
         if (!isFiniteNumber(value) || value <= 0 || value > MAX_AMOUNT) return "bad-slot-value";
+      } else if (key === "expression") {
+        if (!safeExpression(value)) return "bad-slot-value";
       } else if (!safeString(value)) {
         return "bad-slot-value";
       }
@@ -109,7 +136,12 @@ export function encode(program: Program): string {
       const slots = instruction.slots
         ? "{" +
           SLOT_KEYS.filter((key) => instruction.slots?.[key] !== undefined)
-            .map((key) => `${key}:${String(instruction.slots?.[key])}`)
+            .map((key) => {
+              const value = String(instruction.slots?.[key]);
+              // Expressions may hold spaces and commas, which are the
+              // separators of this format, so they travel percent-encoded.
+              return `${key}:${key === "expression" ? encodeURIComponent(value) : value}`;
+            })
             .join(",") +
           "}"
         : "";
@@ -141,6 +173,12 @@ export function decode(encoded: string): { program: Program } | { error: VerifyE
           const value = Number(raw);
           if (!Number.isFinite(value)) return { error: "unparseable" };
           slots.amount = value;
+        } else if (key === "expression") {
+          try {
+            slots.expression = decodeURIComponent(raw);
+          } catch {
+            return { error: "unparseable" };
+          }
         } else {
           slots[key as SlotKey] = raw;
         }
