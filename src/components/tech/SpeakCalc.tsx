@@ -10,6 +10,7 @@ import {
 } from "@/lib/browser-tokens";
 import { browserSpeechGuidance } from "@/lib/voice/browser-support";
 import { createNativeSession, type NativeSession } from "@/lib/voice/native-session";
+import { SHERPA_ONNX_ENGINE_ID, canUseSherpaOnnx, createSherpaSession, prepareSherpaOnnx, sherpaOnnxReady } from "@/lib/voice/sherpa-onnx";
 import { useMicrophoneEligibility, within, type MicrophoneProblem } from "@/lib/voice/use-microphone";
 import { clearLearnedCommands, learnFromRoute, learnedCommandCount, routeHypotheses, type CommandRoute, type WeightedHypothesis } from "@/lib/command-engine";
 import { guessDestination, recordVoiceOutcome } from "@/lib/ml/intent";
@@ -44,10 +45,23 @@ function speechErrorKey(code: string): UiKey {
     case "aborted": return "speech.interrupted";
     case "unsupported": return "unavailable.noApi";
     case "busy": return "speech.busy";
+    case "model-error": return "speech.generic";
+    case "speech-needs-preparation": return "speech.startFailed";
     default: return "speech.generic";
   }
 }
 interface PolicyResponse { country: string | null; overrides: Record<string, RegionRule> }
+interface AgentReply {
+  reply: string | null;
+  href: string | null;
+  label: string | null;
+  comprehension: { reply: string } | null;
+}
+const WASM_NOTE = "This browser has no built-in speech service, so recognition runs on your device with sherpa-onnx (WebAssembly). The model is downloaded once from this site; audio never leaves your browser.";
+
+function newSessionId(): string {
+  try { return crypto.randomUUID(); } catch { return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`; }
+}
 
 export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const router = useRouter();
@@ -73,6 +87,9 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const generation = useRef(0);
   const cloudAvailable = useRef(false);
   const langRef = useRef(pack.speechLocales[0]);
+  // Per-page-load session key for the server-side LangChain/LlamaIndex context.
+  const sessionIdRef = useRef<string | null>(null);
+  if (sessionIdRef.current == null) { sessionIdRef.current = newSessionId(); }
 
   const setPhaseBoth = useCallback((next: Phase) => { phaseRef.current = next; setPhase(next); }, []);
   const teardown = useCallback(() => {
@@ -93,6 +110,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       langRef.current = browserLang;
       runtimeRef.current = new VoiceRuntime([withSystemVocabulary(pack, browserLang), ...packOrder(pack).filter((candidate) => candidate.id !== pack.id)]);
       const speechApi = speechRecognitionAvailability() !== "unavailable";
+      const wasm = canUseSherpaOnnx(browserLang);
       const profile = detectPlatformProfile();
       setPlatformNote(browserSpeechGuidance(profile));
       // Resolve policy before enabling any cloud capture. A slow geo request
@@ -115,7 +133,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       const next = decideVoiceProcessing({
         speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: browserCloud || speechApi,
         local: rule === "any" && local !== "available" ? "unavailable" : local,
-        region, overrides: geo?.overrides ?? {},
+        region, overrides: geo?.overrides ?? {}, wasm,
       });
       const previous = loadVoiceSession();
       if (previous) runtimeRef.current.restore(previous);
@@ -125,7 +143,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       if (active) {
         const profile = detectPlatformProfile();
         const speechApi = speechRecognitionAvailability() !== "unavailable";
-        setDecision(decideVoiceProcessing({ speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: speechApi, local: "unavailable", region: null }));
+        setDecision(decideVoiceProcessing({ speechApi, os: profile.os, device: profile.device, browser: profile.browser, browserCloud: speechApi, local: "unavailable", region: null, wasm: canUseSherpaOnnx(langRef.current) }));
       }
     });
     return () => { active = false; controller.abort(); };
@@ -175,13 +193,55 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     openTimer.current = setTimeout(() => { openTimer.current = null; router.push(href); }, 400);
   }, [router, setPhaseBoth]);
 
+  // Server-side context: the LangChain chain records the turn in LlamaIndex
+  // memory, dispatches backend tools and (when configured) asks FastGPT to
+  // comprehend it. Text only — never audio.
+  const consultAgent = useCallback(async (text: string): Promise<AgentReply | null> => {
+    try {
+      const response = await fetch("/api/nlu/interpret", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          text,
+          sessionId: sessionIdRef.current,
+          engine: decision?.available && decision.mode === "wasm" ? SHERPA_ONNX_ENGINE_ID : "web-speech",
+          locale: langRef.current,
+        }),
+      });
+      if (!response.ok) return null;
+      const data = (await response.json()) as { agent?: AgentReply };
+      return data.agent ?? null;
+    } catch {
+      return null;
+    }
+  }, [decision]);
+
   const handleTranscript = useCallback((hypotheses: Array<string | WeightedHypothesis>) => {
     const route = routeHypotheses(hypotheses, runtimeRef.current);
     setHeard(route.heard);
-    if (route.action && route.program) { commitRoute(route); return; }
+    if (route.action && route.program) {
+      void consultAgent(route.heard); // keep server context aligned; no await
+      commitRoute(route);
+      return;
+    }
     const attempt = generation.current;
     setPhaseBoth("processing");
     void (async () => {
+      // The backend orchestrator may resolve what the local router could not
+      // (typed tool dispatch, retrieved site pages, FastGPT comprehension).
+      const agent = await within(consultAgent(route.heard), 8_000, null);
+      if (generation.current !== attempt) return;
+      if (agent?.href && agent.label) {
+        setMatchedLabel(agent.label);
+        setNavigateTo(agent.href);
+        setGuessed(true);
+        setError(null);
+        setNotice(agent.comprehension?.reply ?? agent.reply ?? t(pack, "voice.guess"));
+        setPhaseBoth("ready");
+        return;
+      }
+      if (agent?.comprehension?.reply) setNotice(agent.comprehension.reply);
       // Last resort before giving up: the TensorFlow.js intent model reads the
       // same words and proposes the closest tool. It only suggests; the visitor
       // decides whether to open it.
@@ -199,7 +259,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       setError(t(pack, "voice.noMatch", { example: pack.examples[0] }));
       setPhaseBoth("ready");
     })();
-  }, [commitRoute, pack, setPhaseBoth]);
+  }, [commitRoute, consultAgent, pack, setPhaseBoth]);
 
   // Intentionally synchronous: native start() must run in the original tap.
   const start = useCallback(() => {
@@ -209,6 +269,49 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     const current = () => generation.current === attempt;
     setError(null); setNotice(null); setHeard(""); setMatchedLabel(null); setNavigateTo(null); setGuessed(false);
     try { window.speechSynthesis?.cancel(); } catch { /* Speech output is optional, never required for input. */ }
+
+    if (decision.mode === "wasm") {
+      if (!sherpaOnnxReady()) {
+        setPhaseBoth("preparing");
+        setNotice("Downloading the on-device speech model (sherpa-onnx)…");
+        void prepareSherpaOnnx((progress) => {
+          if (!current()) return;
+          setNotice(progress.stage === "download" && progress.percent !== null
+            ? `Downloading the on-device speech model (sherpa-onnx)… ${progress.percent}%`
+            : progress.stage === "init" ? "Initialising the on-device recogniser…" : "Loading the sherpa-onnx WebAssembly runtime…");
+        }).then(() => {
+          if (!current()) return;
+          setDecision({ ...decision, prepareLocal: false });
+          setNotice(t(pack, "voice.localReady"));
+          setPhaseBoth("ready"); // A new tap, not an async automatic start.
+        }).catch(() => {
+          if (!current()) return;
+          setNotice(null);
+          fail("speech.generic");
+        });
+        return;
+      }
+      const session = createSherpaSession({
+        language: langRef.current,
+        onPhase: (next) => { if (current()) setPhaseBoth(next); },
+        onInterim: (text) => { if (current()) setHeard(text); },
+        onResult: (hypotheses) => {
+          if (!current()) return;
+          sessionRef.current = null;
+          handleTranscript(hypotheses);
+        },
+        onError: (code) => {
+          if (!current()) return;
+          if (code === "not-allowed") reportProblem("denied");
+          if (code === "no-device") reportProblem("no-device");
+          if (code === "audio-capture") void recheckMicrophone();
+          fail(speechErrorKey(code), code === "unsupported");
+        },
+      });
+      sessionRef.current = session;
+      session.start();
+      return;
+    }
 
     if (decision.mode === "local" && decision.prepareLocal) {
       setPhaseBoth("preparing");
@@ -279,11 +382,12 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     : phase === "listening" ? t(pack, "voice.listening", { example: pack.examples[0] })
     : phase === "opening" && matchedLabel ? t(pack, "voice.opening", { label: matchedLabel }) : null;
   const disclosureKey: UiKey | null = !decision?.available ? null
-    : decision.mode === "local" ? "voice.disclosureLocal"
+    : decision.mode === "local" || decision.mode === "wasm" ? "voice.disclosureLocal"
     : "voice.disclosureCloud";
+  const engineId = decision?.available && decision.mode === "wasm" ? SHERPA_ONNX_ENGINE_ID : "web-speech";
 
   return (
-    <section className="sketch" aria-labelledby="voice-heading" lang={pack.id} data-voice-phase={phase} data-speech-engine="web-speech">
+    <section className="sketch" aria-labelledby="voice-heading" lang={pack.id} data-voice-phase={phase} data-speech-engine={engineId}>
       <div className="flex flex-wrap items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[color:var(--line)] bg-[color:var(--accent-3)] shadow-[2px_2px_0_0_var(--line)]">
           <Icon name="mic" size={18} />
@@ -336,7 +440,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         </div>
       )}
       <p className="mt-3 text-xs leading-relaxed text-slate-600">{t(pack, "voice.languageNote")}</p>
-      {platformNote && <p className="mt-2 text-xs leading-relaxed text-slate-600" data-browser-speech-guidance>{platformNote}</p>}
+      {platformNote && <p className="mt-2 text-xs leading-relaxed text-slate-600" data-browser-speech-guidance>{engineId === SHERPA_ONNX_ENGINE_ID ? WASM_NOTE : platformNote}</p>}
       {disclosureKey && (
         <p className="mt-3 text-xs leading-relaxed text-slate-500">
           {t(pack, disclosureKey)}{" "}<Link href="/privacy#voice" className="font-bold underline underline-offset-4">{t(pack, "voice.privacyLink")}</Link>
