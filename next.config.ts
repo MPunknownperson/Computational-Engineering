@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { optimizePackageImports: ["mathjs"] },
-  serverExternalPackages: ["adm-zip", "tar", "typescript"],
+  serverExternalPackages: ["adm-zip", "tar", "typescript", "llamaindex", "@llamaindex/core", "@llamaindex/env", "@huggingface/transformers", "onnxruntime-node"],
   // Let Next stream metadata to browsers; HTML-only bots get its default
   // blocking behavior. A blanket htmlLimitedBots regex delayed every route.
   async redirects() {
@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
       { source: "/icons/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
       // Self-hosted Silktide Consent Manager v2.0 (no third-party CDN, no tracking).
       { source: "/vendor/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
+      // Self-hosted sherpa-onnx WebAssembly ASR runtime + int8 model (large, versioned by deploy).
+      { source: "/vendor/sherpa-onnx/:path*", headers: [
+        { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=604800" },
+        { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+      ] },
       { source: "/favicon.svg", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
     ];
   },

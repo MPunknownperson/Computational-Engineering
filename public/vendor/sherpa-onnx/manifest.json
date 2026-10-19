@@ -1,0 +1,33 @@
+{
+  "runtime": "sherpa-onnx-wasm-simd-v1.13.7-en-asr-zipformer",
+  "model": "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17",
+  "packagedAt": "2026-10-19T12:16:49.912Z",
+  "files": [
+    {
+      "filename": "/encoder.onnx",
+      "start": 0,
+      "end": 42845182,
+      "bytes": 42845182
+    },
+    {
+      "filename": "/decoder.onnx",
+      "start": 42845182,
+      "end": 43384681,
+      "bytes": 539499
+    },
+    {
+      "filename": "/joiner.onnx",
+      "start": 43384681,
+      "end": 43644253,
+      "bytes": 259572
+    },
+    {
+      "filename": "/tokens.txt",
+      "start": 43644253,
+      "end": 43649301,
+      "bytes": 5048
+    }
+  ],
+  "dataBytes": 43649301,
+  "wasmBytes": 13150239
+}
