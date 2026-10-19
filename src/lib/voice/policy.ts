@@ -1,8 +1,12 @@
 import { speechBrowserAllowed, type BrowserFamily, type DeviceKind, type OperatingSystem } from "@/lib/platform";
 
-/** Only browser-managed Web Speech API recognition is supported. */
+/**
+ * Browser-managed Web Speech API recognition is preferred. When the browser
+ * has no usable speech service, a self-hosted sherpa-onnx WebAssembly
+ * recogniser ("wasm") runs fully on-device as the fallback.
+ */
 export type RegionRule = "any" | "local-only" | "cloud-only" | "none";
-export type ProcessingMode = "local" | "cloud";
+export type ProcessingMode = "local" | "cloud" | "wasm";
 export type LocalSupport = "available" | "downloadable" | "downloading" | "unavailable" | "unknown";
 export type UnavailableReason = "no-api" | "browser" | "location" | "region" | "no-local" | "no-cloud";
 export type VoiceDecision =
@@ -59,14 +63,20 @@ export interface PolicyInput {
   local: LocalSupport;
   region: string | null;
   overrides?: Record<string, RegionRule>;
+  /** The sherpa-onnx WebAssembly fallback can run in this browser. */
+  wasm?: boolean;
 }
 
 export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   const region = normalizeRegion(input.region);
   const rule = regionRule(region, input.overrides);
   if (rule === "none") return { available: false, reason: "region", region, rule };
-  if (!speechBrowserAllowed(input.os, input.browser)) return { available: false, reason: "browser", region, rule };
-  if (!input.speechApi) return { available: false, reason: "no-api", region, rule };
+  // sherpa-onnx WASM is on-device processing, so it satisfies "local-only" and
+  // "any" but is never offered where the operator mandates a cloud service.
+  const wasm = (): VoiceDecision => ({ available: true, mode: "wasm", prepareLocal: true, region, rule });
+  const wasmAllowed = !!input.wasm && rule !== "cloud-only";
+  if (!speechBrowserAllowed(input.os, input.browser)) return wasmAllowed ? wasm() : { available: false, reason: "browser", region, rule };
+  if (!input.speechApi) return wasmAllowed ? wasm() : { available: false, reason: "no-api", region, rule };
 
   const canLocal = ["available", "downloadable", "downloading"].includes(input.local);
   const local = (): VoiceDecision => ({
@@ -74,10 +84,11 @@ export function decideVoiceProcessing(input: PolicyInput): VoiceDecision {
   });
   const cloud = (): VoiceDecision => ({ available: true, mode: "cloud", prepareLocal: false, region, rule });
 
-  if (rule === "local-only") return canLocal ? local() : { available: false, reason: "no-local", region, rule };
+  if (rule === "local-only") return canLocal ? local() : wasmAllowed ? wasm() : { available: false, reason: "no-local", region, rule };
   if (rule === "cloud-only") return input.browserCloud ? cloud() : { available: false, reason: "no-cloud", region, rule };
   if (isMobile(input.os, input.device) && canLocal) return local();
   if (input.browserCloud) return cloud();
   if (canLocal) return local();
+  if (wasmAllowed) return wasm();
   return { available: false, reason: "no-cloud", region, rule };
 }
