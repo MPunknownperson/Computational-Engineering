@@ -5,6 +5,10 @@ import { CURRENCIES } from "@/lib/catalog";
 import { safeEvaluate } from "@/lib/math";
 import { CATEGORIES, FACTORS, convert, convertTemperature, type Category } from "@/lib/units";
 import { solveMath, detectMathIntent } from "@/lib/voice/math-intent";
+import {
+  describeOperationResult,
+  detectOperationIntent,
+} from "@/lib/voice/operation-intent";
 import { retrieveSiteContext } from "@/lib/agent/context";
 
 /**
@@ -41,6 +45,73 @@ export const solveMathTool = tool(
     schema: z.object({
       expression: z.string().min(1).max(400).describe("Expression or equation, e.g. '3*x + 5 = 20' or 'sqrt(2) * 8'"),
       variable: z.string().max(8).optional().describe("Variable to solve for when the input is an equation"),
+    }),
+  },
+);
+
+export const compileOperationTool = tool(
+  async ({ request }) => {
+    const compiled = detectOperationIntent(request);
+    if (!compiled) return json({ ok: false, error: "operation-not-understood" });
+    return json({
+      ok: true,
+      operation: compiled.id,
+      family: compiled.family,
+      expression: compiled.expression,
+      preset: compiled.preset ?? null,
+      parameters: compiled.parameters,
+      confidence: compiled.confidence,
+      signals: compiled.signals,
+    });
+  },
+  {
+    name: "compile_operation",
+    description: "Associate a natural-language calculation request with a typed operation and generate safe math-only code.",
+    schema: z.object({ request: z.string().min(1).max(500) }),
+  },
+);
+
+export const runGeneratedCalculationTool = tool(
+  async ({ expression, operation }) => {
+    const result = safeEvaluate(expression);
+    if (!result.ok) return json({ ok: false, error: result.error, expression, operation });
+    const label = operation ? describeOperationResult(operation, result.formatted) : result.formatted;
+    return json({ ok: true, operation: operation ?? "calculation", expression, generatedCode: expression, value: result.formatted, display: label });
+  },
+  {
+    name: "run_generated_calculation",
+    description: "Execute generated arithmetic code inside the restricted math AST evaluator. JavaScript, shell commands, assignments, property access and unknown functions are rejected.",
+    schema: z.object({
+      expression: z.string().min(1).max(400),
+      operation: z.string().min(1).max(48).optional(),
+    }),
+  },
+);
+
+export const splitBillTool = tool(
+  async ({ bill, people, tipPercent }) => {
+    const tip = tipPercent ?? 0;
+    const total = bill * (1 + tip / 100);
+    const each = total / people;
+    return json({
+      ok: true,
+      bill,
+      people,
+      tipPercent: tip,
+      tipAmount: bill * tip / 100,
+      total,
+      perPerson: each,
+      display: `Bill split: ${each.toFixed(2)} per person`,
+      generatedCode: `(${bill} * (1 + ${tip} / 100)) / ${people}`,
+    });
+  },
+  {
+    name: "calculate_bill_split",
+    description: "Split a bill evenly across people, optionally after adding a percentage tip.",
+    schema: z.object({
+      bill: z.number().finite().min(0).max(1_000_000_000),
+      people: z.number().int().min(1).max(10_000),
+      tipPercent: z.number().finite().min(0).max(500).optional(),
     }),
   },
 );
@@ -110,7 +181,15 @@ export const findSitePageTool = tool(
   },
 );
 
-export const BACKEND_TOOLS: StructuredToolInterface[] = [solveMathTool, convertUnitsTool, convertCurrencyTool, findSitePageTool];
+export const BACKEND_TOOLS: StructuredToolInterface[] = [
+  solveMathTool,
+  compileOperationTool,
+  runGeneratedCalculationTool,
+  splitBillTool,
+  convertUnitsTool,
+  convertCurrencyTool,
+  findSitePageTool,
+];
 
 export const toolsByName: Record<string, StructuredToolInterface> = Object.fromEntries(BACKEND_TOOLS.map((item) => [item.name, item]));
 

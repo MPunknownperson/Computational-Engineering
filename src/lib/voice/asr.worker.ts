@@ -116,7 +116,6 @@ self.addEventListener("message", (event: MessageEvent<Incoming>) => {
 
   if (message.type === "prepare") {
     env.useBrowserCache = message.cache === true;
-    env.useWasmCache = message.cache === true;
     void loadModel(message.device ?? "wasm")
       .then(() => post({ type: "ready", id: message.id }))
       .catch((error: unknown) => post({ type: "error", id: message.id, message: error instanceof Error ? error.message : String(error) }));

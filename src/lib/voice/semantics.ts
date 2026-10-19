@@ -9,6 +9,7 @@ import {
   type Analysis,
 } from "@/lib/voice/parser";
 import { detectMathIntent, hasMonetaryLanguage, type MathIntent } from "@/lib/voice/math-intent";
+import { detectOperationIntent, type OperationIntent } from "@/lib/voice/operation-intent";
 import type { ConversationContext } from "@/lib/voice/context";
 import {
   IR_VERSION,
@@ -64,12 +65,13 @@ export interface BuildFailure {
 /** Extra facts the builder reports so the dispatch guard can validate it. */
 export interface BuildEvidence {
   math: MathIntent | null;
+  operation: OperationIntent | null;
   inherited: boolean;
   currencyMentions: number;
   unitMentions: number;
 }
 
-let lastEvidence: BuildEvidence = { math: null, inherited: false, currencyMentions: 0, unitMentions: 0 };
+let lastEvidence: BuildEvidence = { math: null, operation: null, inherited: false, currencyMentions: 0, unitMentions: 0 };
 
 /** Evidence gathered while building the most recent program. */
 export function evidenceOfLastBuild(): BuildEvidence {
@@ -118,14 +120,16 @@ export function buildProgram(
   const prior = previousConvert(previous);
 
   // ---- Evidence -----------------------------------------------------------
-  const math = detectMathIntent(analysis.raw || analysis.text);
+  const sourceText = analysis.raw || analysis.text;
+  const math = detectMathIntent(sourceText);
+  const operation = detectOperationIntent(sourceText);
   const currencyMentions = analysis.mentions.filter((mention) =>
     mention.candidates.some((candidate) => candidate.type === "currency"),
   ).length;
   const unitMentions = analysis.mentions.filter((mention) =>
     mention.candidates.some((candidate) => candidate.type === "unit"),
   ).length;
-  lastEvidence = { math, inherited: false, currencyMentions, unitMentions };
+  lastEvidence = { math, operation, inherited: false, currencyMentions, unitMentions };
 
   // ---- Mathematics has priority ------------------------------------------
   // A sentence containing an equation, or clearly arithmetic with no money
@@ -148,6 +152,24 @@ export function buildProgram(
       : { program: result, score: Math.max(scoreAnalysis(analysis), 1) + math.confidence };
   }
 
+  // Natural operations compile to generated maths code and optional existing
+  // tool presets. The expression is still constrained by the IR verifier and
+  // the mathjs AST allow-list; no recognised phrase becomes executable JS.
+  if (operation) {
+    const instruction: Instruction = {
+      op: "EVAL",
+      slots: clean({
+        expression: operation.expression,
+        operation: operation.id,
+        ...(operation.preset ? { preset: operation.preset } : {}),
+      }),
+    };
+    const result = program(pack.id, [instruction]);
+    return verify(result)
+      ? { error: "malformed" }
+      : { program: result, score: Math.max(scoreAnalysis(analysis), 1) + operation.confidence };
+  }
+
   // Explicit content navigation is compiled to an opaque catalog id. The
   // executor, not the speech input, owns the final URL.
   if (analysis.pageId) {
@@ -159,7 +181,7 @@ export function buildProgram(
   if (analysis.again && !analysis.paired) {
     if (!prior) return { error: "no-previous-command" };
     const result = program(pack.id, [{ op: "REPEAT" }]);
-    return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) + 0.1 };
+    return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) + 1.1 };
   }
 
   const pair = pairMentions(analysis.mentions);
@@ -256,7 +278,7 @@ function buildTopic(
             : { topic };
   void defaultCurrency;
   const result = program(analysis.pack.id, [open(slots)]);
-  return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) };
+  return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) + 1 };
 }
 
 /** Convenience: analyse + build, for callers that have no context. */

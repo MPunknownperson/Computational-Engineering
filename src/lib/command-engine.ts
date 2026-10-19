@@ -168,8 +168,9 @@ export function routeHypotheses(
   if (!best) return { heard, understood: null, program: null, action: null, learned: false };
 
   const chosen = best as { hypothesis: string; interpretation: NonNullable<ReturnType<VoiceRuntime["interpret"]>>; score: number };
-  // Adopt the winning program into the caller's context.
+  // Adopt the winning program and its typed context into the caller.
   runtime.restore(chosen.interpretation.program);
+  runtime.context.record(chosen.interpretation.domain ?? "navigation", chosen.interpretation.action.label);
   return {
     heard,
     understood: chosen.hypothesis,
@@ -194,7 +195,11 @@ function scoreOf(interpretation: NonNullable<ReturnType<VoiceRuntime["interpret"
           : analysis.amount || analysis.again
             ? 0.5
             : 0;
-  return base + (analysis.grammar ? 0.5 : 0) + (analysis.amount ? 0.25 : 0);
+  return base +
+    (analysis.grammar ? 0.5 : 0) +
+    (analysis.amount ? 0.25 : 0) +
+    (interpretation.action.result !== undefined ? 1.5 : 0) +
+    (interpretation.confidence ?? 0);
 }
 
 /** Reinforce a completed command and teach any mis-hearing. Returns memory size. */

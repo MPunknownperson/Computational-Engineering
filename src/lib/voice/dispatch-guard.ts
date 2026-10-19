@@ -1,5 +1,6 @@
 import type { Program, Slots } from "@/lib/voice/ir";
 import type { TaskDomain } from "@/lib/voice/context";
+import { isFinanceOperation } from "@/lib/voice/operation-intent";
 
 /**
  * Stage 4b: action dispatch validation.
@@ -45,15 +46,18 @@ export type DispatchRejection = {
 export type DispatchVerdict = { ok: true } | { ok: false } & DispatchRejection;
 
 /** Characters an expression slot may legally contain. */
-const EXPRESSION_ALLOWED = /^[0-9a-zA-Z+\-*/^().,%= ]+$/;
+const EXPRESSION_ALLOWED = /^[0-9a-zA-Z+\-*/^().,%= [\]]+$/;
 
 export function domainOfProgram(program: Program): TaskDomain {
   const instruction = program.code[0];
   if (!instruction) return "navigation";
   switch (instruction.op) {
     case "SOLVE":
-    case "EVAL":
       return "math";
+    case "EVAL":
+      return isFinanceOperation(typeof instruction.slots?.operation === "string" ? instruction.slots.operation : undefined)
+        ? "finance"
+        : "math";
     case "CONVERT":
       return typeof instruction.slots?.category === "string" ? "units" : "currency";
     case "OPEN": {
@@ -144,7 +148,7 @@ export function validateDispatch(program: Program, evidence: DispatchEvidence): 
   }
 
   // 5. Maths actions need a well-formed, safe expression.
-  if (domain === "math") {
+  if (domain === "math" || domain === "finance") {
     const expression = instruction.slots?.expression;
     if (typeof expression !== "string" || !expression.trim()) {
       return { ok: false, code: "missing-expression", message: "A maths action requires an expression." };
@@ -170,6 +174,7 @@ export const CONFIDENCE_THRESHOLDS: Record<TaskDomain, number> = {
   currency: 0.62,
   units: 0.52,
   math: 0.45,
+  finance: 0.58,
   market: 0.55,
   navigation: 0.4,
 };

@@ -6,6 +6,7 @@ import { domainOfProgram } from "@/lib/voice/dispatch-guard";
 import type { Program } from "@/lib/voice/ir";
 import { rememberTurn, retrieveSiteContext, sessionHistory, type SiteContextHit } from "@/lib/agent/context";
 import { dispatchTool, type ToolCallRecord } from "@/lib/agent/tools";
+import { detectOperationIntent } from "@/lib/voice/operation-intent";
 import { comprehendWithFastGpt, fastGptConfigured, type FastGptComprehension } from "@/lib/agent/fastgpt";
 
 /**
@@ -89,9 +90,27 @@ async function dispatchFor(decision: Decision, text: string): Promise<{ tools: T
   }
   const domain = decision.domain ?? domainOfProgram(decision.program);
   const slots = slotsOf(decision.program);
-  if (domain === "math") {
+  if (domain === "math" || domain === "finance") {
     const expression = typeof slots.expression === "string" ? slots.expression : text;
-    const call = await dispatchTool("solve_math", { expression, variable: typeof slots.variable === "string" ? slots.variable : undefined });
+    const operation = typeof slots.operation === "string" ? slots.operation : null;
+    if (operation === "bill-split") {
+      const compiled = detectOperationIntent(text);
+      const parameters = compiled?.id === "bill-split" ? compiled.parameters : null;
+      if (parameters && typeof parameters.bill === "number" && typeof parameters.people === "number") {
+        const call = await dispatchTool("calculate_bill_split", {
+          bill: parameters.bill,
+          people: parameters.people,
+          tipPercent: typeof parameters.tipPercent === "number" ? parameters.tipPercent : 0,
+        });
+        tools.push(call);
+        const output = call.output as { display?: string };
+        return { tools, reply: call.ok ? output.display ?? decision.action.label : decision.action.label };
+      }
+    }
+    const toolName = operation ? "run_generated_calculation" : "solve_math";
+    const call = await dispatchTool(toolName, operation
+      ? { expression, operation }
+      : { expression, variable: typeof slots.variable === "string" ? slots.variable : undefined });
     tools.push(call);
     const output = call.output as { ok?: boolean; display?: string; value?: string; detail?: string };
     return { tools, reply: call.ok ? `${output.display ?? output.value ?? decision.action.result ?? ""}`.trim() || decision.action.result || null : decision.action.result ?? null };

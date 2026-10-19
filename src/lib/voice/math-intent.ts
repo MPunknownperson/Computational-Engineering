@@ -1,4 +1,5 @@
 import { safeEvaluate } from "@/lib/math";
+import { canonicaliseSpokenNumbers } from "@/lib/voice/operation-intent";
 
 /**
  * Stage 2a: mathematical intent recognition.
@@ -65,15 +66,6 @@ const REWRITES: Array<[RegExp, string]> = [
   [/\bpercent\b/gi, " % "],
 ];
 
-const SPOKEN_NUMBERS: Record<string, string> = {
-  zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6",
-  seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12",
-  thirteen: "13", fourteen: "14", fifteen: "15", sixteen: "16", seventeen: "17",
-  eighteen: "18", nineteen: "19", twenty: "20", thirty: "30", forty: "40",
-  fifty: "50", sixty: "60", seventy: "70", eighty: "80", ninety: "90",
-  hundred: "100", thousand: "1000",
-};
-
 /** Currency and unit words: their presence means this is *not* a bare sum. */
 const MONETARY_WORDS =
   /\b(dollars?|usd|euros?|eur|pounds?\s+sterling|gbp|yen|jpy|yuan|cny|rupees?|inr|francs?|chf|pesos?|won|krw|rand|zar|real|brl|lira|try|ruble|rub|aud|cad|nzd|sek|nok|dkk|currency|exchange\s+rate|fx|convert\s+\w+\s+to\s+\w+)\b/i;
@@ -82,18 +74,9 @@ export function hasMonetaryLanguage(text: string): boolean {
   return MONETARY_WORDS.test(text);
 }
 
-/** Replace spoken number words, leaving digits untouched. */
-function digitise(text: string): string {
-  return text.replace(/\b[a-z]+\b/gi, (word) => {
-    const key = word.toLowerCase();
-    return Object.hasOwn(SPOKEN_NUMBERS, key) ? SPOKEN_NUMBERS[key] : word;
-  });
-}
-
 /** "three x" → "3x", "5 x" → "5x"; keeps an implicit product explicit later. */
 function normalise(text: string): string {
-  let out = ` ${text.toLowerCase()} `;
-  out = digitise(out);
+  let out = ` ${canonicaliseSpokenNumbers(text)} `;
   for (const [pattern, replacement] of REWRITES) out = out.replace(pattern, replacement);
   out = out
     .replace(/\b(\w+)\s+squared\b/g, "$1^2")
@@ -232,7 +215,7 @@ export function solveMath(intent: MathIntent): MathSolution {
   if (intent.task === "evaluate-expression") {
     const result = safeEvaluate(intent.canonical);
     if (!result.ok) return { ok: false, error: result.error };
-    const text = typeof result.value === "number" ? String(round(result.value)) : String(result.value);
+    const text = typeof result.value === "number" ? String(round(result.value)) : result.formatted;
     return {
       ok: true,
       kind: "value",

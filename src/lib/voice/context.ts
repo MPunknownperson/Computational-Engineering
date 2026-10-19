@@ -8,7 +8,7 @@
  * explicit evidence, and inheritance across different domains is forbidden.
  */
 
-export type TaskDomain = "math" | "currency" | "units" | "market" | "navigation";
+export type TaskDomain = "math" | "finance" | "currency" | "units" | "market" | "navigation";
 
 export interface ContextEntry {
   domain: TaskDomain;

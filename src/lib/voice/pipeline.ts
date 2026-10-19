@@ -76,6 +76,7 @@ function normaliseConfidence(score: number): number {
 
 const DOMAIN_LABEL: Record<TaskDomain, string> = {
   math: "Solve it as mathematics",
+  finance: "Run the financial calculation",
   currency: "Convert it as money",
   units: "Convert it as measurements",
   market: "Look up market data",
@@ -116,7 +117,9 @@ export class VoiceRuntime {
 
   /** A trial runtime carries the same prior command but cannot mutate this one. */
   fork(): VoiceRuntime {
-    const next = new VoiceRuntime(this.packs);
+    const copiedContext = new ConversationContext();
+    for (const entry of this.context.history()) copiedContext.record(entry.domain, entry.label, entry.at);
+    const next = new VoiceRuntime(this.packs, copiedContext);
     if (this.previous) next.restore(this.previous);
     return next;
   }
@@ -232,7 +235,8 @@ export class VoiceRuntime {
         normaliseConfidence(built.score) +
           this.context.bias(domain) +
           continuation +
-          (domain === "math" ? (evidenceOfBuild.math?.confidence ?? 0) * 0.3 : 0),
+          (domain === "math" ? (evidenceOfBuild.math?.confidence ?? 0) * 0.3 : 0) +
+          (domain === "math" || domain === "finance" ? (evidenceOfBuild.operation?.confidence ?? 0) * 0.35 : 0),
       );
       const threshold = CONFIDENCE_THRESHOLDS[domain];
       trace.push({

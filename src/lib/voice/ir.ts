@@ -36,6 +36,8 @@ export const SLOT_KEYS = [
   "pageId",
   "expression",
   "variable",
+  "operation",
+  "preset",
 ] as const;
 export type SlotKey = (typeof SLOT_KEYS)[number];
 
@@ -92,7 +94,7 @@ function safeExpression(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const text = value.trim();
   if (text.length < 1 || text.length > MAX_EXPRESSION_LENGTH) return false;
-  if (!/^[0-9a-zA-Z+\-*/^().,%= ]+$/.test(text)) return false;
+  if (!/^[0-9a-zA-Z+\-*/^().,%= [\]]+$/.test(text)) return false;
   // At most one equality, and no empty side.
   const equals = (text.match(/=/g) ?? []).length;
   if (equals > 1) return false;

@@ -7,6 +7,11 @@ import { formatAmount } from "@/lib/voice/parser";
 import { contentById } from "@/lib/voice/site-content";
 import { decode, verify, type Program, type Slots, type VerifyError } from "@/lib/voice/ir";
 import { detectMathIntent, solveMath, type MathIntent } from "@/lib/voice/math-intent";
+import {
+  describeOperationResult,
+  operationDestination,
+  type OperationId,
+} from "@/lib/voice/operation-intent";
 
 /**
  * Stage 5: the executor — the site's "operating system" for voice.
@@ -158,10 +163,11 @@ interface Built {
 function buildMath(program: Program, slots: Slots, op: "SOLVE" | "EVAL"): Built {
   const expression = slots.expression;
   const variable = typeof slots.variable === "string" ? slots.variable : undefined;
+  const operation = typeof slots.operation === "string" ? slots.operation as OperationId : null;
   if (typeof expression !== "string" || !expression.trim()) return { error: "missing-slots" };
   if (op === "SOLVE" && !expression.includes("=")) return { error: "bad-expression" };
 
-  const intent = detectMathIntent(expression);
+  const intent = operation ? null : detectMathIntent(expression);
   const resolved: MathIntent = intent ?? {
     task: op === "SOLVE" ? "solve-equation" : "evaluate-expression",
     canonical: expression,
@@ -173,23 +179,31 @@ function buildMath(program: Program, slots: Slots, op: "SOLVE" | "EVAL"): Built 
   const solution = solveMath({ ...resolved, variable: variable ?? resolved.variable });
   if (!solution.ok) return { error: "unsolvable-math" };
 
-  // The maths workspace is the correct destination, pre-filled with the very
-  // expression that was heard — never the currency or unit converter.
-  const href = internalHref("/tools/scientific", {
-    expr: op === "SOLVE" ? expression.split("=")[0]?.trim() : expression,
-    // Only a single, unambiguous root is pre-filled as a variable value.
-    ...(op === "SOLVE" && variable && !solution.display.includes(" or ")
-      ? { vars: `${variable} = ${solution.display.split("= ")[1] ?? "0"}` }
-      : {}),
-  });
+  const preset = typeof slots.preset === "string" ? slots.preset : undefined;
+  // Generated operations can point only at a known preset or the scientific
+  // workspace. Ordinary maths remains pre-filled with the heard expression.
+  const href = operation
+    ? operationDestination({ id: operation, preset })
+    : internalHref("/tools/scientific", {
+        expr: op === "SOLVE" ? expression.split("=")[0]?.trim() : expression,
+        // Only a single, unambiguous root is pre-filled as a variable value.
+        ...(op === "SOLVE" && variable && !solution.display.includes(" or ")
+          ? { vars: `${variable} = ${solution.display.split("= ")[1] ?? "0"}` }
+          : {}),
+      });
   void program;
+  const label = operation
+    ? describeOperationResult(operation, solution.display)
+    : op === "SOLVE"
+      ? solution.display
+      : `${expression} = ${solution.display}`;
   return {
     action: {
       href,
-      label: op === "SOLVE" ? solution.display : `${expression} = ${solution.display}`,
+      label,
       kind: "math",
       result: solution.display,
-      detail: solution.detail,
+      detail: operation ? `${operation}: generated ${expression} = ${solution.display}` : solution.detail,
     },
   };
 }
