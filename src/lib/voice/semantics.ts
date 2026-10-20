@@ -10,6 +10,9 @@ import {
 } from "@/lib/voice/parser";
 import { detectMathIntent, hasMonetaryLanguage, type MathIntent } from "@/lib/voice/math-intent";
 import { detectOperationIntent, type OperationIntent } from "@/lib/voice/operation-intent";
+import { generateCode, type GeneratedProgram } from "@/lib/voice/codegen";
+import { associate, associateAsset, associateCountry, associateIndicator, type Association } from "@/lib/voice/association";
+import { contentByPath } from "@/lib/voice/site-content";
 import type { ConversationContext } from "@/lib/voice/context";
 import {
   IR_VERSION,
@@ -66,12 +69,16 @@ export interface BuildFailure {
 export interface BuildEvidence {
   math: MathIntent | null;
   operation: OperationIntent | null;
+  /** Program written by the automated code generator, when one applied. */
+  generated: GeneratedProgram | null;
+  /** Capability the language-association layer mapped the sentence to. */
+  association: Association | null;
   inherited: boolean;
   currencyMentions: number;
   unitMentions: number;
 }
 
-let lastEvidence: BuildEvidence = { math: null, operation: null, inherited: false, currencyMentions: 0, unitMentions: 0 };
+let lastEvidence: BuildEvidence = { math: null, operation: null, generated: null, association: null, inherited: false, currencyMentions: 0, unitMentions: 0 };
 
 /** Evidence gathered while building the most recent program. */
 export function evidenceOfLastBuild(): BuildEvidence {
@@ -129,7 +136,16 @@ export function buildProgram(
   const unitMentions = analysis.mentions.filter((mention) =>
     mention.candidates.some((candidate) => candidate.type === "unit"),
   ).length;
-  lastEvidence = { math, operation, inherited: false, currencyMentions, unitMentions };
+  const pairCandidate = pairMentions(analysis.mentions);
+  // ---- Automated code generation -----------------------------------------
+  // A sentence that names a calculation the site can perform is compiled to
+  // self-contained code. Conversions with both sides recognised stay with
+  // the conversion executor.
+  const generatedRaw = generateCode(sourceText);
+  const generated = generatedRaw && !(pairCandidate && (generatedRaw.family === "arithmetic" || generatedRaw.family === "function")) && !(generatedRaw.family === "arithmetic" && currencyMentions > 0)
+    ? generatedRaw
+    : null;
+  lastEvidence = { math, operation, generated, association: null, inherited: false, currencyMentions, unitMentions };
 
   // ---- Mathematics has priority ------------------------------------------
   // A sentence containing an equation, or clearly arithmetic with no money
@@ -138,6 +154,27 @@ export function buildProgram(
   const mathWins =
     math !== null &&
     (math.task === "solve-equation" || (!monetary && math.confidence >= 0.45 && currencyMentions === 0));
+  // A specialised generated program (finance, geometry, percentages...) is a
+  // more complete reading than a bare arithmetic guess at the same words.
+  const generatedWins =
+    generated !== null &&
+    (math === null || math.task !== "solve-equation") &&
+    (generated.family !== "arithmetic" || !mathWins);
+  if (generatedWins && generated) {
+    const instruction: Instruction = {
+      op: "RUN",
+      slots: clean({
+        capability: generated.capability,
+        expression: generated.code,
+        ...(generated.preset ? { preset: generated.preset } : {}),
+        ...(generated.unit ? { unit: generated.unit } : {}),
+      }),
+    };
+    const result = program(pack.id, [instruction]);
+    if (!verify(result)) {
+      return { program: result, score: Math.max(scoreAnalysis(analysis), 1) + generated.confidence };
+    }
+  }
   if (mathWins && math) {
     const instruction: Instruction = {
       op: math.task === "solve-equation" ? "SOLVE" : "EVAL",
@@ -184,9 +221,11 @@ export function buildProgram(
     return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) + 1.1 };
   }
 
-  const pair = pairMentions(analysis.mentions);
+  const pair = pairCandidate;
   if (pair) {
-    const [a, b] = pair;
+    // "how many pounds is 70 kilos" / "what is 70 kilos in pounds": the side
+    // that carries the amount is the source, whichever is spoken first.
+    const [a, b] = orientPair(pair, analysis);
     const result =
       a.type === "currency"
         ? program(pack.id, [convert({ amount: amountSlot, from: a.code, to: (b as { code: string }).code })])
@@ -254,10 +293,64 @@ export function buildProgram(
     return verify(result) ? { error: "malformed" } : { program: result, score: scoreAnalysis(analysis) };
   }
 
-  if (analysis.topic) return buildTopic(analysis.topic, analysis, pack.defaultCurrency, economyFor(pack));
+  if (analysis.topic) {
+    const country = analysis.topic === "inflation" || analysis.topic === "gdp" ? associateCountry(sourceText) : null;
+    const indicator = analysis.topic === "inflation" || analysis.topic === "gdp" ? associateIndicator(sourceText) : null;
+    const asset = analysis.topic === "crypto" || analysis.topic === "bitcoin" ? associateAsset(sourceText) : null;
+    // "interest rates in brazil" names a country and a World Bank series, so
+    // it is economic data, not the compound-interest preset.
+    if (analysis.topic !== "inflation" && analysis.topic !== "gdp" && analysis.topic !== "crypto" && analysis.topic !== "bitcoin") {
+      const series = associateIndicator(sourceText);
+      const economy = series ? associateCountry(sourceText) : null;
+      if (series && economy) return buildTopic(series === "inflation" ? "inflation" : "gdp", analysis, pack.defaultCurrency, economy, series);
+    }
+    return buildTopic(analysis.topic, analysis, pack.defaultCurrency, country ?? economyFor(pack), indicator, asset);
+  }
+
+  // Language association: the sentence names a capability of the site (a
+  // tool, a page, a market series) without the parser's keywords.
+  const association = associate(sourceText, { locale: pack.id, recentDomain: context?.recent()?.domain ?? null });
+  if (association) {
+    lastEvidence = { ...lastEvidence, association };
+    if (association.kind === "page") {
+      const entry = contentByPath(association.path);
+      if (entry) {
+        const result = program(pack.id, [{ op: "OPEN_PAGE", slots: { pageId: entry.id } }]);
+        return verify(result) ? { error: "malformed" } : { program: result, score: Math.max(scoreAnalysis(analysis), 0.5) + association.score };
+      }
+    } else {
+      const slots: Slots = clean({
+        topic: association.topic,
+        asset: association.slots.asset,
+        economy: association.slots.economy ?? (association.topic === "inflation" || association.topic === "gdp" ? economyFor(pack) : undefined),
+        indicator: association.slots.indicator ?? (association.topic === "inflation" ? "inflation" : association.topic === "gdp" ? "gdp_per_capita" : undefined),
+      }) ?? { topic: association.topic };
+      const result = program(pack.id, [open(slots)]);
+      return verify(result) ? { error: "malformed" } : { program: result, score: Math.max(scoreAnalysis(analysis), 0.5) + association.score };
+    }
+  }
 
   // No amount and no entities: a bare repeat request already handled, so stop.
   return { error: "nothing-understood" };
+}
+
+type Pair = NonNullable<ReturnType<typeof pairMentions>>;
+
+/** Put the entity nearest the spoken amount first; it is the source side. */
+function orientPair(pair: Pair, analysis: Analysis): Pair {
+  const amount = analysis.amount;
+  if (!amount) return pair;
+  const [a, b] = pair;
+  const positions = analysis.mentions
+    .map((mention) => ({ mention, a: mention.candidates.includes(a), b: mention.candidates.includes(b) }))
+    .filter((item) => item.a || item.b);
+  const first = positions.find((item) => item.a)?.mention;
+  const second = positions.find((item) => item.b)?.mention;
+  if (!first || !second) return pair;
+  const gap = (mention: { start: number; end: number }) => Math.min(Math.abs(mention.start - amount.end), Math.abs(amount.start - mention.end));
+  // The amount sits directly beside the second mention and far from the first.
+  if (gap(second) <= 2 && gap(first) > 2 && second.start > first.end) return [b, a];
+  return pair;
 }
 
 function buildTopic(
@@ -265,16 +358,18 @@ function buildTopic(
   analysis: Analysis,
   defaultCurrency: LanguagePack["defaultCurrency"],
   economy: string,
+  indicator: string | null = null,
+  asset: string | null = null,
 ): BuildResult | BuildFailure {
   const slots: Slots =
     topic === "bitcoin"
-      ? { topic, asset: "bitcoin" }
+      ? { topic, asset: asset ?? "bitcoin" }
       : topic === "crypto"
-        ? { topic }
+        ? (asset ? { topic, asset } : { topic })
         : topic === "inflation"
-          ? { topic, economy, indicator: "inflation" }
+          ? { topic, economy, indicator: indicator ?? "inflation" }
           : topic === "gdp"
-            ? { topic, economy, indicator: "gdp_per_capita" }
+            ? { topic, economy, indicator: indicator ?? "gdp_per_capita" }
             : { topic };
   void defaultCurrency;
   const result = program(analysis.pack.id, [open(slots)]);

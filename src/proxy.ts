@@ -1,5 +1,5 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { hasAdminKey } from "@/lib/admin-key";
 import { missingPageResponse } from "@/lib/not-found-response";
 import { pageDisposition } from "@/lib/public-routes";
 import { privacyRegion } from "@/lib/privacy/regions";
@@ -7,7 +7,10 @@ import { trustedPrivacyCountry } from "@/lib/privacy/geo";
 import { PRIVACY_COOKIE_SECONDS, PRIVACY_GEO_VARY, PRIVACY_OPTOUT_COOKIE } from "@/lib/privacy/constants";
 import { applyResolvedGeo, resolveVisitorGeo } from "@/lib/privacy/geo-resolver";
 
-const PRIVATE_API_PREFIX = "/api/workbench/";
+// Operator-only backend surfaces: the workbench (shell, archives, tool
+// installation, code engine) and the NLU regression replay, which writes to
+// the database. All of them answer 404 without a valid bearer key.
+const PRIVATE_API_PREFIXES = ["/api/workbench/", "/api/nlu/replay"];
 const PAGE_TONES: Array<[string, string]> = [
   ["/", "home"], ["/tools/calculator", "ink"], ["/tools/scientific", "indigo"],
   ["/tools/units", "teal"], ["/tools/currency", "terra"], ["/tools/crypto", "violet"],
@@ -24,13 +27,8 @@ function toneForPathname(pathname: string): string {
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith(PRIVATE_API_PREFIX)) {
-    const expected = process.env.WORKBENCH_API_KEY;
-    const supplied = (request.headers.get("authorization") ?? "").match(/^Bearer\s+(.+)$/i)?.[1] ?? "";
-    if (!expected || Buffer.byteLength(expected, "utf8") < 32) return hiddenResponse();
-    const a = Buffer.from(expected, "utf8");
-    const b = Buffer.from(supplied, "utf8");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return hiddenResponse();
+  if (PRIVATE_API_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix))) {
+    if (!hasAdminKey(request)) return hiddenResponse();
     return NextResponse.next();
   }
 
@@ -99,5 +97,5 @@ function hiddenResponse() {
 }
 
 export const config = {
-  matcher: ["/api/workbench/:path*", "/api/voice/:path*", "/api/privacy/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
+  matcher: ["/api/workbench/:path*", "/api/nlu/:path*", "/api/voice/:path*", "/api/privacy/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt).*)"],
 };

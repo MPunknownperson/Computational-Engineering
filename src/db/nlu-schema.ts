@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, real, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, real, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Every interpretation is logged: raw text, chosen intent, extracted entities,
@@ -38,5 +38,28 @@ export const nluRegressionRuns = pgTable("nlu_regression_runs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Language associations learned on the server: a normalised phrase paired with
+ * the verified program it resolved to (never a URL, never audio). Replaying a
+ * remembered program re-runs every IR and executor check, so a stale or
+ * tampered row can only fail, never misroute.
+ */
+export const voiceAssociations = pgTable("voice_associations", {
+  id: serial("id").primaryKey(),
+  phrase: text("phrase").notNull(),
+  locale: text("locale").notNull().default("en"),
+  program: text("program").notNull(), // encoded IR, e.g. v1|en|RUN{...}
+  capability: text("capability"),
+  domain: text("domain"),
+  source: text("source").notNull().default("pipeline"), // pipeline | codegen | association | replay
+  uses: integer("uses").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("voice_associations_phrase_locale_idx").on(table.phrase, table.locale),
+  index("voice_associations_capability_idx").on(table.capability),
+]);
+
 export type NluInteraction = typeof nluInteractions.$inferSelect;
+export type VoiceAssociation = typeof voiceAssociations.$inferSelect;
 export type NluRegressionRun = typeof nluRegressionRuns.$inferSelect;

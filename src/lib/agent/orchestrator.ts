@@ -1,6 +1,7 @@
 import "server-only";
 import { RunnableLambda, RunnableSequence } from "@langchain/core/runnables";
-import { allPacks } from "@/lib/voice/parser";
+import { allPacks, analyse } from "@/lib/voice/parser";
+import { LANGUAGE_PACKS } from "@/lib/i18n";
 import { VoiceRuntime, type Decision } from "@/lib/voice/pipeline";
 import { domainOfProgram } from "@/lib/voice/dispatch-guard";
 import type { Program } from "@/lib/voice/ir";
@@ -8,6 +9,8 @@ import { rememberTurn, retrieveSiteContext, sessionHistory, type SiteContextHit 
 import { dispatchTool, type ToolCallRecord } from "@/lib/agent/tools";
 import { detectOperationIntent } from "@/lib/voice/operation-intent";
 import { comprehendWithFastGpt, fastGptConfigured, type FastGptComprehension } from "@/lib/agent/fastgpt";
+import { recallAssociation, rememberAssociation } from "@/lib/agent/associations";
+import { execute } from "@/lib/voice/vm";
 
 /**
  * LangChain orchestration for one recognised utterance.
@@ -90,6 +93,41 @@ async function dispatchFor(decision: Decision, text: string): Promise<{ tools: T
   }
   const domain = decision.domain ?? domainOfProgram(decision.program);
   const slots = slotsOf(decision.program);
+  const opcode = decision.program.code[0]?.op;
+  if (opcode === "RUN") {
+    // Generated program: re-derive it server-side so the trace carries the
+    // template, bindings and generated code, then run it in the evaluator.
+    const generated = await dispatchTool("generate_calculation_code", { request: text });
+    tools.push(generated);
+    const output = generated.output as { ok?: boolean; display?: string; value?: string };
+    if (generated.ok && output.display) return { tools, reply: output.display };
+    const fallback = await dispatchTool("run_generated_calculation", { expression: String(slots.expression ?? ""), operation: typeof slots.capability === "string" ? slots.capability : undefined });
+    tools.push(fallback);
+    const run = fallback.output as { ok?: boolean; display?: string; value?: string };
+    return { tools, reply: fallback.ok ? run.display ?? run.value ?? decision.action.label : decision.action.label };
+  }
+  if (domain === "market") {
+    if (typeof slots.asset === "string") {
+      const call = await dispatchTool("lookup_crypto_price", { asset: slots.asset });
+      tools.push(call);
+      const output = call.output as { ok?: boolean; name?: string; price?: number; vs?: string; change24h?: number | null };
+      if (call.ok && typeof output.price === "number") {
+        const change = typeof output.change24h === "number" ? ` (${output.change24h >= 0 ? "+" : ""}${output.change24h.toFixed(2)}% 24h)` : "";
+        return { tools, reply: `${output.name ?? slots.asset}: ${output.price.toLocaleString("en-US", { maximumFractionDigits: output.price < 1 ? 6 : 2 })} ${output.vs ?? "USD"}${change}` };
+      }
+      return { tools, reply: decision.action.label };
+    }
+    if (typeof slots.economy === "string" && typeof slots.indicator === "string") {
+      const call = await dispatchTool("lookup_economy_indicator", { country: slots.economy, indicator: slots.indicator });
+      tools.push(call);
+      const output = call.output as { ok?: boolean; countryName?: string; indicatorName?: string; year?: string; value?: number; unit?: string };
+      if (call.ok && typeof output.value === "number") {
+        const value = output.unit === "%" ? `${output.value.toFixed(2)}%` : output.value.toLocaleString("en-US", { maximumFractionDigits: 0 }) + (output.unit ? ` ${output.unit}` : "");
+        return { tools, reply: `${output.indicatorName ?? slots.indicator} — ${output.countryName ?? slots.economy}: ${value} (${output.year})` };
+      }
+      return { tools, reply: decision.action.label };
+    }
+  }
   if (domain === "math" || domain === "finance") {
     const expression = typeof slots.expression === "string" ? slots.expression : text;
     const operation = typeof slots.operation === "string" ? slots.operation : null;
@@ -138,7 +176,34 @@ const loadContext = RunnableLambda.from(async (input: AgentInput): Promise<Stage
 }).withConfig({ runName: "load_context" });
 
 const interpret = RunnableLambda.from(async (input: Stage1): Promise<Stage2> => {
-  const decision = runtimeFor(input.sessionId).decide({ heard: input.text, hypothesis: input.text });
+  const runtime = runtimeFor(input.sessionId);
+  let decision = runtime.decide({ heard: input.text, hypothesis: input.text });
+  if (decision.kind !== "action") {
+    // Server-side language association memory: a phrase this deployment has
+    // already resolved replays its verified program through the executor.
+    const remembered = await recallAssociation(input.text, input.locale);
+    if (remembered) {
+      const executed = execute(remembered.program, runtime.last);
+      if (executed.ok) {
+        runtime.restore(executed.program);
+        const domain = domainOfProgram(executed.program);
+        runtime.context.record(domain, executed.action.label);
+        const pack = LANGUAGE_PACKS[executed.program.lang] ?? LANGUAGE_PACKS.en;
+        decision = {
+          kind: "action",
+          program: executed.program,
+          action: executed.action,
+          analysis: analyse(input.text, pack),
+          pack,
+          confidence: 0.8,
+          domain,
+          trace: [...decision.trace, { stage: "execute", pack: remembered.locale, outcome: "replayed-association", detail: `learned phrase (${remembered.uses} uses)` }],
+        };
+      }
+    }
+  } else {
+    void rememberAssociation(input.text, input.locale, decision.program, decision.domain ?? domainOfProgram(decision.program));
+  }
   return { ...input, decision };
 }).withConfig({ runName: "interpret" });
 

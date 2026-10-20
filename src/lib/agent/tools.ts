@@ -1,7 +1,9 @@
 import "server-only";
 import { tool, type StructuredToolInterface } from "@langchain/core/tools";
 import { z } from "zod";
-import { CURRENCIES } from "@/lib/catalog";
+import { COUNTRIES, CRYPTO_IDS, CURRENCIES, INDICATORS, TIMING } from "@/lib/catalog";
+import { describeGenerated, explainGenerated, generateCode } from "@/lib/voice/codegen";
+import { associate, associateAsset, associateCountry, associateIndicator, describeAssociations } from "@/lib/voice/association";
 import { safeEvaluate } from "@/lib/math";
 import { CATEGORIES, FACTORS, convert, convertTemperature, type Category } from "@/lib/units";
 import { solveMath, detectMathIntent } from "@/lib/voice/math-intent";
@@ -181,7 +183,127 @@ export const findSitePageTool = tool(
   },
 );
 
+/**
+ * Automated code generation: speech → capability → self-contained code. The
+ * generated code is executed by the restricted evaluator and the symbolic
+ * template plus bindings are returned so the derivation is auditable.
+ */
+export const generateCalculationTool = tool(
+  async ({ request }) => {
+    const generated = generateCode(request);
+    if (!generated) return json({ ok: false, error: "no-generator-for-request" });
+    const result = safeEvaluate(generated.code);
+    if (!result.ok) return json({ ok: false, error: result.error, generatedCode: generated.code });
+    const value = tidy(result.formatted);
+    return json({
+      ok: true,
+      capability: generated.capability,
+      family: generated.family,
+      template: generated.template,
+      bindings: generated.bindings,
+      generatedCode: generated.code,
+      explanation: explainGenerated(generated),
+      value: `${value}${generated.unit ?? ""}`,
+      display: describeGenerated(generated.capability, value, generated.unit ?? ""),
+      preset: generated.preset ?? null,
+      confidence: generated.confidence,
+      signals: generated.signals,
+    });
+  },
+  {
+    name: "generate_calculation_code",
+    description: "Generate and run math-only code for a spoken calculation request (percentages, loans, interest, geometry, statistics, functions, everyday maths). Returns the template, bindings, generated code and result.",
+    schema: z.object({ request: z.string().min(1).max(400) }),
+  },
+);
+
+/** Language association: map a phrase onto a site capability or page. */
+export const associateCapabilityTool = tool(
+  async ({ text, locale }) => {
+    const match = associate(text, { locale: locale ?? "en" });
+    return json({
+      ok: Boolean(match),
+      association: match,
+      country: associateCountry(text, locale ?? "en"),
+      indicator: associateIndicator(text, locale ?? "en"),
+      asset: associateAsset(text, locale ?? "en"),
+      lexicon: describeAssociations().length,
+    });
+  },
+  {
+    name: "associate_capability",
+    description: "Map recognised text onto the site's closed set of capabilities (tools, pages, market series, countries, assets) with recogniser-noise tolerance.",
+    schema: z.object({ text: z.string().min(1).max(300), locale: z.string().max(12).optional() }),
+  },
+);
+
+interface CoinMarket { id: string; symbol: string; name: string; current_price: number; price_change_percentage_24h: number | null; market_cap: number | null }
+
+export const lookupCryptoPriceTool = tool(
+  async ({ asset, vs }) => {
+    if (!(CRYPTO_IDS as readonly string[]).includes(asset)) return json({ ok: false, error: "unknown-asset", assets: CRYPTO_IDS });
+    const quote = (vs ?? "usd").toLowerCase();
+    if (!/^[a-z]{3,4}$/.test(quote)) return json({ ok: false, error: "unknown-quote-currency" });
+    try {
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${encodeURIComponent(quote)}&ids=${encodeURIComponent(asset)}&per_page=1&page=1&sparkline=false&price_change_percentage=24h`;
+      const response = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: TIMING.cryptoCacheSeconds } });
+      if (!response.ok) return json({ ok: false, error: "price-unavailable" });
+      const [item] = (await response.json()) as CoinMarket[];
+      if (!item || typeof item.current_price !== "number") return json({ ok: false, error: "price-unavailable" });
+      return json({ ok: true, asset: item.id, symbol: item.symbol?.toUpperCase(), name: item.name, price: item.current_price, vs: quote.toUpperCase(), change24h: item.price_change_percentage_24h, marketCap: item.market_cap, source: "coingecko" });
+    } catch {
+      return json({ ok: false, error: "price-unavailable" });
+    }
+  },
+  {
+    name: "lookup_crypto_price",
+    description: `Latest market price for a listed digital asset. Assets: ${CRYPTO_IDS.join(", ")}.`,
+    schema: z.object({ asset: z.string().min(2).max(32), vs: z.string().min(3).max(4).optional() }),
+  },
+);
+
+interface WorldBankPoint { date: string; value: number | null; country?: { value?: string } }
+
+export const lookupEconomyIndicatorTool = tool(
+  async ({ country, indicator }) => {
+    const economy = COUNTRIES.find((item) => item.value === country.toUpperCase());
+    const series = INDICATORS.find((item) => item.value === indicator);
+    if (!economy) return json({ ok: false, error: "unknown-country", countries: COUNTRIES.map((item) => item.value) });
+    if (!series) return json({ ok: false, error: "unknown-indicator", indicators: INDICATORS.map((item) => item.value) });
+    try {
+      const url = `https://api.worldbank.org/v2/country/${encodeURIComponent(economy.value)}/indicator/${encodeURIComponent(series.code)}?format=json&per_page=12&mrv=12`;
+      const response = await fetch(url, { next: { revalidate: TIMING.economyCacheSeconds } });
+      if (!response.ok) return json({ ok: false, error: "data-unavailable" });
+      const payload = (await response.json()) as [unknown, WorldBankPoint[] | undefined];
+      const latest = (payload[1] ?? []).find((point) => typeof point.value === "number");
+      if (!latest) return json({ ok: false, error: "data-unavailable" });
+      return json({ ok: true, country: economy.value, countryName: economy.label, indicator: series.value, indicatorName: series.name, year: latest.date, value: latest.value, unit: series.unit, source: "worldbank.org" });
+    } catch {
+      return json({ ok: false, error: "data-unavailable" });
+    }
+  },
+  {
+    name: "lookup_economy_indicator",
+    description: `Latest World Bank value for an economic indicator. Indicators: ${INDICATORS.map((item) => item.value).join(", ")}.`,
+    schema: z.object({ country: z.string().length(3), indicator: z.string().min(3).max(24) }),
+  },
+);
+
+function tidy(formatted: string): string {
+  const value = Number(formatted);
+  if (!Number.isFinite(value)) return formatted;
+  if (value === 0) return "0";
+  const magnitude = Math.abs(value);
+  if (magnitude >= 1e15 || magnitude < 1e-6) return value.toPrecision(6).replace(/\.?0+(e|$)/, "$1");
+  const rounded = magnitude >= 1000 ? Number(value.toFixed(2)) : Number(value.toPrecision(8));
+  return String(Number(rounded.toFixed(6)));
+}
+
 export const BACKEND_TOOLS: StructuredToolInterface[] = [
+  generateCalculationTool,
+  associateCapabilityTool,
+  lookupCryptoPriceTool,
+  lookupEconomyIndicatorTool,
   solveMathTool,
   compileOperationTool,
   runGeneratedCalculationTool,

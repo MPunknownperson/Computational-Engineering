@@ -29,6 +29,12 @@ const CONTENT = SEARCH_PAGES.map((page, index): ContentEntry => {
 });
 
 const CONTENT_BY_ID = new Map(CONTENT.map((entry) => [entry.id, entry]));
+const CONTENT_BY_PATH = new Map(CONTENT.map((entry) => [entry.path, entry]));
+
+/** Catalog entry for a site-relative path, if the path is public content. */
+export function contentByPath(path: string): ContentEntry | null {
+  return CONTENT_BY_PATH.get(path) ?? null;
+}
 
 export function contentById(id: string): ContentEntry | null {
   return CONTENT_BY_ID.get(id) ?? null;

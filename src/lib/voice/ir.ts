@@ -21,7 +21,9 @@ export const IR_VERSION = 1;
 // SOLVE and EVAL make mathematics representable in its own right. Before they
 // existed every numeric utterance had to be compiled to CONVERT, which is how
 // a linear equation ended up being answered as a currency conversion.
-export const OPCODES = ["CONVERT", "OPEN", "OPEN_PAGE", "REPEAT", "SOLVE", "EVAL"] as const;
+// RUN carries a program written by the automated code generator: a named
+// capability plus the self-contained code it generated for that sentence.
+export const OPCODES = ["CONVERT", "OPEN", "OPEN_PAGE", "REPEAT", "SOLVE", "EVAL", "RUN"] as const;
 export type Opcode = (typeof OPCODES)[number];
 
 export const SLOT_KEYS = [
@@ -38,6 +40,8 @@ export const SLOT_KEYS = [
   "variable",
   "operation",
   "preset",
+  "capability",
+  "unit",
 ] as const;
 export type SlotKey = (typeof SLOT_KEYS)[number];
 
@@ -123,6 +127,8 @@ export function verify(program: unknown): VerifyError | null {
         if (!isFiniteNumber(value) || value <= 0 || value > MAX_AMOUNT) return "bad-slot-value";
       } else if (key === "expression") {
         if (!safeExpression(value)) return "bad-slot-value";
+      } else if (key === "unit") {
+        if (typeof value !== "string" || value.length > 16 || !/^[ %a-zA-Z/]*$/.test(value)) return "bad-slot-value";
       } else if (!safeString(value)) {
         return "bad-slot-value";
       }
@@ -142,7 +148,7 @@ export function encode(program: Program): string {
               const value = String(instruction.slots?.[key]);
               // Expressions may hold spaces and commas, which are the
               // separators of this format, so they travel percent-encoded.
-              return `${key}:${key === "expression" ? encodeURIComponent(value) : value}`;
+              return `${key}:${key === "expression" || key === "unit" ? encodeURIComponent(value) : value}`;
             })
             .join(",") +
           "}"
@@ -175,9 +181,9 @@ export function decode(encoded: string): { program: Program } | { error: VerifyE
           const value = Number(raw);
           if (!Number.isFinite(value)) return { error: "unparseable" };
           slots.amount = value;
-        } else if (key === "expression") {
+        } else if (key === "expression" || key === "unit") {
           try {
-            slots.expression = decodeURIComponent(raw);
+            slots[key] = decodeURIComponent(raw);
           } catch {
             return { error: "unparseable" };
           }

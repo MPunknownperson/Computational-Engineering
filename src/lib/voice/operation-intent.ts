@@ -201,7 +201,11 @@ export function normaliseAssociationText(input: string): string {
     .normalize("NFD")
     .replace(/(\p{Script=Latin})\p{M}+/gu, "$1")
     .normalize("NFC")
-    .replace(/[’'`´_-]/g, " ")
+    // Apostrophes and underscores separate words. A hyphen only does so
+    // between letters ("bill-split"); between numbers or beside a space it is
+    // the subtraction operator and must survive ("2x - 8 = 0", "5-3").
+    .replace(/[’'`´_]/g, " ")
+    .replace(/(?<=\p{L})-(?=\p{L})/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 500);
@@ -409,7 +413,7 @@ function compile(
   }
 
   if (definition.id === "compound-interest") {
-    const percentMention = aroundKeyword(text, numbers, /(?:%|percent|rate|interest|interes|interet|zins|利率)/i);
+    const percentMention = aroundKeyword(text, numbers, /(?:%|percent|por ciento|pour cent|prozent|百分之)/i) ?? aroundKeyword(text, numbers, /(?:\brate\b|interest rate|tasa|taux|zinssatz|利率)/i);
     const yearMention = aroundKeyword(text, numbers, /\b(?:years?|anos?|ans?|jahre?)\b|年/i);
     const reserved = new Set([percentMention, yearMention].filter(Boolean));
     const principal = numbers.find((item) => !reserved.has(item))?.value;
@@ -422,7 +426,7 @@ function compile(
   }
 
   if (definition.id === "loan-payment") {
-    const percentMention = aroundKeyword(text, numbers, /(?:%|percent|rate|interest|interes|interet|zins|利率)/i);
+    const percentMention = aroundKeyword(text, numbers, /(?:%|percent|por ciento|pour cent|prozent|百分之)/i) ?? aroundKeyword(text, numbers, /(?:\brate\b|interest rate|tasa|taux|zinssatz|利率)/i);
     const yearMention = aroundKeyword(text, numbers, /\b(?:years?|anos?|ans?|jahre?)\b|年/i);
     const reserved = new Set([percentMention, yearMention].filter(Boolean));
     const principal = numbers.find((item) => !reserved.has(item))?.value;

@@ -1,4 +1,6 @@
-import { CURRENCIES } from "@/lib/catalog";
+import { COUNTRIES, CRYPTO_IDS, CURRENCIES, INDICATORS } from "@/lib/catalog";
+import { safeEvaluate } from "@/lib/math";
+import { describeGenerated } from "@/lib/voice/codegen";
 import { LANGUAGE_PACKS, t, type PackId } from "@/lib/i18n";
 import { FACTORS, TEMPERATURE_UNITS, type Category } from "@/lib/units";
 import { internalHref } from "@/lib/urls";
@@ -128,20 +130,30 @@ function buildOpen(program: Program, slots: Slots): Built {
       return { action: { href: "/tools/units", label: t(pack, "topic.units") } };
     case "currency":
       return { action: { href: "/tools/currency", label: t(pack, "topic.currency") } };
-    case "crypto":
+    case "crypto": {
+      const asset = typeof slots.asset === "string" && isKnownAsset(slots.asset) ? slots.asset : null;
+      if (asset) return { action: { href: internalHref("/tools/crypto", { id: asset }), label: `${assetLabel(asset)} price` } };
       return { action: { href: "/tools/crypto", label: t(pack, "topic.crypto") } };
+    }
     case "bitcoin": {
-      const asset = typeof slots.asset === "string" && isCurrencySafe(slots.asset) ? slots.asset : "bitcoin";
-      return { action: { href: internalHref("/tools/crypto", { id: asset }), label: t(pack, "topic.bitcoin") } };
+      const asset = typeof slots.asset === "string" && isKnownAsset(slots.asset) ? slots.asset : "bitcoin";
+      return { action: { href: internalHref("/tools/crypto", { id: asset }), label: asset === "bitcoin" ? t(pack, "topic.bitcoin") : `${assetLabel(asset)} price` } };
     }
     case "inflation":
     case "gdp": {
-      const economy = typeof slots.economy === "string" && /^[A-Z]{3}$/.test(slots.economy) ? slots.economy : "USA";
-      const indicator = topic === "inflation" ? "inflation" : "gdp_per_capita";
+      // Country and indicator identifiers are closed catalogs; anything else
+      // falls back to the defaults rather than reaching the URL.
+      const economy = typeof slots.economy === "string" && COUNTRIES.some((country) => country.value === slots.economy) ? slots.economy : "USA";
+      const requested = typeof slots.indicator === "string" ? INDICATORS.find((item) => item.value === slots.indicator) : undefined;
+      const indicator = requested?.value ?? (topic === "inflation" ? "inflation" : "gdp_per_capita");
+      const base = requested && requested.value !== "inflation" && requested.value !== "gdp_per_capita"
+        ? requested.label
+        : t(pack, indicator === "inflation" ? "topic.inflation" : "topic.gdp");
+      const countryLabel = COUNTRIES.find((country) => country.value === economy)?.label;
       return {
         action: {
           href: internalHref("/tools/economy", { country: economy, indicator }),
-          label: t(pack, topic === "inflation" ? "topic.inflation" : "topic.gdp"),
+          label: economy !== "USA" && countryLabel ? `${base} — ${countryLabel}` : base,
         },
       };
     }
@@ -209,8 +221,50 @@ function buildMath(program: Program, slots: Slots, op: "SOLVE" | "EVAL"): Built 
 }
 
 /** Digital-asset ids are a fixed set in the catalogue; keep it closed. */
-function isCurrencySafe(asset: string): boolean {
-  return /^[a-z0-9-]{3,20}$/.test(asset);
+function isKnownAsset(asset: string): boolean {
+  return (CRYPTO_IDS as readonly string[]).includes(asset);
+}
+
+function assetLabel(asset: string): string {
+  const name = asset.replace(/-\d+$/, "").replace(/-/g, " ");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Round a computed value for speech-sized display without losing magnitude. */
+function tidyNumber(formatted: string): string {
+  const value = Number(formatted);
+  if (!Number.isFinite(value)) return formatted;
+  if (value === 0) return "0";
+  const magnitude = Math.abs(value);
+  if (magnitude >= 1e15 || magnitude < 1e-6) return value.toPrecision(6).replace(/\.?0+(e|$)/, "$1");
+  const rounded = magnitude >= 1000 ? Number(value.toFixed(2)) : Number(value.toPrecision(8));
+  return String(Number(rounded.toFixed(6)));
+}
+
+/**
+ * Executor for generated programs. The capability id selects the label and
+ * destination; the code itself is run by the restricted evaluator, which is
+ * the same grammar the scientific workspace uses.
+ */
+function buildRun(slots: Slots): Built {
+  const capability = typeof slots.capability === "string" && /^[a-z0-9-]{2,40}$/.test(slots.capability) ? slots.capability : null;
+  const expression = typeof slots.expression === "string" ? slots.expression.trim() : "";
+  if (!capability || !expression) return { error: "missing-slots" };
+  const evaluated = safeEvaluate(expression);
+  if (!evaluated.ok) return { error: "bad-expression" };
+  const result = tidyNumber(evaluated.formatted);
+  const unit = typeof slots.unit === "string" ? slots.unit : "";
+  const preset = typeof slots.preset === "string" ? slots.preset : undefined;
+  const href = preset ? presetHref(preset) : internalHref("/tools/scientific", { expr: expression });
+  return {
+    action: {
+      href,
+      label: describeGenerated(capability, result, unit),
+      kind: "math",
+      result: `${result}${unit}`,
+      detail: `${capability}: generated ${expression} = ${result}${unit}`,
+    },
+  };
 }
 
 /**
@@ -238,6 +292,8 @@ export function execute(input: unknown, previous: Program | null = null): Execut
         const page = typeof id === "string" ? contentById(id) : null;
         return page ? { action: { href: page.path, label: page.label } } : { error: "unknown-page" as const };
       })()
+    : instruction.op === "RUN"
+      ? buildRun(instruction.slots)
     : instruction.op === "SOLVE" || instruction.op === "EVAL"
       ? buildMath(program, instruction.slots, instruction.op)
       : instruction.op === "CONVERT"

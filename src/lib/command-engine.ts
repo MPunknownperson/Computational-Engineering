@@ -18,6 +18,10 @@ import { functionalStorage } from "@/lib/privacy/browser-consent";
 export interface CommandAction {
   href: string;
   label: string;
+  /** Computed answer (maths / generated programs), when the action produced one. */
+  result?: string;
+  /** Longer derivation, e.g. the generated code and its value. */
+  detail?: string;
 }
 
 export interface CommandRoute {

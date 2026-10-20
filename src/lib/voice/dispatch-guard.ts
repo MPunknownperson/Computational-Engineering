@@ -1,6 +1,7 @@
 import type { Program, Slots } from "@/lib/voice/ir";
 import type { TaskDomain } from "@/lib/voice/context";
 import { isFinanceOperation } from "@/lib/voice/operation-intent";
+import { isFinanceCapability } from "@/lib/voice/codegen";
 
 /**
  * Stage 4b: action dispatch validation.
@@ -54,6 +55,10 @@ export function domainOfProgram(program: Program): TaskDomain {
   switch (instruction.op) {
     case "SOLVE":
       return "math";
+    case "RUN":
+      return isFinanceCapability(typeof instruction.slots?.capability === "string" ? instruction.slots.capability : undefined)
+        ? "finance"
+        : "math";
     case "EVAL":
       return isFinanceOperation(typeof instruction.slots?.operation === "string" ? instruction.slots.operation : undefined)
         ? "finance"
