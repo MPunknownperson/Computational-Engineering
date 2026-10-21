@@ -22,6 +22,51 @@ See `docs/privacy-operations.md`. This preview uses `PRIVACY_GEO_PROVIDER=signed
 
 Private workbench APIs require a server-configured `WORKBENCH_API_KEY` of at least 32 bytes; they remain hidden when unconfigured. Public site functions do not require that key.
 
+## Crypto computational engine (`/tools/crypto`)
+
+The Bitcoin & crypto prices page is a computational tool, not a price list:
+
+- **Automated updates** — `src/instrumentation.ts` starts a self-scheduling refresh loop
+  (`ensureAutoUpdater`) at server boot; browsers receive pushes over Server-Sent Events
+  (`/api/crypto/stream`) with automatic fallback to polling.
+- **Provider chain** — CoinGecko → Coinbase → last persisted snapshot → clearly labelled
+  deterministic seed. Every response states its `source` and age. Snapshots are persisted
+  in `crypto_snapshots`; history series in `crypto_history_cache`.
+- **Analytical engine** (`src/lib/crypto/engine.ts`, pure and deterministic) — SMA/EMA, Wilder
+  RSI, MACD, Bollinger bands, annualised volatility, Sharpe/Sortino, max drawdown,
+  historical/parametric VaR and CVaR, skew/kurtosis, linear regression, z-score, seeded
+  GBM Monte Carlo, support/resistance clustering, Pearson correlation and beta, and a
+  weighted composite signal with per-component reasons. Sums are Kahan-compensated.
+- **Exact arithmetic** (`src/lib/crypto/precision.ts`) — decimal.js at 40 significant
+  digits for conversion, recurring-purchase (DCA) back-tests and portfolio P&L.
+- **Tools** — converter, DCA simulator, anonymous workspace-scoped portfolio tracker and
+  server-evaluated price alerts (`crypto_positions`, `crypto_alerts`), correlation matrix
+  and a transparent engine-status panel.
+
+Endpoints: `/api/crypto`, `/api/crypto/history`, `/api/crypto/analysis`,
+`/api/crypto/correlation`, `/api/crypto/compute?op=convert|dca`, `/api/crypto/alerts`,
+`/api/crypto/portfolio`, `/api/crypto/stream`, `/api/crypto/engine`.
+
+## High-speed processing, error handling and automated remediation
+
+- `src/lib/core/fast-cache.ts` — TTL + stale-while-revalidate cache with request coalescing,
+  LRU bounds and last-known-good fallback.
+- `src/lib/core/resilience.ts` — bounded timeouts, retry with decorrelated jitter,
+  per-upstream circuit breakers and an ordered provider fallback chain.
+- `src/lib/core/errors.ts` / `api-handler.ts` — typed error classification, stable
+  fingerprints, safe JSON errors and `Server-Timing` on every route.
+- `src/lib/remediation/engine.ts` — **automated error-remediation**: capture → classify →
+  fingerprint → record (`incident_reports`) → select playbook → generate fix → deploy
+  (runtime patches in `runtime_patches`, cache resets, breaker control, schema self-heal,
+  pool reconnect, cache warm-up) → verify → audit (`remediation_actions`). Browser-side
+  actions (clear corrupt storage, cache-busting reload, transport switch, boundary reset)
+  are returned to the reporting client.
+- Browser capture: `src/components/system/ErrorReporter.tsx` (global errors, unhandled
+  rejections, chunk failures, last user action) and self-healing `error.tsx` /
+  `global-error.tsx` boundaries.
+- Console: `/system/reliability` (incident ledger, deployed fixes, patches, breakers, caches,
+  self-test & repair, fault drills). API: `/api/system/errors`, `/api/system/reliability`.
+
 ## Validation
 
 Run `npx next typegen`, `npm exec tsc -- --noEmit --pretty false`, and `npm run build`. Geography/browser regression tests are in `tests/browser-speech-only.spec.ts`, `tests/mobile-consent-regressions.spec.ts`, `tests/cookie-consent.spec.ts` and `tests/privacy-policy.spec.ts`. Headless tests mock recognition services; real speech quality and availability still depend on the user’s physical device and provider.
