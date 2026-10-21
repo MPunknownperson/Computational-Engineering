@@ -1,166 +1,84 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import { AnimatedNumber, Reveal, Skeleton } from "@/components/Motion";
+import { useEffect, useMemo, useState } from "react";
+import { Reveal, Segmented } from "@/components/Motion";
 import { Icon } from "@/components/Icons";
+import { ASSET_META } from "@/lib/crypto/providers";
+import { MarketPanel } from "@/components/crypto/MarketPanel";
+import { AnalysisPanel } from "@/components/crypto/AnalysisPanel";
+import { ToolsPanel } from "@/components/crypto/ToolsPanel";
+import { SystemPanel } from "@/components/crypto/SystemPanel";
+import { fmtAge, sourceLabel, useMarketFeed, VS_OPTIONS } from "@/components/crypto/use-crypto";
 
-type Asset = {
-  id: string;
-  symbol: string;
-  name: string;
-  current_price: number;
-  price_change_percentage_24h: number | null;
-  market_cap: number;
-  total_volume: number;
-};
+type Tab = "market" | "analysis" | "tools" | "system";
+const TABS: Array<{ value: Tab; label: string }> = [{ value: "market", label: "Market" }, { value: "analysis", label: "Analysis" }, { value: "tools", label: "Tools" }, { value: "system", label: "Correlation & engine" }];
 
+/**
+ * Bitcoin & crypto prices — a computational tool rather than a price list:
+ * live market table (server event stream with polling fallback), on-server
+ * analytical engine (indicators, risk metrics, regression, Monte Carlo),
+ * exact-arithmetic converter and recurring-purchase simulator, anonymous
+ * portfolio tracker and server-evaluated alerts, correlation matrix and a
+ * transparent engine-status panel.
+ */
 export default function CryptoPage() {
-  const [items, setItems] = useState<Asset[]>([]);
-  const [asOf, setAsOf] = useState<Date | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [applied, setApplied] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [vs, setVs] = useState("usd");
+  const [tab, setTab] = useState<Tab>("market");
+  const [selected, setSelected] = useState("bitcoin");
+  const feed = useMarketFeed(vs);
+  const names = useMemo(() => Object.fromEntries(Object.entries(ASSET_META).map(([id, m]) => [id, feed.items.find((a) => a.id === id)?.name ?? m.name])), [feed.items]);
 
-  const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/crypto");
-      if (!response.ok) throw new Error("unavailable");
-      const payload = await response.json();
-      setItems(payload.items || []);
-      setAsOf(new Date());
-      setErr(null);
-    } catch {
-      setErr("Digital-asset information is temporarily unavailable.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { refresh(); }, [refresh]);
+  // Restore/persist light UI state (never market data) so a reload lands where the visitor was.
   useEffect(() => {
-    const timer = setInterval(refresh, 30_000);
-    return () => clearInterval(timer);
-  }, [refresh]);
+    try {
+      const hash = location.hash.replace("#", "") as Tab;
+      if (TABS.some((t) => t.value === hash)) setTab(hash);
+      const saved = sessionStorage.getItem("radix-crypto:ui");
+      if (saved) { const s = JSON.parse(saved) as { vs?: string; selected?: string }; if (s.vs && VS_OPTIONS.some((o) => o.value === s.vs)) setVs(s.vs); if (s.selected && s.selected in ASSET_META) setSelected(s.selected); }
+    } catch { /* corrupt state is simply ignored and overwritten */ }
+  }, []);
+  useEffect(() => { try { sessionStorage.setItem("radix-crypto:ui", JSON.stringify({ vs, selected })); } catch { /* ignore */ } }, [vs, selected]);
+  useEffect(() => { if (typeof history !== "undefined") history.replaceState(null, "", `#${tab}`); }, [tab]);
 
-  // Filtering is applied only when the visitor confirms it, so the table does
-  // not change on every keystroke.
-  const filtered = items.filter((asset) => {
-    const search = applied.trim().toLowerCase();
-    return !search || asset.name.toLowerCase().includes(search) || asset.symbol.toLowerCase().includes(search);
-  });
-  const pendingFilter = query.trim() !== applied.trim();
-
-  function applyFilter() {
-    setApplied(query.trim());
-  }
+  const [, force] = useState(0);
+  useEffect(() => { const t = setInterval(() => force((n) => n + 1), 5_000); return () => clearInterval(t); }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="mx-auto max-w-7xl px-5 py-12">
       <Reveal>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="h-title text-4xl sm:text-5xl">Bitcoin &amp; <span className="h-underline">crypto prices</span></h1>
-          <span className="chip">Market reference information</span>
+          <span className={`chip ${feed.meta.live ? "chip-live" : ""}`} aria-live="polite">
+            <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${feed.meta.live ? "bg-teal-600" : "bg-amber-500"}`} />
+            {feed.meta.live ? "Live" : feed.loading ? "Connecting" : "Degraded"} · {feed.meta.fetchedAt ? fmtAge(Date.now() - feed.meta.fetchedAt) : "…"}
+          </span>
         </div>
-        <p className="mt-3 max-w-2xl text-slate-600">
-          Price, daily movement and market summaries for selected digital assets. Values can change
-          quickly, differ between venues and may not represent a price available to you.
+        <p className="mt-3 max-w-3xl text-slate-600">
+          A computational market tool: automatically updated quotes, an on-server analytical engine (moving averages, RSI, MACD, Bollinger bands, volatility, drawdown, Value-at-Risk, regression and seeded Monte Carlo), exact-arithmetic conversion and recurring-purchase simulation, an anonymous portfolio tracker, server-evaluated alerts and a correlation matrix. Every figure states its source and age.
         </p>
       </Reveal>
 
       <Reveal delay={60}>
-        <form
-          className="mt-7 flex flex-wrap items-center gap-3"
-          aria-label="Filter digital assets"
-          onSubmit={(event) => { event.preventDefault(); applyFilter(); }}
-        >
-          <label className="sr-only" htmlFor="asset-search">Filter digital assets by name or symbol</label>
-          <input
-            id="asset-search"
-            className="input max-w-xs"
-            placeholder="Filter by name or symbol"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-describedby="asset-filter-status"
-          />
-          <button type="submit" className="btn" disabled={!pendingFilter && !applied}>
-            <Icon name="search" size={16} />
-            Filter
-          </button>
-          {applied && (
-            <button type="button" className="btn btn-ghost" onClick={() => { setQuery(""); setApplied(""); }}>
-              Clear filter
-            </button>
-          )}
-          <p id="asset-filter-status" role="status" className="confirm-status is-muted">
-            {pendingFilter
-              ? "Filter not applied yet — press Filter."
-              : applied
-                ? `Showing ${filtered.length} of ${items.length} assets matching “${applied}”.`
-                : `Showing all ${items.length} assets.`}
-          </p>
-          {asOf && <span className="text-xs text-slate-500">Displayed {asOf.toLocaleTimeString()}</span>}
-          {err && <span role="status" className="text-xs font-semibold text-rose-600">{err}</span>}
-        </form>
-      </Reveal>
-
-      <Reveal delay={90}>
-        <div className="sketch mt-4 overflow-hidden !p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b-2 border-[color:var(--line)] bg-[#fffdf5] text-left">
-                <tr>
-                  <th scope="col" className="p-3.5 font-semibold text-slate-600">#</th>
-                  <th scope="col" className="p-3.5 font-semibold text-slate-600">Asset</th>
-                  <th scope="col" className="p-3.5 text-right font-semibold text-slate-600">Price (USD)</th>
-                  <th scope="col" className="p-3.5 text-right font-semibold text-slate-600">Daily change</th>
-                  <th scope="col" className="hidden p-3.5 text-right font-semibold text-slate-600 sm:table-cell">Market size</th>
-                  <th scope="col" className="hidden p-3.5 text-right font-semibold text-slate-600 md:table-cell">Trading activity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 6 }).map((_, i) => <tr key={i} className="border-b border-[color:var(--line)]"><td colSpan={6} className="p-3"><Skeleton className="h-6 w-full" /></td></tr>)
-                  : filtered.map((asset, i) => {
-                      const change = asset.price_change_percentage_24h;
-                      const positive = (change ?? 0) >= 0;
-                      return (
-                        <tr key={asset.id} className="row-hover border-b border-[color:var(--line)] last:border-0">
-                          <td className="p-3.5 text-slate-500">{i + 1}</td>
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-2.5">
-                              <span aria-hidden className="grid h-7 w-7 place-items-center rounded-full border-2 border-[color:var(--line)] bg-[color:var(--accent-3)] text-[.55rem] font-extrabold">{asset.symbol.slice(0, 3).toUpperCase()}</span>
-                              <span className="font-semibold">{asset.name}</span>
-                              <span className="text-xs uppercase text-slate-500">{asset.symbol}</span>
-                            </div>
-                          </td>
-                          <td className="mono p-3.5 text-right font-semibold"><AnimatedNumber value={asset.current_price} format={fmt} duration={700} /></td>
-                          <td className={`mono p-3.5 text-right font-bold ${positive ? "text-teal-700" : "text-rose-600"}`}>
-                            {change !== null ? `${positive ? "+" : ""}${change.toFixed(2)}%` : "—"}
-                          </td>
-                          <td className="mono hidden p-3.5 text-right text-slate-600 sm:table-cell">{big(asset.market_cap)}</td>
-                          <td className="mono hidden p-3.5 text-right text-slate-600 md:table-cell">{big(asset.total_volume)}</td>
-                        </tr>
-                      );
-                    })}
-                {!loading && filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-500">No matching assets.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Segmented options={TABS} value={tab} onChange={setTab} ariaLabel="Crypto tool sections" />
+          <label className="ml-auto flex items-center gap-2 text-sm font-semibold">
+            <Icon name="coin" size={16} /> Quote in
+            <select className="input !py-1.5" value={vs} onChange={(e) => setVs(e.target.value)} aria-label="Quote currency">
+              {VS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
         </div>
       </Reveal>
 
-      <p className="mt-4 text-xs text-slate-500">General information only. Figures may be delayed or revised; they are not financial advice.</p>
+      <div className="mt-6">
+        {tab === "market" && <MarketPanel items={feed.items} meta={feed.meta} loading={feed.loading} error={feed.error} notice={feed.notice} vs={vs} selected={selected} onSelect={(id) => { setSelected(id); setTab("analysis"); }} onRefresh={() => void feed.refresh()} />}
+        {tab === "analysis" && <AnalysisPanel assetId={selected} vs={vs} onSelect={setSelected} names={names} />}
+        {tab === "tools" && <ToolsPanel vs={vs} items={feed.items} names={names} selected={selected} />}
+        {tab === "system" && <SystemPanel vs={vs} meta={feed.meta} />}
+      </div>
+
+      <p className="mt-6 text-xs text-slate-500">
+        Data: {sourceLabel(feed.meta.source)} with automatic failover to a secondary provider, persisted snapshots and a clearly labelled reference seed. General information only; figures may be delayed or revised and are not financial advice.
+      </p>
     </div>
   );
-}
-
-function fmt(value: number) {
-  if (value >= 1) return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
-  return `$${value.toLocaleString(undefined, { maximumSignificantDigits: 4 })}`;
-}
-function big(value: number) {
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-  return `$${value.toLocaleString()}`;
 }

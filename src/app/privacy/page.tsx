@@ -3,7 +3,6 @@ import { DataControls } from "@/components/DataControls";
 import { GdprPolicy } from "@/components/legal/GdprPolicy";
 import { CcpaPolicy } from "@/components/legal/CcpaPolicy";
 import { InternationalPrivacy } from "@/components/legal/InternationalPrivacy";
-import { RegionalPrivacyLinks } from "@/components/legal/RegionalPrivacyLinks";
 import { PrivacyChoicesLink } from "@/components/legal/PrivacyChoicesLink";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { metadataFor } from "@/lib/seo";
@@ -242,7 +241,6 @@ export default function PrivacyPage() {
           <GdprPolicy />
           <CcpaPolicy />
           <InternationalPrivacy />
-          <RegionalPrivacyLinks />
           <section id="privacy-choices" className="sketch scroll-mt-24" aria-labelledby="privacy-choices-title">
             <h2 id="privacy-choices-title" className="text-xl font-bold">Your privacy choices</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">You can review sale and sharing choices on the Do Not Sell or Share page. Browser controls may be available there. You can also contact us about a sale, sharing or related request.</p>

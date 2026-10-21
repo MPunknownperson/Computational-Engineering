@@ -19,6 +19,7 @@ import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-re
 import { ConsentManager } from "@/components/consent/ConsentManager";
 import { FastGptWidget } from "@/components/tech/FastGptWidget";
 import { fastGptWidgetConfig } from "@/lib/agent/fastgpt";
+import { ErrorReporter } from "@/components/system/ErrorReporter";
 
 export const generateMetadata = defaultMetadata;
 export const viewport: Viewport = {
@@ -72,6 +73,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </main>
         <SiteFooter />
         <ConsentManager serverRegime={serverRegime} />
+        <ErrorReporter />
         {fastGpt && <FastGptWidget scriptSrc={fastGpt.scriptSrc} botSrc={fastGpt.botSrc} />}
       </body>
     </html>
