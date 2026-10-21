@@ -8,7 +8,6 @@ import {
   installLocalSpeech, localSpeechAvailability,
   speechRecognitionAvailability, supportsOnDeviceSpeech, vibrate,
 } from "@/lib/browser-tokens";
-import { browserSpeechGuidance } from "@/lib/voice/browser-support";
 import { createNativeSession, type NativeSession } from "@/lib/voice/native-session";
 import { SHERPA_ONNX_ENGINE_ID, canUseSherpaOnnx, createSherpaSession, prepareSherpaOnnx, sherpaOnnxReady } from "@/lib/voice/sherpa-onnx";
 import { useMicrophoneEligibility, within, type MicrophoneProblem } from "@/lib/voice/use-microphone";
@@ -57,7 +56,6 @@ interface AgentReply {
   label: string | null;
   comprehension: { reply: string } | null;
 }
-const WASM_NOTE = "This browser has no built-in speech service, so recognition runs on your device with sherpa-onnx (WebAssembly). The model is downloaded once from this site; audio never leaves your browser.";
 
 function newSessionId(): string {
   try { return crypto.randomUUID(); } catch { return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`; }
@@ -77,7 +75,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   const [checkVersion, setCheckVersion] = useState(0);
   const [learned, setLearned] = useState(0);
   const [guessed, setGuessed] = useState(false);
-  const [platformNote, setPlatformNote] = useState("");
   const { problem: micProblem, recheck: recheckMicrophone, reportProblem } = useMicrophoneEligibility();
 
   const runtimeRef = useRef(new VoiceRuntime(packOrder(pack)));
@@ -112,7 +109,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
       const speechApi = speechRecognitionAvailability() !== "unavailable";
       const wasm = canUseSherpaOnnx(browserLang);
       const profile = detectPlatformProfile();
-      setPlatformNote(browserSpeechGuidance(profile));
       // Resolve policy before enabling any cloud capture. A slow geo request
       // must never briefly bypass a local-only regional policy.
       const geo = await within<PolicyResponse | null>(
@@ -440,7 +436,6 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
         </div>
       )}
       <p className="mt-3 text-xs leading-relaxed text-slate-600">{t(pack, "voice.languageNote")}</p>
-      {platformNote && <p className="mt-2 text-xs leading-relaxed text-slate-600" data-browser-speech-guidance>{engineId === SHERPA_ONNX_ENGINE_ID ? WASM_NOTE : platformNote}</p>}
       {disclosureKey && (
         <p className="mt-3 text-xs leading-relaxed text-slate-500">
           {t(pack, disclosureKey)}{" "}<Link href="/privacy#voice" className="font-bold underline underline-offset-4">{t(pack, "voice.privacyLink")}</Link>
