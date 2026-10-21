@@ -18,7 +18,7 @@ const PAGE_TONES: Array<[string, string]> = [
   ["/convert", "teal"], ["/calculate", "indigo"], ["/reference", "terra"],
   ["/guides", "blue"], ["/about", "warm"], ["/contact", "warm"],
   ["/accessibility", "warm"], ["/privacy", "slate"], ["/do-not-sell-or-share", "slate"],
-  ["/terms", "slate"], ["/disclaimer", "slate"],
+  ["/terms", "slate"], ["/disclaimer", "slate"], ["/system", "slate"],
 ];
 
 function toneForPathname(pathname: string): string {

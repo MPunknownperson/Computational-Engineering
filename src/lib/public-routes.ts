@@ -4,7 +4,7 @@ import { SEARCH_PAGES } from "@/lib/search-pages";
  * Operational pages that are real routes but are not search-facing content,
  * so they are not part of the search catalogue (and are noindex via robots).
  */
-const OPERATIONAL_PAGES = ["/voice-nlu"];
+const OPERATIONAL_PAGES = ["/voice-nlu", "/system/reliability"];
 
 /** Pages Next.js should render. Everything else is a real HTTP 404. */
 const KNOWN_PAGES = new Set([...SEARCH_PAGES.map((page) => page.path), ...OPERATIONAL_PAGES]);
