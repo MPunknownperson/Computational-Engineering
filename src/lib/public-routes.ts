@@ -6,8 +6,22 @@ import { SEARCH_PAGES } from "@/lib/search-pages";
  */
 const OPERATIONAL_PAGES = ["/voice-nlu", "/system/reliability"];
 
+/**
+ * Dedicated PWA domain path. These routes belong to the installed app shell
+ * (not to website visitors) and are noindex.
+ */
+export const PWA_PAGES = [
+  "/app",
+  "/app/home",
+  "/app/calculator",
+  "/app/convert",
+  "/app/settings",
+  "/app/offline",
+  "/app/manifest.webmanifest",
+];
+
 /** Pages Next.js should render. Everything else is a real HTTP 404. */
-const KNOWN_PAGES = new Set([...SEARCH_PAGES.map((page) => page.path), ...OPERATIONAL_PAGES]);
+const KNOWN_PAGES = new Set([...SEARCH_PAGES.map((page) => page.path), ...OPERATIONAL_PAGES, ...PWA_PAGES]);
 
 /** next.config redirects — must reach the framework, not a 404. */
 const FRAMEWORK_REDIRECTS = new Set(["/tools/markets"]);
