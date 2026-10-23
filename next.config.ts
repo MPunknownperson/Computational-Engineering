@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
         { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=604800" },
         { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
       ] },
+      { source: "/app/:path((?!manifest\\.webmanifest).*)", headers: [{ key: "Cache-Control", value: "no-store" }] },
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] },
       { source: "/app/manifest.webmanifest", headers: [{ key: "Content-Type", value: "application/manifest+json" }, { key: "Cache-Control", value: "public, max-age=3600" }] },
       { source: "/favicon.svg", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
