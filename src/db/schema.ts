@@ -263,3 +263,48 @@ export type CryptoAlert = typeof cryptoAlerts.$inferSelect;
 export type CryptoPosition = typeof cryptoPositions.$inferSelect;
 export type IncidentReport = typeof incidentReports.$inferSelect;
 export type RemediationAction = typeof remediationActions.$inferSelect;
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Native app shell (Ionic / Framework7 / Capacitor PWA)
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Payloads delivered by the OS "Share to…" sheet via the Web Share Target API. */
+export const sharedItems = pgTable("shared_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  deviceId: text("device_id").notNull().default("anonymous"),
+  title: text("title"),
+  body: text("body"),
+  url: text("url"),
+  // Parsed interpretation: what the app decided the share was (expression, unit, link…)
+  kind: text("kind").notNull().default("text"),
+  parsed: jsonb("parsed").$type<Record<string, unknown>>().notNull().default({}),
+  platform: text("platform").notNull().default("web"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("shared_items_device_idx").on(table.deviceId, table.createdAt)]);
+
+/** Feed rows rendered by the native shell with pull-to-refresh + infinite scroll. */
+export const appFeedItems = pgTable("app_feed_items", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  category: text("category").notNull().default("tool"),
+  href: text("href").notNull(),
+  icon: text("icon").notNull().default("calculator-outline"),
+  weight: integer("weight").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("app_feed_items_slug_idx").on(table.slug), index("app_feed_items_weight_idx").on(table.weight)]);
+
+/** Per-device native shell preferences (engine, mode, haptics) synced server-side. */
+export const appDevicePrefs = pgTable("app_device_prefs", {
+  deviceId: text("device_id").primaryKey(),
+  engine: text("engine").notNull().default("auto"),
+  mode: text("mode").notNull().default("auto"),
+  haptics: boolean("haptics").notNull().default(true),
+  platform: text("platform").notNull().default("web"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SharedItem = typeof sharedItems.$inferSelect;
+export type AppFeedItem = typeof appFeedItems.$inferSelect;
+export type AppDevicePrefs = typeof appDevicePrefs.$inferSelect;
