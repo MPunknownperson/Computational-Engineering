@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import "./pwa.css";
-import { PwaChrome } from "@/components/pwa/PwaChrome";
-import { ServiceWorkerBridge } from "@/components/pwa/ServiceWorkerBridge";
+import "./native.css";
 
 export const metadata: Metadata = {
-  title: { default: "Radix Loom App", template: "%s · Radix Loom App" },
-  description: "Installable offline-first engineering toolkit.",
+  title: { default: "Radix Loom", template: "%s · Radix Loom" },
+  description: "Engineering calculators, converters and analytics in a native-feel connected app.",
   applicationName: "Radix Loom",
   manifest: "/app/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Radix Loom", statusBarStyle: "black-translucent" },
@@ -29,15 +27,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // `viewport-fit: cover` lets the UI run under the notch / status bar so the
+  // app looks like system software rather than a page inside a browser.
   viewportFit: "cover",
   colorScheme: "light dark",
 };
 
-export default function PwaLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="pwa-root" data-pwa-shell>
-      <ServiceWorkerBridge />
-      <PwaChrome>{children}</PwaChrome>
-    </div>
-  );
+export default function AppShellLayout({ children }: { children: ReactNode }) {
+  return <div className="native-root">{children}</div>;
 }
