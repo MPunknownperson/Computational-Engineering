@@ -15,8 +15,9 @@ export const PWA_PAGES = [
   "/app/home",
   "/app/calculator",
   "/app/convert",
+  "/app/shared",
   "/app/settings",
-  "/app/offline",
+  "/app/share",
   "/app/manifest.webmanifest",
 ];
 
