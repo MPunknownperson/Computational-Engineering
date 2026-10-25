@@ -122,6 +122,7 @@ export const FORMULA_LIMITS = {
   description: 500,
   tags: 200,
   expression: 2000,
+  variables: 8000,
   listed: 50,
 } as const;
 
