@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ConfirmBar, ConfirmForm, LockedResult, useConfirmGate } from "@/components/Confirm";
 import { ShareCopy, WakeLockToggle } from "@/components/tech/BrowserTools";
-import { safeEvaluate } from "@/lib/math";
+import { evaluate, formatValue, type FormatOptions } from "@/lib/engine";
+import { EngineSettingsBar, useEngineSettings } from "@/components/engine/EngineUi";
 import { ExpressionAssist } from "@/components/tech/MlAssist";
 import { recordExpression } from "@/lib/ml/completion";
 import { functionalStorage } from "@/lib/privacy/browser-consent";
@@ -42,6 +43,14 @@ const KEYS: Array<{ label: string; insert: string; wide?: boolean }> = [
   { label: "0", insert: "0" }, { label: ".", insert: "." }, { label: "(", insert: "(" }, { label: ")", insert: ")" },
   { label: "+", insert: "+", wide: true }, { label: "^", insert: "^" }, { label: "%", insert: "/100" },
 ];
+const ENGINEERING: Array<{ label: string; insert: string; title: string }> = [
+  { label: "→ unit", insert: " to ", title: "convert, e.g. 5 mi to km" }, { label: "kN·m", insert: " kN*m", title: "torque / moment unit" }, { label: "MPa", insert: " MPa", title: "pressure / stress unit" },
+  { label: "°C→K", insert: " degC to K", title: "temperature conversion" }, { label: "g₀", insert: "g0", title: "standard gravity 9.80665 m/s²" }, { label: "c", insert: "speedOfLight", title: "speed of light" },
+  { label: "R̄", insert: "gasConstant", title: "molar gas constant" }, { label: "k_B", insert: "boltzmann", title: "Boltzmann constant" }, { label: "N_A", insert: "avogadro", title: "Avogadro constant" },
+  { label: "∥", insert: "par(", title: "parallel resistances par(r1, r2, …)" }, { label: "dB", insert: "db(", title: "10·log10(ratio)" }, { label: "pmt", insert: "pmt(", title: "loan payment pmt(rate, n, pv)" },
+  { label: "hex", insert: "hex(", title: "hexadecimal output" }, { label: "bin", insert: "bin(", title: "binary output" }, { label: "ʲ", insert: "i", title: "imaginary unit" },
+  { label: "∫", insert: 'integrate("', title: 'integrate("f(x)", a, b)' }, { label: "solve", insert: 'nsolve("', title: 'nsolve("f(x)", guess)' }, { label: "ans", insert: "ans", title: "previous result" },
+];
 const FUNCTIONS: Array<{ label: string; insert: string }> = [
   { label: "sin", insert: "sin(" }, { label: "cos", insert: "cos(" }, { label: "tan", insert: "tan(" },
   { label: "asin", insert: "asin(" }, { label: "acos", insert: "acos(" }, { label: "atan", insert: "atan(" },
@@ -72,6 +81,12 @@ function loadBoard(): { strokes: Stroke[]; notes: Note[] } {
 
 export function CalculatorWorkspace() {
   const functionalAllowed = useOptionalConsent("functional");
+  const [settings, updateSettings] = useEngineSettings();
+  const format = useMemo<FormatOptions>(() => ({ notation: settings.notation, precision: settings.precision }), [settings.notation, settings.precision]);
+  const [memory, setMemory] = useState<unknown>(null);
+  const [ansValue, setAnsValue] = useState<unknown>(null);
+  const [tape, setTape] = useState<Array<{ expression: string; result: string }>>([]);
+  const [keyset, setKeyset] = useState<"basic" | "functions" | "engineering">("basic");
   const [boardLoaded, setBoardLoaded] = useState(false);
   const [expression, setExpression] = useState("");
   const [mode, setMode] = useState<Mode>("draw");
@@ -87,8 +102,14 @@ export function CalculatorWorkspace() {
   const live = useRef<Stroke | null>(null);
   const drag = useRef<{ id: string; dx: number; dy: number } | null>(null);
 
-  const evaluation = safeEvaluate(expression);
-  const gate = useConfirmGate(expression, evaluation.ok);
+  const scope = useMemo(() => {
+    const s: Record<string, unknown> = {};
+    if (ansValue !== null) s.ans = ansValue;
+    if (memory !== null) s.M = memory;
+    return s;
+  }, [ansValue, memory]);
+  const evaluation = useMemo(() => evaluate(expression, scope, { angle: settings.angle, format }), [expression, scope, settings.angle, format]);
+  const gate = useConfirmGate(`${expression}|${settings.angle}|${settings.notation}|${settings.precision}`, evaluation.ok);
   const state = !expression.trim() ? "needs-input" : !evaluation.ok ? "invalid" : gate.revealed ? "revealed" : "awaiting";
   // Predictive input learns from expressions the visitor actually calculated.
   useEffect(() => { if (gate.revealed) recordExpression(expression); }, [gate.revealed, expression]);
@@ -221,7 +242,17 @@ export function CalculatorWorkspace() {
     if (!evaluation.ok) return;
     gate.confirm();
     setAns(evaluation.formatted);
+    setAnsValue(evaluation.value);
+    setTape((current) => [{ expression, result: evaluation.formatted }, ...current].slice(0, 20));
     pinResult(`${expression} = ${evaluation.formatted}`);
+  };
+  const memoryOp = (op: "M+" | "M-" | "MR" | "MC") => {
+    if (op === "MC") { setMemory(null); return; }
+    if (op === "MR") { insert("M"); return; }
+    if (!evaluation.ok) return;
+    const current = memory === null ? 0 : memory;
+    const next = evaluate(op === "M+" ? "a + b" : "a - b", { a: current, b: evaluation.value });
+    if (next.ok) setMemory(next.value);
   };
 
   const startNoteDrag = (event: ReactPointerEvent<HTMLButtonElement>, note: Note) => {
@@ -251,8 +282,11 @@ export function CalculatorWorkspace() {
       </p>
 
       <div className="sketch mt-6 flex flex-wrap items-center gap-x-8 gap-y-4">
-        <WakeLockToggle />
-        <ShareCopy title="Calculator" text={expression ? `Expression: ${expression}` : "Calculator blackboard"} href="/tools/calculator" />
+        <EngineSettingsBar settings={settings} onChange={(patch) => { updateSettings(patch); gate.reset(); }} compact />
+        <div className="ml-auto flex flex-wrap items-center gap-x-6 gap-y-3">
+          <WakeLockToggle />
+          <ShareCopy title="Calculator" text={expression ? `Expression: ${expression}` : "Calculator blackboard"} href="/tools/calculator" />
+        </div>
       </div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -326,12 +360,13 @@ export function CalculatorWorkspace() {
             />
             <ExpressionAssist inputId="board-expression" expression={expression} onApply={(next) => { setExpression(next); gate.reset(); }} />
             <div id="board-result" role="status" aria-live="polite" className={`result-panel mt-4 ${gate.revealed ? "is-revealed" : "is-locked"}`}>
-              <div className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Result</div>
+              <div className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Result{gate.revealed && evaluation.ok ? ` · ${evaluation.type}` : ""}</div>
               {gate.revealed
                 ? evaluation.ok
                   ? <div className="mono mt-2 break-all text-2xl font-extrabold">= {evaluation.formatted}</div>
                   : <div className="mt-2 font-semibold text-rose-600">{evaluation.error}</div>
                 : <div className="mt-2"><LockedResult label="Result hidden until you press Calculate." /></div>}
+              {gate.revealed && evaluation.ok && settings.notation !== "auto" && <div className="mt-2 text-xs text-slate-500">Full precision: <span className="mono">{formatValue(evaluation.value, { precision: 20 })}</span></div>}
             </div>
             <ConfirmBar
               id="board-confirm"
@@ -345,23 +380,61 @@ export function CalculatorWorkspace() {
             />
           </ConfirmForm>
 
-          <div className="mt-5 grid grid-cols-4 gap-1.5" aria-label="Digits and operators">
-            {KEYS.map((key) => (
-              <button key={key.label} type="button" className={`board-key ${key.wide ? "is-wide" : ""}`} onClick={() => insert(key.insert)}>{key.label}</button>
+          <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Key sets">
+            {(["basic", "functions", "engineering"] as const).map((item) => (
+              <button key={item} type="button" role="tab" aria-selected={keyset === item} className={`chip !min-h-8 ${keyset === item ? "!bg-[color:var(--accent-3)]" : ""}`} onClick={() => setKeyset(item)}>
+                {item === "basic" ? "Keys" : item === "functions" ? "Functions" : "Engineering"}
+              </button>
             ))}
-            <button type="button" className="board-key" onClick={() => setExpression((current) => current.slice(0, -1))} aria-label="Backspace">⌫</button>
-            <button type="button" className="board-key" onClick={() => { setExpression(""); gate.reset(); }}>C</button>
-            <button type="button" className="board-key" disabled={!ans} onClick={() => insert(ans ?? "")}>Ans</button>
           </div>
 
-          <p className="mt-4 text-xs font-bold uppercase tracking-wider text-slate-500">Functions</p>
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
-            {FUNCTIONS.map((item) => (
-              <button key={item.label} type="button" className="board-key" onClick={() => insert(item.insert)}>{item.label}</button>
-            ))}
-          </div>
+          {keyset === "basic" && (
+            <div className="mt-3 grid grid-cols-4 gap-1.5" aria-label="Digits and operators">
+              {KEYS.map((key) => (
+                <button key={key.label} type="button" className={`board-key ${key.wide ? "is-wide" : ""}`} onClick={() => insert(key.insert)}>{key.label}</button>
+              ))}
+              <button type="button" className="board-key" onClick={() => setExpression((current) => current.slice(0, -1))} aria-label="Backspace">⌫</button>
+              <button type="button" className="board-key" onClick={() => { setExpression(""); gate.reset(); }}>C</button>
+              <button type="button" className="board-key" disabled={!ans} onClick={() => insert("ans")}>Ans</button>
+              <button type="button" className="board-key" onClick={() => memoryOp("M+")} disabled={!evaluation.ok} title="Add the current result to memory">M+</button>
+              <button type="button" className="board-key" onClick={() => memoryOp("M-")} disabled={!evaluation.ok} title="Subtract the current result from memory">M−</button>
+              <button type="button" className="board-key" onClick={() => memoryOp("MR")} disabled={memory === null} title="Insert memory (M)">MR</button>
+              <button type="button" className="board-key" onClick={() => memoryOp("MC")} disabled={memory === null} title="Clear memory">MC</button>
+            </div>
+          )}
+          {keyset === "functions" && (
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              {FUNCTIONS.map((item) => (
+                <button key={item.label} type="button" className="board-key" onClick={() => insert(item.insert)}>{item.label}</button>
+              ))}
+            </div>
+          )}
+          {keyset === "engineering" && (
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              {ENGINEERING.map((item) => (
+                <button key={item.label} type="button" className="board-key !text-xs" title={item.title} onClick={() => insert(item.insert)}>{item.label}</button>
+              ))}
+            </div>
+          )}
+          {memory !== null && <p className="mono mt-2 text-xs text-slate-500">M = {formatValue(memory, format)}</p>}
+
+          {tape.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tape</p>
+              <ul className="mt-1.5 max-h-40 space-y-1 overflow-y-auto">
+                {tape.map((item, index) => (
+                  <li key={`${item.expression}-${index}`}>
+                    <button type="button" className="w-full rounded-lg border border-[color:var(--line)] px-2 py-1 text-left row-hover" onClick={() => { setExpression(item.expression); gate.reset(); }}>
+                      <span className="mono block truncate text-[.7rem] text-slate-500">{item.expression}</span>
+                      <span className="mono block truncate text-xs font-bold">= {item.result}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="mt-4 text-xs leading-relaxed text-slate-500">
-            Chalk, typed notes and the last expression stay in this browser until you clear the board. Nothing is uploaded.
+            Decimal arithmetic with units, constants and <span className="mono">ans</span>/<span className="mono">M</span> registers (try <span className="mono">5 mi to km</span> or <span className="mono">200 * 12%</span>). Chalk, notes and the last expression stay in this browser until you clear the board. Nothing is uploaded.
           </p>
         </aside>
       </div>
