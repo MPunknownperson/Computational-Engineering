@@ -83,6 +83,8 @@ export const formulas = pgTable("formulas", {
   expression: text("expression").notNull(),
   description: text("description"),
   tags: text("tags"), // comma-separated
+  // JSON: { variables: [{ name, value, description?, uncertainty? }], resultUnit? }
+  variables: text("variables"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
