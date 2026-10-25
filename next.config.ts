@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/tools/markets", destination: "/tools/currency", permanent: true }];
   },
+  // The native shell used to be an optional catch-all route folder named
+  // `[[...slug]]`. That folder name blocked the GitHub import and collided with
+  // the static /app page, so deep links are now rewritten (after the
+  // filesystem routes are checked) to a plainly named /app/shell page.
+  async rewrites() {
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        { source: "/app/:tab/:rest*", destination: "/app/shell?tab=:tab" },
+        { source: "/app/:tab", destination: "/app/shell?tab=:tab" },
+      ],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       { source: "/:path*", headers: [

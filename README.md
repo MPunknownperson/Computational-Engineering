@@ -3,6 +3,18 @@
 This deployment replaces the previous site with the project downloaded from:
 https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/main.zip
 
+## What changed in this deployment
+
+- **Route fix** — the optional catch-all folder `src/app/app/[[...slug]]` (whose bracketed, dotted name blocked the GitHub import and collided with the static `/app` page) is gone. `/app/shell` plus an `afterFiles` rewrite in `next.config.ts` now serves deep links such as `/app/calculator/history`; `/app/shared` has a plain page.
+- **Dark mode** — the speech-recognition guide (`/guides/voice-coach`) and the guides index used hard-coded white panels and light icon tiles; they now use theme-aware classes with explicit dark rules (`.voice-path__*`, `.icon-tile` in dark).
+- **Rive** — `src/components/rive/RiveReactor.tsx` renders a Rive state machine (`public/vendor/rive/login-teddy.riv`, override with `NEXT_PUBLIC_RIVE_SRC`) whose inputs are driven live by pointer position, typed characters (focus boolean, caret-tracking number input, Enter/clear triggers) and device-motion shake intensity (with the iOS permission flow). Inputs are discovered by type/name so other `.riv` files work; a drawn fallback reacts to the same signals when the WASM runtime cannot load. Mounted on the home page.
+- **Computation engine** (`src/lib/engine/`) — a new engineering-grade core shared by the standard calculator, scientific calculator, custom-formula tool, voice executor and `/api/engine`:
+  - `core.ts`: 64-digit decimal evaluator plus a fast double-precision evaluator behind one grammar policy; complex numbers, matrices, physical units and constants, degree/radian/gradian modes, percent and base literals, engineering/sci/fixed/fraction formatting; numeric extensions (`nsolve`, `roots`, `integrate`, `diff`, `summation`, `odesolve`, `polyfit`, `linreg`, `interp`, `pmt/fv/pv/npv/irr`, `par`, `db`, …).
+  - `analysis.ts`: symbolic derivatives, Richardson derivatives, adaptive Gauss–Kronrod quadrature (improper limits included), multi-root scanning with Brent refinement, extrema, Taylor series, numeric limits, exact linear/quadratic/cubic solving with numeric fallback, linear-system extraction + LU solve, descriptive statistics.
+  - `session.ts`: notebook evaluation with persistent scope, user functions and `ans`.
+  - `formula.ts`: formula model with unit-bearing variables and ± uncertainties, solve-for-any-variable, parameter sweeps, sensitivity (elasticities) and Monte-Carlo-checked uncertainty propagation; a 20-entry engineering library.
+  - UI: `/tools/calculator` (engine settings, memory registers, tape, engineering keys), `/tools/scientific` (Expression · Notebook · Solve · Calculus & plot · Data), `/tools/formula` (variable table with units, library, analyses). Saved formulas now persist their variable table (`formulas.variables`).
+
 ## Run
 
 Install dependencies, set `DATABASE_URL`, apply the Drizzle schema with `npx drizzle-kit push`, then use `npm run dev` or build for production. Existing legacy database records are preserved, but their previous public application routes are removed. The health endpoint is `/api/health`.
