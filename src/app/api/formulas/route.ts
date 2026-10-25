@@ -35,12 +35,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const { workspace, name, expression, description, tags } = body || {};
+  const { workspace, name, expression, description, tags, variables } = body || {};
   if (typeof workspace !== "string" || !WS.test(workspace) || !name || !expression) {
     return NextResponse.json({ error: "workspace, name and expression required" }, { status: 400 });
   }
   if (typeof expression !== "string" || expression.length > L.expression) {
     return NextResponse.json({ error: "expression too long" }, { status: 400 });
+  }
+  let storedVariables: string | null = null;
+  if (variables !== undefined && variables !== null) {
+    const serialised = typeof variables === "string" ? variables : JSON.stringify(variables);
+    if (serialised.length > L.variables) return NextResponse.json({ error: "variables too long" }, { status: 400 });
+    try { JSON.parse(serialised); storedVariables = serialised; } catch { return NextResponse.json({ error: "variables must be JSON" }, { status: 400 }); }
   }
   const [row] = await db
     .insert(formulas)
@@ -50,6 +56,7 @@ export async function POST(req: NextRequest) {
       expression,
       description: description ? String(description).slice(0, L.description) : null,
       tags: tags ? String(tags).slice(0, L.tags) : null,
+      variables: storedVariables,
     })
     .returning();
   return NextResponse.json({ item: row });

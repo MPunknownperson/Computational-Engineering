@@ -443,6 +443,30 @@ html[data-theme="dark"] [class*="border-slate-200"],
 html[data-theme="dark"] [class*="border-slate-300"],
 html[data-theme="dark"] [class*="border-gray-200"] { border-color: #40516d !important; }
 html[data-theme="dark"] .guide-teaser-figure { background: #202d46; }
+/* Voice learning-path guide (speech recognition): explicit light + dark surfaces
+   instead of hard-coded white panels, so the page reads correctly in both themes. */
+.voice-path__tile { background: var(--accent-3); color: #0b1020; }
+.voice-path__body { background: #fffdf5; }
+.voice-path__node, .voice-path__phrase { background: #fff; }
+.voice-path__opens { color: #146c3a; }
+.voice-path__cta { background: #0b1020; }
+.voice-path__cta-title { color: #fff; }
+.voice-path__cta-body { color: #cbd5e1; }
+.icon-tile--voice { background: var(--accent-2); color: #fff; }
+html[data-theme="dark"] .icon-tile { color: #0b1020; }
+html[data-theme="dark"] .icon-tile--ink { background: #eef3ff; color: #0b1020; }
+html[data-theme="dark"] .icon-tile--voice { background: #a5c2ff; color: #0b1020; }
+html[data-theme="dark"] .voice-path__tile { background: #f3c571; color: #0b1020; }
+html[data-theme="dark"] .voice-path__body { background: #1b2740; }
+html[data-theme="dark"] .voice-path__node, html[data-theme="dark"] .voice-path__phrase { background: #243454; color: var(--ink); }
+html[data-theme="dark"] .voice-path__opens { color: #9de5ae; }
+html[data-theme="dark"] .voice-path__cta { background: #0f1830; border-color: #687b9a; }
+html[data-theme="dark"] .voice-path__cta-title { color: #f3f6ff; }
+html[data-theme="dark"] .voice-path__cta-body { color: #c5d2ea; }
+html[data-theme="dark"] .guide-image { background-color: #fffdf5 !important; }
+html[data-theme="dark"] [class*="bg-[#fff8dc]"] { background-color: #3a3420 !important; color: #f3ead0; }
+html[data-theme="dark"] [class*="text-slate-300"] { color: #c5d2ea; }
+html[data-theme="dark"] .text-rose-600 { color: #ff9eb0 !important; }
 html[data-theme="dark"] table tbody tr { border-color: #40516d; }
 html[data-theme="dark"] ::selection { color: #101a27; background: #c1df8f; }
 
@@ -552,3 +576,30 @@ body { font-family: "DM Sans Variable", Arial, sans-serif; }
 /* Managed prompts are non-blocking but always readable until a choice is made. */
 #stcm-banner { max-height: min(76vh, 680px); overflow-y: auto; }
 #stcm-modal { max-height: 90dvh; }
+
+/* --------------------------------------------------------------------------
+   Rive reactive stage
+   -------------------------------------------------------------------------- */
+.rive-reactor { display: grid; gap: 1rem; }
+.rive-stage { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border: 2px solid var(--line); border-radius: 18px; background: radial-gradient(circle at 50% 35%, #e3ecff 0, #c9daff 55%, #b4c8f7 100%); box-shadow: var(--shadow-ink-sm); touch-action: none; cursor: crosshair; }
+.rive-reactor.is-compact .rive-stage { aspect-ratio: 16 / 9; }
+.rive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rive-loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: .8rem; font-weight: 700; color: #38445e; }
+.rive-pointer { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--line); border-radius: 999px; background: rgba(255,210,63,.85); pointer-events: none; transition: left 80ms linear, top 80ms linear; }
+.rive-meter { height: 8px; overflow: hidden; border: 2px solid var(--line); border-radius: 999px; background: var(--paper-2); }
+.rive-meter > span { display: block; height: 100%; background: linear-gradient(90deg, #4ade80, #ffd23f 60%, #ff6b4a); transition: width 120ms linear; }
+html[data-theme="dark"] .rive-stage { background: radial-gradient(circle at 50% 35%, #2b3c63 0, #1f2d4d 55%, #182440 100%); }
+html[data-theme="dark"] .rive-loading { color: #d7e1f4; }
+
+/* Engine plots (SVG) */
+.engine-plot__grid { stroke: rgba(26,32,64,.12); stroke-width: 1; }
+.engine-plot__axis { stroke: var(--line); stroke-width: 1.5; }
+.engine-plot__line { stroke: var(--accent-2); }
+.engine-plot__tick { fill: #38445e; }
+.engine-plot__mark circle { fill: #ffd23f; stroke: var(--line); stroke-width: 2; }
+.engine-plot__mark.is-min circle { fill: #4ade80; }
+.engine-plot__mark.is-max circle { fill: #ff9a7e; }
+.engine-plot__mark text { fill: var(--ink); }
+html[data-theme="dark"] .engine-plot__grid { stroke: rgba(184,202,241,.14); }
+html[data-theme="dark"] .engine-plot__tick { fill: #c5d2ea; }
+html[data-theme="dark"] .engine-plot__line { stroke: #a5c2ff; }
