@@ -57,13 +57,13 @@ export default function VoiceCoachPage() {
               <Reveal key={lang} delay={Math.min(index, 4) * 40}>
                 <details className="group sketch !p-0 overflow-hidden" open={lang === "en"}>
                   <summary className="flex cursor-pointer list-none items-center gap-3.5 px-5 py-4 marker:content-none [&::-webkit-details-marker]:hidden">
-                    <span className="icon-tile !h-11 !w-11 !rounded-[14px]" style={{ background: "var(--accent-3)" }}>
+                    <span className="icon-tile voice-path__tile !h-11 !w-11 !rounded-[14px]">
                       <Icon name="language" size={19} strokeWidth={2.1} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-baseline gap-2">
                         <span className="text-lg font-extrabold tracking-tight">{pack.name}</span>
-                        <span className="text-sm font-semibold text-slate-500">{pack.nativeName}</span>
+                        <span className="text-sm font-semibold text-slate-500" lang={lang}>{pack.nativeName}</span>
                       </span>
                       <span className="block text-xs font-semibold uppercase tracking-widest text-slate-500">
                         {path.units.length} units · {path.units.length * 3} example commands
@@ -72,11 +72,11 @@ export default function VoiceCoachPage() {
                     <Icon name="chevron" size={20} className="shrink-0 text-slate-500 transition-transform duration-300 group-open:rotate-180" />
                   </summary>
 
-                  <div className="border-t-2 border-[color:var(--line)] bg-[#fffdf5] px-5 py-6 sm:px-7">
+                  <div className="voice-path__body border-t-2 border-[color:var(--line)] px-5 py-6 sm:px-7">
                     <ol className="relative space-y-6 before:absolute before:bottom-2 before:left-[21px] before:top-2 before:w-0.5 before:border-l-2 before:border-dashed before:border-[color:var(--line)] before:content-['']">
                       {path.units.map((unit, unitIndex) => (
                         <li key={unit.id} className="relative pl-14">
-                          <span className="absolute left-0 top-0 grid h-11 w-11 place-items-center rounded-full border-2 border-[color:var(--line)] bg-white shadow-[2px_2px_0_0_var(--line)]">
+                          <span className="voice-path__node absolute left-0 top-0 grid h-11 w-11 place-items-center rounded-full border-2 border-[color:var(--line)] shadow-[2px_2px_0_0_var(--line)]">
                             <Icon name={unit.icon} size={19} strokeWidth={2.1} />
                           </span>
                           <div className="sketch-sm">
@@ -85,10 +85,10 @@ export default function VoiceCoachPage() {
                             <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{unit.canDo}</p>
                             <ul className="mt-3.5 space-y-2.5">
                               {unit.phrases.map((phrase) => (
-                                <li key={phrase.speech} className="rounded-xl border border-[color:var(--line)] bg-white px-3.5 py-2.5">
+                                <li key={phrase.speech} className="voice-path__phrase rounded-xl border border-[color:var(--line)] px-3.5 py-2.5">
                                   <p className="mono text-sm font-bold text-[color:var(--ink)]">&ldquo;{phrase.speech}&rdquo;</p>
                                   <p className="mt-1 text-xs text-slate-500">{phrase.meaning}</p>
-                                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-[#146c3a]">
+                                  <p className="voice-path__opens mt-1.5 flex items-center gap-1.5 text-xs font-bold">
                                     <Icon name="arrow-right" size={13} />{phrase.opens}
                                   </p>
                                 </li>
@@ -106,9 +106,9 @@ export default function VoiceCoachPage() {
         </div>
 
         <Reveal>
-          <div className="mt-12 rounded-[24px] border-2 border-[color:var(--line)] bg-[#0b1020] p-8 text-center shadow-[var(--shadow-ink-lg)] sm:p-10">
-            <h2 className="text-2xl font-extrabold text-white sm:text-3xl">Try it with your own voice</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-300">
+          <div className="voice-path__cta mt-12 rounded-[24px] border-2 border-[color:var(--line)] p-8 text-center shadow-[var(--shadow-ink-lg)] sm:p-10">
+            <h2 className="voice-path__cta-title text-2xl font-extrabold sm:text-3xl">Try it with your own voice</h2>
+            <p className="voice-path__cta-body mx-auto mt-3 max-w-xl text-sm leading-relaxed">
               Every phrase above works on the calculators page right now. Recognition runs on your
               device or through your browser&apos;s own speech service — never uploaded to this site.
             </p>

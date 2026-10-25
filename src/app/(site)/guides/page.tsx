@@ -26,7 +26,7 @@ export default function GuidesPage() {
 
       <section className="mt-10" aria-labelledby="voice-coach-heading">
         <Link href="/guides/voice-coach" className="sketch card-hover flex flex-wrap items-center gap-5 !bg-[#eef3ff]">
-          <span className="icon-tile !bg-[color:var(--accent-2)] !text-white">
+          <span className="icon-tile icon-tile--voice">
             <Icon name="language" size={21} strokeWidth={2.1} />
           </span>
           <span className="min-w-0 flex-1">
