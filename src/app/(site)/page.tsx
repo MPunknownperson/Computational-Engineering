@@ -10,7 +10,6 @@ import { Icon, type IconName } from "@/components/Icons";
 import { MotionCard, Reveal } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
 import { FormulaLibrary } from "@/components/home/Sections";
-import { RiveShowcase } from "@/components/rive/RiveShowcase";
 import { SITE } from "@/lib/site";
 import { CURRENCIES, COUNTRIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, CRYPTO_IDS, INDICATORS } from "@/lib/catalog";
 
@@ -81,8 +80,6 @@ export default function Home() {
           <Reveal delay={120}><HeroIllustration /></Reveal>
         </div>
       </section>
-
-      <RiveShowcase />
 
       <section className="mx-auto max-w-7xl px-5 py-12" aria-labelledby="voice-heading">
         <div className="sketch overflow-hidden !p-0">

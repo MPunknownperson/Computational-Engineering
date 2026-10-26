@@ -10,7 +10,7 @@ import { SystemPanel } from "@/components/crypto/SystemPanel";
 import { fmtAge, sourceLabel, useMarketFeed, VS_OPTIONS } from "@/components/crypto/use-crypto";
 
 type Tab = "market" | "analysis" | "tools" | "system";
-const TABS: Array<{ value: Tab; label: string }> = [{ value: "market", label: "Market" }, { value: "analysis", label: "Analysis" }, { value: "tools", label: "Tools" }, { value: "system", label: "Correlation & engine" }];
+const TABS: Array<{ value: Tab; label: string }> = [{ value: "market", label: "Market" }, { value: "analysis", label: "Analysis" }, { value: "tools", label: "Tools" }, { value: "system", label: "Correlation" }];
 
 /**
  * Bitcoin & crypto prices — a computational tool rather than a price list:
@@ -73,7 +73,7 @@ export default function CryptoPage() {
         {tab === "market" && <MarketPanel items={feed.items} meta={feed.meta} loading={feed.loading} error={feed.error} notice={feed.notice} vs={vs} selected={selected} onSelect={(id) => { setSelected(id); setTab("analysis"); }} onRefresh={() => void feed.refresh()} />}
         {tab === "analysis" && <AnalysisPanel assetId={selected} vs={vs} onSelect={setSelected} names={names} />}
         {tab === "tools" && <ToolsPanel vs={vs} items={feed.items} names={names} selected={selected} />}
-        {tab === "system" && <SystemPanel vs={vs} meta={feed.meta} />}
+        {tab === "system" && <SystemPanel vs={vs} />}
       </div>
 
       <p className="mt-6 text-xs text-slate-500">

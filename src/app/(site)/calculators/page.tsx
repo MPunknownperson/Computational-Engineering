@@ -122,8 +122,8 @@ export default async function CalculatorsPage() {
       </Reveal>
 
       <Reveal delay={130}>
-        <div className="sketch mt-12 flex flex-wrap items-center justify-between gap-5 !bg-[color:var(--ink)] !text-white">
-          <div><h2 className="text-xl font-extrabold">Need to calculate a different expression?</h2><p className="mt-1 text-sm text-slate-300">Enter your own expression and values in the custom formula tool.</p></div>
+        <div className="sketch cta-ink mt-12 flex flex-wrap items-center justify-between gap-5">
+          <div><h2 className="text-xl font-extrabold">Need to calculate a different expression?</h2><p className="cta-ink__body mt-1 text-sm">Enter your own expression and values in the custom formula tool.</p></div>
           <Link href="/tools/formula" className="btn btn-primary">Open custom formulas <Icon name="arrow-right" size={16} /></Link>
         </div>
       </Reveal>

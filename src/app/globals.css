@@ -603,3 +603,11 @@ html[data-theme="dark"] .rive-loading { color: #d7e1f4; }
 html[data-theme="dark"] .engine-plot__grid { stroke: rgba(184,202,241,.14); }
 html[data-theme="dark"] .engine-plot__tick { fill: #c5d2ea; }
 html[data-theme="dark"] .engine-plot__line { stroke: #a5c2ff; }
+
+/* Inverted call-to-action panels. These used to hard-code an ink background
+   with white text, which inverted into an unreadable light-on-light panel as
+   soon as dark mode was enabled. */
+.cta-ink { background-color: #0b1020 !important; color: #fff !important; border-color: var(--line); }
+.cta-ink__body { color: #cbd5e1 !important; }
+html[data-theme="dark"] .cta-ink { background-color: #0f1830 !important; color: #f3f6ff !important; border-color: #687b9a; }
+html[data-theme="dark"] .cta-ink__body { color: #c5d2ea !important; }

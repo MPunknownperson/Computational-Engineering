@@ -4,7 +4,7 @@ import "@fontsource-variable/dm-sans";
 import "./globals.css";
 import "@/components/consent/consent-theme.css";
 import { defaultMetadata } from "@/lib/seo";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { consentAreaFromHeaders } from "@/lib/privacy/consent-location";
 import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-regime";
 
@@ -17,13 +17,21 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-// Runs before hydration so system-dark devices never flash the day palette.
-const appearanceScript = `(function(){try{var r=document.documentElement.dataset.consentRegime;var p='stcm.radixloom-v2-'+r+'.';var allowed=localStorage.getItem(p+'hasConsented')==='1'&&localStorage.getItem(p+'consent.functional')==='true';var saved=allowed?localStorage.getItem('radix-loom-theme'):null;var mode=(saved==='dark'||saved==='light')?saved:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;}catch(e){document.documentElement.dataset.theme='light';}})();`;
+// Runs before hydration so neither a system-dark device nor a visitor who
+// chose dark mode ever sees a flash of the day palette.
+//
+// The appearance choice is a strictly necessary interface preference: it is
+// stored for everyone (cookie + localStorage) and never depends on optional
+// consent, which previously made the toggle reset on every navigation.
+const appearanceScript = `(function(){try{var saved=null;var m=document.cookie.match(/(?:^|; )radix-loom-theme=(dark|light)/);if(m)saved=m[1];if(!saved){var ls=localStorage.getItem('radix-loom-theme');if(ls==='dark'||ls==='light')saved=ls;}var mode=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',mode==='dark'?'#141d30':'#f7f5ef');}catch(e){document.documentElement.dataset.theme='light';}})();`;
 
 const TONES = new Set(["home", "ink", "indigo", "teal", "terra", "violet", "rose", "green", "blue", "warm", "slate"]);
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers();
+  const cookieStore = await cookies();
+  const storedTheme = cookieStore.get("radix-loom-theme")?.value;
+  const theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : undefined;
   const rawTone = requestHeaders.get("x-page-tone") ?? "home";
   const tone = TONES.has(rawTone) ? rawTone : "home";
   const serverRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
@@ -31,6 +39,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang="en"
+      data-theme={theme}
+      style={theme ? { colorScheme: theme } : undefined}
       data-consent-regime={consentRegime}
       data-consent-location={serverRegime === "unknown" ? "unverified" : "verified"}
       suppressHydrationWarning
