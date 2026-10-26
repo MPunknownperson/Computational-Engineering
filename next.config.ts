@@ -9,20 +9,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/tools/markets", destination: "/tools/currency", permanent: true }];
   },
-  // The native shell used to be an optional catch-all route folder named
-  // `[[...slug]]`. That folder name blocked the GitHub import and collided with
-  // the static /app page, so deep links are now rewritten (after the
-  // filesystem routes are checked) to a plainly named /app/shell page.
-  async rewrites() {
-    return {
-      beforeFiles: [],
-      afterFiles: [
-        { source: "/app/:tab/:rest*", destination: "/app/shell?tab=:tab" },
-        { source: "/app/:tab", destination: "/app/shell?tab=:tab" },
-      ],
-      fallback: [],
-    };
-  },
   async headers() {
     return [
       { source: "/:path*", headers: [
@@ -49,9 +35,6 @@ const nextConfig: NextConfig = {
         { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=604800" },
         { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
       ] },
-      { source: "/app/:path((?!manifest\\.webmanifest).*)", headers: [{ key: "Cache-Control", value: "no-store" }] },
-      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] },
-      { source: "/app/manifest.webmanifest", headers: [{ key: "Content-Type", value: "application/manifest+json" }, { key: "Cache-Control", value: "public, max-age=3600" }] },
       { source: "/favicon.svg", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
     ];
   },
