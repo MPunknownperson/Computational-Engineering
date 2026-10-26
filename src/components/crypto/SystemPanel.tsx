@@ -1,27 +1,15 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icons";
 import { Skeleton } from "@/components/Motion";
 import type { CorrelationReport } from "@/lib/crypto/service";
 import { Heatmap } from "./charts";
-import { apiFetch, fmtAge, sourceLabel, type ApiError, type FeedMeta } from "./use-crypto";
+import { apiFetch, sourceLabel, type ApiError } from "./use-crypto";
 
-type Engine = {
-  now: number;
-  feed: { source: string; fetchedAt: number; ageMs: number; state: string; live: boolean; assets: number; attempts: Array<{ provider: string; ok: boolean; ms: number; error?: string }> } | null;
-  scheduler: { running: boolean; ticks: number; lastTickAt: number | null; lastDurationMs: number; lastError: string | null; lastSource: string | null; alertsTriggered: number; intervalMs: number };
-  runtime: { primaryProvider: string; cacheTtlMs: number; timeoutMs: number; historyTtlMs: number; clientPollMs: number; transport: string; streamPushMs: number };
-  breakers: Array<{ name: string; state: string; failures: number; totalCalls: number; totalFailures: number; reopensInMs: number; lastError: string | null }>;
-  caches: Array<{ name: string; entries: number; hits: number; misses: number; staleServed: number; coalesced: number; refreshErrors: number }>;
-  persistence: { snapshots: number; oldestSnapshot: string | null; historySeries: number };
-};
-
-export function SystemPanel({ vs, meta }: { vs: string; meta: FeedMeta }) {
+export function SystemPanel({ vs }: { vs: string }) {
   const [corr, setCorr] = useState<CorrelationReport | null>(null);
   const [corrError, setCorrError] = useState<string | null>(null);
   const [days, setDays] = useState(90);
-  const [engine, setEngine] = useState<Engine | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,14 +17,6 @@ export function SystemPanel({ vs, meta }: { vs: string; meta: FeedMeta }) {
     apiFetch<CorrelationReport>(`/api/crypto/correlation?vs=${vs}&days=${days}`, { userAction: "correlation" }).then((r) => { if (!cancelled) setCorr(r); }).catch((e: ApiError) => { if (!cancelled) setCorrError(e.message); });
     return () => { cancelled = true; };
   }, [vs, days]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = () => apiFetch<Engine>("/api/crypto/engine", { userAction: "engine-status" }).then((e) => { if (!cancelled) setEngine(e); }).catch(() => undefined);
-    void load();
-    const t = setInterval(load, 15_000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, []);
 
   return (
     <div className="space-y-5">
@@ -63,55 +43,7 @@ export function SystemPanel({ vs, meta }: { vs: string; meta: FeedMeta }) {
         )}
       </section>
 
-      <section className="sketch" aria-labelledby="engine-title">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="engine-title" className="flex items-center gap-2 text-xl font-extrabold"><Icon name="gauge" size={18} /> Engine status</h2>
-          <Link href="/system/reliability" className="btn btn-ghost !py-1 text-sm"><Icon name="shield" size={14} /> Reliability console</Link>
-        </div>
-        {!engine ? <Skeleton className="mt-4 h-40 w-full" /> : (
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Block title="Live feed">
-              <Row k="Source" v={engine.feed ? sourceLabel(engine.feed.source) : "warming"} />
-              <Row k="Server data age" v={engine.feed ? fmtAge(engine.now - engine.feed.fetchedAt) : "—"} />
-              <Row k="Cache state" v={engine.feed?.state ?? "—"} />
-              <Row k="Browser transport" v={`${meta.transport}${meta.seq ? ` · seq ${meta.seq}` : ""}`} />
-              <Row k="Browser last event" v={meta.lastEventAt ? fmtAge(Date.now() - meta.lastEventAt) : "—"} />
-              <Row k="Stream errors / reconnects" v={`${meta.errors} / ${meta.reconnects}`} />
-            </Block>
-            <Block title="Automated scheduler">
-              <Row k="Running" v={engine.scheduler.running ? "yes" : "no"} />
-              <Row k="Interval" v={`${(engine.scheduler.intervalMs / 1000).toFixed(0)} s`} />
-              <Row k="Ticks" v={String(engine.scheduler.ticks)} />
-              <Row k="Last tick" v={engine.scheduler.lastTickAt ? `${fmtAge(engine.now - engine.scheduler.lastTickAt)} (${engine.scheduler.lastDurationMs} ms)` : "pending"} />
-              <Row k="Last source" v={engine.scheduler.lastSource ?? "—"} />
-              <Row k="Alerts triggered" v={String(engine.scheduler.alertsTriggered)} />
-              {engine.scheduler.lastError && <Row k="Last error" v={engine.scheduler.lastError} />}
-            </Block>
-            <Block title="Runtime configuration">
-              <Row k="Primary provider" v={engine.runtime.primaryProvider} />
-              <Row k="Cache TTL" v={`${engine.runtime.cacheTtlMs / 1000} s`} />
-              <Row k="Upstream timeout" v={`${engine.runtime.timeoutMs} ms`} />
-              <Row k="History TTL" v={`${engine.runtime.historyTtlMs / 60000} min`} />
-              <Row k="Stream push" v={`${engine.runtime.streamPushMs / 1000} s`} />
-              <Row k="Persisted snapshots" v={`${engine.persistence.snapshots.toLocaleString()} rows`} />
-              <Row k="History series cached" v={String(engine.persistence.historySeries)} />
-            </Block>
-            <Block title="Circuit breakers & caches">
-              {engine.breakers.length === 0 && <p className="text-sm text-slate-500">No upstream calls yet.</p>}
-              {engine.breakers.map((b) => <Row key={b.name} k={b.name} v={`${b.state}${b.state === "open" ? ` (${Math.ceil(b.reopensInMs / 1000)}s)` : ""} · ${b.totalFailures}/${b.totalCalls} failed`} />)}
-              {engine.caches.map((c) => <Row key={c.name} k={c.name.replace("crypto:", "cache ")} v={`${c.entries} entries · ${c.hits} hits · ${c.staleServed} stale · ${c.coalesced} coalesced`} />)}
-              {engine.feed?.attempts && engine.feed.attempts.length > 0 && <p className="mt-1 text-xs text-slate-500">Last provider chain: {engine.feed.attempts.map((a) => `${a.provider} ${a.ok ? "✓" : "✗"} ${a.ms}ms`).join(" → ")}</p>}
-            </Block>
-          </div>
-        )}
-      </section>
     </div>
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div className="rounded-xl border-2 border-[color:var(--line)] bg-[color:var(--paper)] p-3"><h3 className="text-[.62rem] font-extrabold uppercase tracking-[.16em] text-slate-500">{title}</h3><dl className="mt-2 space-y-1">{children}</dl></div>;
-}
-function Row({ k, v }: { k: string; v: string }) {
-  return <div className="flex items-baseline justify-between gap-2 text-sm"><dt className="text-slate-600">{k}</dt><dd className="mono truncate text-right font-semibold" title={v}>{v}</dd></div>;
-}

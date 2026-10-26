@@ -2,21 +2,33 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
-import { functionalStorage, subscribeConsentChange } from "@/lib/privacy/browser-consent";
 
 const KEY = "radix-loom-theme";
 const EVENT = "radix-loom-theme-change";
+const ONE_YEAR = 60 * 60 * 24 * 365;
+
 type Appearance = "light" | "dark";
-let transientAppearance: Appearance | null = null;
+
+/**
+ * The appearance choice is a strictly necessary interface preference, so it is
+ * remembered for every visitor without an optional-consent gate. It is written
+ * to a first-party cookie (so the server renders the right palette on the very
+ * first paint of every navigation) and mirrored into localStorage.
+ */
+function readCookieAppearance(): Appearance | null {
+  const match = /(?:^|; )radix-loom-theme=(dark|light)/.exec(document.cookie);
+  return match ? (match[1] as Appearance) : null;
+}
 
 function systemAppearance(): Appearance {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function readAppearance(): Appearance {
-  if (transientAppearance) return transientAppearance;
   try {
-    const saved = functionalStorage()?.getItem(KEY);
+    const cookie = readCookieAppearance();
+    if (cookie) return cookie;
+    const saved = window.localStorage.getItem(KEY);
     if (saved === "light" || saved === "dark") return saved;
   } catch {
     // Private browsing can disallow storage; follow the operating system instead.
@@ -33,6 +45,16 @@ function applyAppearance(mode: Appearance): void {
   );
 }
 
+function persistAppearance(mode: Appearance): void {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${KEY}=${mode}; Path=/; Max-Age=${ONE_YEAR}; SameSite=Lax${secure}`;
+  try {
+    window.localStorage.setItem(KEY, mode);
+  } catch {
+    // The cookie alone is enough to keep the choice across navigations.
+  }
+}
+
 function subscribe(notify: () => void): () => void {
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   const sync = () => {
@@ -45,9 +67,7 @@ function subscribe(notify: () => void): () => void {
   media.addEventListener("change", sync);
   window.addEventListener("storage", onStorage);
   window.addEventListener(EVENT, sync);
-  const unsubscribeConsent = subscribeConsentChange(sync);
   return () => {
-    unsubscribeConsent();
     media.removeEventListener("change", sync);
     window.removeEventListener("storage", onStorage);
     window.removeEventListener(EVENT, sync);
@@ -55,12 +75,7 @@ function subscribe(notify: () => void): () => void {
 }
 
 function chooseAppearance(mode: Appearance): void {
-  transientAppearance = mode;
-  try {
-    functionalStorage()?.setItem(KEY, mode);
-  } catch {
-    // The control still works for the current session when storage is unavailable.
-  }
+  persistAppearance(mode);
   applyAppearance(mode);
   window.dispatchEvent(new Event(EVENT));
 }
