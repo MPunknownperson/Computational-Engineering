@@ -25,8 +25,8 @@ microphone; the page does not open a second capture stream. See
 
 ## Privacy and control
 
-Local state lives under `radixloom.ml.*` (localStorage) and IndexedDB
-`radixloom-*` model keys. It holds expressions calculated, converter choices
+Local state lives under `quilloryn.ml.*` (localStorage) and IndexedDB
+`quilloryn-*` model keys. It holds expressions calculated, converter choices
 with hour/weekday context, and voice phrases that led to a tool. It can be erased
 with "Forget what the models learned" (Privacy page → Manage saved formulas),
 "Forget learned phrases" on the voice card, or by clearing site data.

@@ -1,4 +1,4 @@
-# Radix Loom — Computational Engineering
+# Quilloryn — Computational Engineering
 
 This deployment replaces the previous site with the project downloaded from:
 https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/main.zip

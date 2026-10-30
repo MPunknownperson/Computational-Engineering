@@ -23,7 +23,7 @@ Sitemaps and canonicals intentionally use absolute URLs: search engines recommen
 
 ## Before public indexing
 
-1. Perform a real trademark/domain clearance for **Radix Loom**. A web search cannot establish legal availability or prevent search-engine spelling suggestions.
+1. Perform a real trademark/domain clearance for **Quilloryn**. A web search cannot establish legal availability or prevent search-engine spelling suggestions.
 2. Publish on a working HTTPS domain. Confirm real content, private data controls, contact monitoring and any legally required disclosures. Neutral wording alone does not establish legal compliance.
 3. Add `GOOGLE_SITE_VERIFICATION` and/or `BING_SITE_VERIFICATION` from the respective webmaster accounts. These are verification values, not fabricated identifiers.
 4. Submit `/sitemap.xml` in Google Search Console and Bing Webmaster Tools. Use URL Inspection on the home page, one tool and one guide. Run Google's Rich Results Test and a Schema.org validator. Breadcrumb markup can be tested; app/article markup is descriptive and does not guarantee a search feature.

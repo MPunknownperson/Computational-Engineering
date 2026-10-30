@@ -1,6 +1,6 @@
 # Private sandbox/archive runtime
 
-The public website is Radix Loom: its calculator, converter, guides, reference,
+The public website is Quilloryn: its calculator, converter, guides, reference,
 and information pages remain the only visitor-facing product. The sandbox UI is
 not part of the deployed site. Its useful server-side capabilities remain in
 `src/lib/workbench/` and the corresponding private API routes under
