@@ -12,7 +12,7 @@ export function missingPageResponse(): NextResponse {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,follow">
-  <title>Page not found | Radix Loom</title>
+  <title>Page not found | Quilloryn</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }

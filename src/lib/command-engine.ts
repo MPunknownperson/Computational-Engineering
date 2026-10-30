@@ -39,8 +39,8 @@ interface Memory {
   updatedAt: number;
 }
 
-const MEMORY_KEY = "radixloom.voice-memory.v2";
-const LEGACY_KEYS = ["radixloom.command-memory.v1", "radixloom.voice.cloud-consent.v1"];
+const MEMORY_KEY = "quilloryn.voice-memory.v2";
+const LEGACY_KEYS = ["quilloryn.command-memory.v1", "quilloryn.voice.cloud-consent.v1"];
 const MAX_MEMORY = 120;
 
 function storage(): Storage | null {

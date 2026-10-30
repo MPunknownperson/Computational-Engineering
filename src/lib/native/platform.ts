@@ -154,7 +154,7 @@ export function effectiveEngine(info: PlatformInfo, preference: EnginePreference
 /** Stable per-device id used to scope shared items and preferences. */
 export function deviceId(): string {
   if (typeof window === "undefined") return "anonymous";
-  const KEY = "radix-loom-device-id";
+  const KEY = "quilloryn-device-id";
   try {
     const existing = window.localStorage.getItem(KEY);
     if (existing) return existing;

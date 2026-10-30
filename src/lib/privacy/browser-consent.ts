@@ -1,13 +1,13 @@
 import { isManagedRegime, type ConsentRegime } from "./consent-regime";
 
-export const CONSENT_CHANGED_EVENT = "radixloom:consent-changed";
-export const CONSENT_REGIME_EVENT = "radixloom:consent-regime";
+export const CONSENT_CHANGED_EVENT = "quilloryn:consent-changed";
+export const CONSENT_REGIME_EVENT = "quilloryn:consent-regime";
 export const CONSENT_VERSION = "v2";
 export type OptionalPurpose = "functional" | "analytics" | "advertising";
 
 /** A new namespace requires a fresh, explicit choice for this policy version. */
 export function consentNamespace(regime: ConsentRegime): string {
-  return `radixloom-${CONSENT_VERSION}-${regime}`;
+  return `quilloryn-${CONSENT_VERSION}-${regime}`;
 }
 
 export function browserConsentRegime(): ConsentRegime | null {

@@ -1,6 +1,6 @@
 // Shared public identity and discovery-content metadata.
 export const SITE = {
-  name: "Radix Loom",
+  name: "Quilloryn",
   tagline: "A little clarity in every calculation",
   // Keyword-led and intent-aligned: this is the home-page snippet, so it leads
   // with the phrases people actually type rather than the brand name.
@@ -9,9 +9,9 @@ export const SITE = {
   legalUpdated: "16 October 2026",
   legalVersion: "8.1",
   contentUpdated: "2026-10-07",
-  storageKeys: [{ key: "radixloom.workspace" }] as const,
+  storageKeys: [{ key: "quilloryn.workspace" }] as const,
   legacyStorageKeys: [
-    "arithbit.workspace", "sumbyte.workspace", "abacorn.workspace", "numble.workspace",
+    "radixloom.workspace", "arithbit.workspace", "sumbyte.workspace", "abacorn.workspace", "numble.workspace",
     "numeriq.workspace", "calcite.workspace", "axiom.workspace",
   ] as const,
 } as const;

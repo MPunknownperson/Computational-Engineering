@@ -9,7 +9,7 @@ import { functionalStorage } from "@/lib/privacy/browser-consent";
  * can return to Calculators and say “and 80” or “again” without restating the
  * currency/unit direction. Closing the tab clears it; it is never uploaded.
  */
-const KEY = "radixloom.voice-session.v1";
+const KEY = "quilloryn.voice-session.v1";
 const TTL_MS = 20 * 60 * 1000;
 
 type Stored = { encoded: string; expiresAt: number };

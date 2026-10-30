@@ -200,7 +200,7 @@ const PLAYBOOKS: Playbook[] = [
       playbook: "client-storage-repair",
       summary: "Browser storage held corrupt or over-quota data: clear the application's own keys and reset the view.",
       serverActions: [],
-      clientActions: [{ type: "clear-storage", keys: ["radix-crypto:", "radix-loom-crypto", "crypto-workspace-cache"], scope: "both" }, { type: "reset-boundary" }],
+      clientActions: [{ type: "clear-storage", keys: ["radix-crypto:", "quilloryn-crypto", "crypto-workspace-cache"], scope: "both" }, { type: "reset-boundary" }],
       verify: "none",
     }),
   },
