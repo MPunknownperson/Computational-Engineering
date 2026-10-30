@@ -31,7 +31,7 @@ const SECTIONS: LegalSection[] = [
     title: "Freshness and external information",
     paragraphs: [
       "Live figures are refreshed periodically. The time shown in a tool indicates when its displayed information was last received by the page, and is not necessarily the publication time of the original information. Some reference figures are updated less frequently than others.",
-      "External content may be unavailable, changed or withdrawn. Radix Loom does not guarantee that any external figure is complete, current or suitable for a particular purpose.",
+      "External content may be unavailable, changed or withdrawn. Quilloryn does not guarantee that any external figure is complete, current or suitable for a particular purpose.",
     ],
   },
   {
@@ -47,7 +47,7 @@ const SECTIONS: LegalSection[] = [
     id: "external-content",
     title: "External content and names",
     paragraphs: [
-      "External names, content and references remain associated with their respective sources. Their appearance is solely descriptive and does not imply sponsorship, affiliation or endorsement. Links or references are provided for convenience; their content and availability are outside Radix Loom’s control.",
+      "External names, content and references remain associated with their respective sources. Their appearance is solely descriptive and does not imply sponsorship, affiliation or endorsement. Links or references are provided for convenience; their content and availability are outside Quilloryn’s control.",
     ],
   },
   {

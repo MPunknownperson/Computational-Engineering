@@ -94,18 +94,18 @@ const SECTIONS: LegalSection[] = [
     title: "External reference information",
     paragraphs: [
       "Some tools display information derived from external public or market-reference sources. Such information may be delayed, incomplete, revised or unavailable. Currency reference values may be published periodically and are not necessarily transaction prices. Digital-asset values can differ across venues. Economic statistics are often periodic and may be revised.",
-      "External information may carry separate use conditions. References to it are informational and do not imply sponsorship or endorsement. Radix Loom does not guarantee that external information is complete, current or suitable for a particular decision.",
+      "External information may carry separate use conditions. References to it are informational and do not imply sponsorship or endorsement. Quilloryn does not guarantee that external information is complete, current or suitable for a particular decision.",
     ],
   },
   {
     id: "saved-content",
     title: "Saved formulas",
     paragraphs: [
-      "If you choose to save a formula, Radix Loom retains the expression and related details you provide so they can be shown to you later. A random workspace reference kept with the browser you use links those saved items to that workspace; it is not an account or password.",
+      "If you choose to save a formula, Quilloryn retains the expression and related details you provide so they can be shown to you later. A random workspace reference kept with the browser you use links those saved items to that workspace; it is not an account or password.",
     ],
     bullets: [
       "Anyone who obtains the workspace reference may be able to access or remove formulas associated with it. Do not include passwords, confidential information or personal details in a formula.",
-      "You retain the rights you have in your own expression. You allow Radix Loom to keep and display it only as needed to provide the saving feature and respond to lawful requests.",
+      "You retain the rights you have in your own expression. You allow Quilloryn to keep and display it only as needed to provide the saving feature and respond to lawful requests.",
       "You may download or delete saved formulas from the Privacy Policy controls. Saved formulas do not currently expire automatically.",
     ],
   },

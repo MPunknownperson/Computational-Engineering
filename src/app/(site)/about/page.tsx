@@ -37,9 +37,9 @@ export default function AboutPage() {
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-slate-600">
           {SITE.name} is a friendly collection of calculation tools for scientific expressions,
-          unit conversion, reference information and custom formulas. The name combines <em>radix</em>,
-          the base of a numeral system, with <em>loom</em>: a place to bring separate mathematical
-          ideas together. The static, interwoven mark reflects that combination.
+          unit conversion, reference information and custom formulas. The name begins with <em>quill</em>,
+          the pen once used to work sums out by hand, and our owl mascot is a nod to patient, careful
+          thinking. Every tool aims to show its working as clearly as a page of handwritten notes.
         </p>
       </Reveal>
 

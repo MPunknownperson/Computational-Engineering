@@ -15,7 +15,7 @@ export const generateMetadata = () => metadataFor("/privacy");
 const N = SITE.name;
 
 /**
- * Privacy Policy for Radix Loom.
+ * Privacy Policy for Quilloryn.
  *
  * Structured after the disclosures a privacy policy is normally expected to
  * contain — the controller and how to contact it, the categories of personal

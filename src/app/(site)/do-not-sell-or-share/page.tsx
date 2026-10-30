@@ -31,7 +31,7 @@ export default async function PrivacyChoicesPage({ searchParams }: { searchParam
         <div className="mt-6 flex items-center gap-3 text-sm font-semibold text-slate-700"><CaliforniaPrivacyIcon /> Privacy choices</div>
         <h1 className="h-title mt-3 text-3xl leading-tight sm:text-4xl">Do Not Sell or Share My Personal Information</h1>
         <p className="mt-5 text-base leading-relaxed text-slate-700">
-          This page lets you review how Radix Loom treats the sale or sharing of personal information,
+          This page lets you review how Quilloryn treats the sale or sharing of personal information,
           including for advertising and analytics. It forms part of our{" "}
           <Link href="/privacy" className="font-bold underline underline-offset-4">Privacy Policy</Link>.
           A Global Privacy Control (GPC) signal is honored when we receive it.
