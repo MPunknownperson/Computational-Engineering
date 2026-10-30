@@ -97,5 +97,5 @@ function hiddenResponse() {
 }
 
 export const config = {
-  matcher: ["/api/workbench/:path*", "/api/nlu/:path*", "/api/voice/:path*", "/api/privacy/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt|sw\\.js|sw\\.js\\.map|workbox-.*\\.js).*)"],
+  matcher: ["/api/workbench/:path*", "/api/nlu/:path*", "/api/voice/:path*", "/api/privacy/:path*", "/((?!api|_next|_not-found|media|images|icons|vendor|favicon\\.svg|robots\\.txt|ads\\.txt|sitemap\\.xml|manifest\\.webmanifest|indexnow\\.txt|sw\\.js|sw\\.js\\.map|workbox-.*\\.js).*)"],
 };

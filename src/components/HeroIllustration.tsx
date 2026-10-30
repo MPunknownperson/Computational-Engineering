@@ -1,166 +1,184 @@
-import { GrainOverlay, TextureDefs } from "@/components/Texture";
-
 /**
- * Homepage editorial artwork: a hand-drawn number workbench rather than a
- * repeating mascot loop. The scene tells the product story at a glance — a
- * quantity, a unit pair, a formula and a result arranged on a calm paper desk.
+ * Homepage artwork: a flat, 2D cartoon scene. A cheerful calculator character
+ * hops on a grassy hill beside a walking note card that holds a currency
+ * question, while number bubbles float up, clouds drift and the sun turns.
  *
- * Material notes: every plate carries its own gradient body, a soft cast shadow
- * and a faint paper grain so the artwork reads as printed, layered ink rather
- * than flat clip art. Motion is limited to a slow ambient drift on the floating
- * props and a one-shot stroke draw on the graph line — transform/opacity only,
- * and the global reduced-motion rule switches it all off.
+ * Everything is solid fills and bold ink outlines (no gradients or grain), so
+ * it reads like an animation cel. Motion is transform-only, and the global
+ * reduced-motion rule switches it all off. Animated groups are always nested
+ * inside a positioned group so CSS transforms never replace SVG positioning.
  */
+const INK = "#0b1020";
+
+function Eyes({ x, y, gap = 22, r = 6.5 }: { x: number; y: number; gap?: number; r?: number }) {
+  return (
+    <g className="anim-blink">
+      <ellipse cx={x} cy={y} rx={r} ry={r * 1.15} fill="#fff" stroke={INK} strokeWidth="2.4" />
+      <ellipse cx={x + gap} cy={y} rx={r} ry={r * 1.15} fill="#fff" stroke={INK} strokeWidth="2.4" />
+      <circle cx={x + 1.2} cy={y + 1} r={r * 0.5} fill={INK} />
+      <circle cx={x + gap + 1.2} cy={y + 1} r={r * 0.5} fill={INK} />
+      <circle cx={x - 0.6} cy={y - 1.4} r={r * 0.18} fill="#fff" />
+      <circle cx={x + gap - 0.6} cy={y - 1.4} r={r * 0.18} fill="#fff" />
+    </g>
+  );
+}
+
+function Cloud({ w = 92 }: { w?: number }) {
+  const s = w / 92;
+  return (
+    <path
+      transform={`scale(${s})`}
+      d="M14 40c-9 0-14-6-14-13s6-13 14-12c2-9 10-15 20-15 9 0 16 5 19 13 3-2 6-3 10-3 9 0 16 7 16 15 7 0 13 5 13 12s-6 13-13 13H14Z"
+      fill="#fff"
+      stroke={INK}
+      strokeWidth={3 / s}
+      strokeLinejoin="round"
+    />
+  );
+}
+
 export function HeroIllustration() {
   return (
     <div className="relative mx-auto w-full max-w-[540px] select-none">
-      {/* Real paper stock under the drawn art: a 19 KB greyscale fibre tile,
-          repeated by the compositor as a single cached background layer rather
-          than a decoded <img> element. */}
-      <div className="art-plate" aria-hidden="true" />
-      <svg viewBox="0 0 520 430" className="illus art-plate__art" aria-hidden>
-        <TextureDefs id="hero" tone="cool" />
-        <radialGradient id="studio-wash" cx="48%" cy="44%" r="62%">
-          <stop offset="0%" stopColor="#d8e6ff" stopOpacity=".85" />
-          <stop offset="100%" stopColor="#d8e6ff" stopOpacity="0" />
-        </radialGradient>
-
-        <ellipse cx="260" cy="210" rx="235" ry="175" fill="url(#studio-wash)" />
-        <path
-          d="M28 352c70-20 150-21 229-4s155 13 235-11v65H28Z"
-          fill="url(#hero-wash)"
-          stroke="#0b1020"
-          strokeWidth="3"
-        />
-
-        {/* background graph paper, deliberately faint */}
-        <g opacity=".18" stroke="#0b1020" strokeWidth="1">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <path key={`v${i}`} d={`M${74 + i * 48} 54v238`} />
-          ))}
-          {Array.from({ length: 5 }).map((_, i) => (
-            <path key={`h${i}`} d={`M74 ${74 + i * 48}h336`} />
-          ))}
+      <div className="art-plate art-plate--sky" aria-hidden="true" />
+      <svg viewBox="0 0 520 430" className="illus art-plate__art hero-cartoon" aria-hidden>
+        {/* sun with turning rays and a friendly face */}
+        <g transform="translate(442 70)">
+          <g className="cartoon-spin-slow">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <path
+                key={i}
+                d="M0 -50 L7 -36 L-7 -36 Z"
+                transform={`rotate(${i * 36})`}
+                fill="#ffb01f"
+                stroke={INK}
+                strokeWidth="2.4"
+                strokeLinejoin="round"
+              />
+            ))}
+          </g>
+          <circle r="31" fill="#ffd23f" stroke={INK} strokeWidth="3" />
+          <path d="M-14 -24a28 28 0 0 1 22-5" stroke="#fff" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <circle cx="-9" cy="-3" r="3.2" fill={INK} />
+          <circle cx="9" cy="-3" r="3.2" fill={INK} />
+          <path d="M-9 8q9 8 18 0" stroke={INK} strokeWidth="2.8" strokeLinecap="round" fill="none" />
+          <circle cx="-17" cy="6" r="4" fill="#ff7a59" opacity=".55" />
+          <circle cx="17" cy="6" r="4" fill="#ff7a59" opacity=".55" />
         </g>
 
-        {/* formula sheet — drifts very slightly, like paper on a desk */}
-        <g transform="translate(78 82) rotate(-5 112 116)">
-          <g >
-          <rect
-            x="-4"
-            y="-2"
-            width="224"
-            height="232"
-            rx="16"
-            fill="#0b1020"
-            opacity=".14"
-          />
-          <rect
-            width="224"
-            height="232"
-            rx="16"
-            fill="url(#hero-paper)"
-            stroke="#0b1020"
-            strokeWidth="3"
-          />
-          <rect width="224" height="232" rx="16" fill="url(#hero-shade)" />
-          <path d="M25 47h110M25 66h164M25 85h139" stroke="#0b1020" strokeWidth="2.2" strokeLinecap="round" opacity=".35" />
-          <text x="26" y="125" fontSize="25" fontWeight="800" fill="#0b1020">120 USD</text>
-          <path d="M29 146h106" stroke="#0b1020" strokeWidth="2.4" strokeDasharray="3 6" strokeLinecap="round" />
-          <text x="26" y="178" fontSize="23" fontWeight="800" fill="#4470e8">→ EUR</text>
-          <rect x="25" y="193" width="155" height="22" rx="7" fill="url(#hero-sun)" stroke="#0b1020" strokeWidth="2" />
-          <text x="36" y="209" fontSize="11" fontWeight="800" fill="#0b1020">amount × reference rate</text>
-          {/* hand-inked corner fold + stitch marks */}
-          <path d="M186 8c10 6 22 12 30 24-8 2-18 2-26 0" fill="#fffdf5" stroke="#0b1020" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M16 226h16" stroke="#5b8cff" strokeWidth="3" strokeLinecap="round" />
+        {/* drifting clouds */}
+        <g transform="translate(40 34)"><g className="cartoon-drift"><Cloud w={96} /></g></g>
+        <g transform="translate(250 22)"><g className="cartoon-drift is-slow"><Cloud w={70} /></g></g>
+
+        {/* rolling hills */}
+        <path d="M-4 330c60-40 140-46 210-14s120 30 170 4 110-24 148 2v114H-4Z" fill="#8fe39b" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M-4 366c90-26 180-22 266 2s170 18 262-8v76H-4Z" fill="#4fcb6e" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+        {/* grass tufts and flowers */}
+        <g stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none">
+          <path d="M60 392l4-10 3 10M190 404l4-10 3 10M380 398l4-10 3 10M470 388l4-10 3 10" />
+        </g>
+        {[[110, 384, "#ff7a59"], [300, 392, "#ffd23f"], [440, 376, "#c9a7ff"]].map(([x, y, c]) => (
+          <g key={`${x}`} transform={`translate(${x} ${y})`}>
+            <g className="cartoon-tilt">
+              <path d="M0 0v14" stroke={INK} strokeWidth="2.4" strokeLinecap="round" />
+              {[0, 72, 144, 216, 288].map((a) => (
+                <circle key={a} cx={Math.cos((a * Math.PI) / 180) * 5} cy={Math.sin((a * Math.PI) / 180) * 5} r="4" fill={c as string} stroke={INK} strokeWidth="1.8" />
+              ))}
+              <circle r="3" fill="#fff" stroke={INK} strokeWidth="1.8" />
+            </g>
+          </g>
+        ))}
+
+        {/* note card character holding the question */}
+        <g transform="translate(64 128)">
+          <g className="cartoon-waddle">
+            {/* legs */}
+            <g stroke={INK} strokeWidth="3.2" strokeLinecap="round">
+              <path d="M62 196v22h-10M120 196v22h10" fill="none" />
+            </g>
+            <ellipse cx="91" cy="226" rx="66" ry="7" fill={INK} opacity=".12" />
+            <rect x="6" y="6" width="170" height="194" rx="20" fill={INK} />
+            <rect x="0" y="0" width="170" height="194" rx="20" fill="#fffdf4" stroke={INK} strokeWidth="3" />
+            {/* arm waving */}
+            <g transform="translate(168 104)">
+              <g className="cartoon-wave">
+                <path d="M0 0c14-6 24-18 28-32" stroke={INK} strokeWidth="3.2" strokeLinecap="round" fill="none" />
+                <circle cx="29" cy="-35" r="7" fill="#fffdf4" stroke={INK} strokeWidth="2.6" />
+              </g>
+            </g>
+            <path d="M2 104c-12 8-18 20-18 32" stroke={INK} strokeWidth="3.2" strokeLinecap="round" fill="none" />
+            <Eyes x={60} y={40} gap={50} r={8} />
+            <path d="M74 62q11 10 22 0" stroke={INK} strokeWidth="3" strokeLinecap="round" fill="none" />
+            <circle cx="46" cy="60" r="6" fill="#ff7a59" opacity=".45" />
+            <circle cx="124" cy="60" r="6" fill="#ff7a59" opacity=".45" />
+            <text x="22" y="112" fontSize="26" fontWeight="800" fill={INK}>120 USD</text>
+            <text x="22" y="146" fontSize="23" fontWeight="800" fill="#2f66e0">→ EUR</text>
+            <rect x="20" y="160" width="130" height="22" rx="11" fill="#ffd23f" stroke={INK} strokeWidth="2.4" />
+            <text x="34" y="176" fontSize="11.5" fontWeight="800" fill={INK}>amount × rate</text>
           </g>
         </g>
 
-        {/* tilted calculator — screen glass, key depth and a gloss sweep */}
-        <g transform="translate(290 72) rotate(7 80 116)">
-          <g >
-          <rect x="4" y="6" width="160" height="226" rx="21" fill="#0b1020" opacity=".16" />
-          <rect x="0" y="0" width="160" height="226" rx="21" fill="url(#hero-sky)" stroke="#0b1020" strokeWidth="3" />
-          <rect x="14" y="15" width="132" height="54" rx="9" fill="url(#hero-wash)" stroke="#fff" strokeOpacity=".55" strokeWidth="1.5" />
-          <rect x="14" y="15" width="132" height="27" rx="9" fill="url(#hero-gloss)" opacity=".75" />
-          <text x="28" y="51" fontSize="24" fontWeight="800" fill="#0b1020">110.42</text>
-          <g>
-            {Array.from({ length: 3 }).map((_, row) =>
+        {/* calculator character, hopping */}
+        <g transform="translate(300 112)">
+          <ellipse cx="78" cy="248" rx="58" ry="7" fill={INK} opacity=".12" className="cartoon-shadow" />
+          <g className="cartoon-hop">
+            <g stroke={INK} strokeWidth="3.2" strokeLinecap="round" fill="none">
+              <path d="M52 222v16h-10M104 222v16h10" />
+              <path d="M2 120c-14 4-22 14-24 26M154 120c14-6 22-18 22-32" />
+            </g>
+            <circle cx="-22" cy="148" r="7" fill="#5b8cff" stroke={INK} strokeWidth="2.6" />
+            <circle cx="176" cy="85" r="7" fill="#5b8cff" stroke={INK} strokeWidth="2.6" />
+            <rect x="6" y="6" width="150" height="220" rx="24" fill={INK} />
+            <rect x="0" y="0" width="150" height="220" rx="24" fill="#5b8cff" stroke={INK} strokeWidth="3" />
+            {/* screen face */}
+            <rect x="14" y="14" width="122" height="66" rx="14" fill="#d9f5ff" stroke={INK} strokeWidth="2.6" />
+            <path d="M24 24h46" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
+            <text x="34" y="68" fontSize="24" fontWeight="800" fill={INK}>110.42</text>
+            <Eyes x={50} y={104} gap={50} r={8} />
+            <path d="M63 124q12 12 24 0" stroke={INK} strokeWidth="3" strokeLinecap="round" fill="#ff7a59" />
+            {/* keys */}
+            {Array.from({ length: 2 }).map((_, row) =>
               Array.from({ length: 3 }).map((__, col) => (
-                <g key={`${row}-${col}`}>
-                  <rect
-                    x={16 + col * 41}
-                    y={89 + row * 34}
-                    width="31"
-                    height="24"
-                    rx="6"
-                    fill="#0b1020"
-                    opacity=".22"
-                  />
-                  <rect
-                    x={16 + col * 41}
-                    y={86 + row * 34}
-                    width="31"
-                    height="24"
-                    rx="6"
-                    fill="#fffdf5"
-                    stroke="#0b1020"
-                    strokeWidth="1.8"
-                  />
-                </g>
+                <rect
+                  key={`${row}-${col}`}
+                  x={18 + col * 40}
+                  y={146 + row * 32}
+                  width="32"
+                  height="24"
+                  rx="9"
+                  fill={row === 1 && col === 2 ? "#ffd23f" : "#fffdf4"}
+                  stroke={INK}
+                  strokeWidth="2.4"
+                />
               )),
             )}
-            <rect x="16" y="191" width="72" height="23" rx="6" fill="#0b1020" opacity=".22" />
-            <rect x="16" y="188" width="72" height="23" rx="6" fill="url(#hero-sun)" stroke="#0b1020" strokeWidth="1.8" />
-            <rect x="97" y="191" width="47" height="23" rx="6" fill="#0b1020" opacity=".22" />
-            <rect x="97" y="188" width="47" height="23" rx="6" fill="url(#hero-coral)" stroke="#0b1020" strokeWidth="1.8" />
-          </g>
           </g>
         </g>
 
-        {/* measuring tab and line graph: joins tools to calculations */}
-        <g transform="translate(331 317)">
-          <path d="M0 42h142" stroke="#0b1020" strokeWidth="3" strokeLinecap="round" />
-          <path
-            d="M13 40 35 25l28 8 31-24 31 9"
-            fill="none"
-            stroke="url(#hero-mint)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="anim-draw-in"
-          />
-          {[13, 35, 63, 94, 125].map((x, i) => (
-            <circle key={x} cx={x} cy={[40, 25, 33, 9, 18][i]} r="4.6" fill="url(#hero-sun)" stroke="#0b1020" strokeWidth="2" />
-          ))}
-        </g>
+        {/* floating number bubbles */}
+        {[
+          { x: 250, y: 120, t: "+", c: "#ffd23f", d: "" },
+          { x: 262, y: 216, t: "=", c: "#ff9fc4", d: "is-delay-1" },
+          { x: 34, y: 120, t: "%", c: "#8fe39b", d: "is-delay-2" },
+          { x: 484, y: 190, t: "÷", c: "#c9a7ff", d: "is-delay-1" },
+        ].map((b) => (
+          <g key={b.t} transform={`translate(${b.x} ${b.y})`}>
+            <g className={`cartoon-float ${b.d}`}>
+              <circle r="17" fill={b.c} stroke={INK} strokeWidth="2.8" />
+              <path d="M-9 -7a10 10 0 0 1 7-5" stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none" />
+              <text y="8" textAnchor="middle" fontSize="22" fontWeight="800" fill={INK}>{b.t}</text>
+            </g>
+          </g>
+        ))}
 
-        <g transform="translate(48 320)">
-          <rect x="0" y="3" width="195" height="30" rx="7" fill="#0b1020" opacity=".16" />
-          <rect x="0" y="0" width="195" height="30" rx="7" fill="#fff" stroke="#0b1020" strokeWidth="2.4" />
-          <rect x="0" y="0" width="195" height="15" rx="7" fill="url(#hero-gloss)" opacity=".6" />
-          {Array.from({ length: 13 }).map((_, i) => (
-            <path key={i} d={`M${13 + i * 14} 0v${i % 4 === 0 ? 17 : 10}`} stroke="#0b1020" strokeWidth="1.8" />
-          ))}
-          <text x="88" y="23" fontSize="11" fontWeight="800" fill="#4470e8">m ↔ ft</text>
-        </g>
-
-        {/* sparse handmade accents; slow drift only */}
-        <g >
-          <circle cx="51" cy="75" r="10" fill="url(#hero-coral)" stroke="#0b1020" strokeWidth="2.4" />
-          <circle cx="47" cy="71" r="3" fill="#fff" opacity=".5" />
-        </g>
-        <g >
-          <path
-            d="M454 64l8 14 14 8-14 8-8 14-8-14-14-8 14-8Z"
-            fill="url(#hero-sun)"
-            stroke="#0b1020"
-            strokeWidth="2.2"
-            strokeLinejoin="round"
-          />
-        </g>
-
-        <GrainOverlay id="hero" x={0} y={0} width={520} height={430} opacity={0.16} />
+        {/* sparkles */}
+        {[[214, 76], [500, 280], [22, 260]].map(([x, y], i) => (
+          <g key={i} transform={`translate(${x} ${y})`}>
+            <g className="cartoon-spark">
+              <path d="M0 -12l3.5 8.5L12 0l-8.5 3.5L0 12l-3.5-8.5L-12 0l8.5-3.5Z" fill="#fff" stroke={INK} strokeWidth="2.2" strokeLinejoin="round" />
+            </g>
+          </g>
+        ))}
       </svg>
     </div>
   );

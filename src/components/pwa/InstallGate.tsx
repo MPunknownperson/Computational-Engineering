@@ -35,7 +35,7 @@ export function InstallGate() {
       setPrompt(event as InstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", () => setStatus("Installed — open Radix Loom from your home screen."));
+    window.addEventListener("appinstalled", () => setStatus("Installed — open Quilloryn from your home screen."));
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, [router]);
 
@@ -48,10 +48,10 @@ export function InstallGate() {
   };
 
   const steps = platform === "ios"
-    ? ["Tap the Share button in Safari", "Choose “Add to Home Screen”", "Open Radix Loom from your home screen"]
+    ? ["Tap the Share button in Safari", "Choose “Add to Home Screen”", "Open Quilloryn from your home screen"]
     : platform === "android"
-      ? ["Open the browser menu (⋮)", "Choose “Install app” / “Add to Home screen”", "Launch Radix Loom from your launcher"]
-      : ["Click the install icon in the address bar", "Confirm “Install”", "Radix Loom opens in its own window"];
+      ? ["Open the browser menu (⋮)", "Choose “Install app” / “Add to Home screen”", "Launch Quilloryn from your launcher"]
+      : ["Click the install icon in the address bar", "Confirm “Install”", "Quilloryn opens in its own window"];
 
   return (
     <div className="pwa-scroll" style={{ display: "grid", placeItems: "center" }}>
@@ -66,9 +66,9 @@ export function InstallGate() {
         >
           ◆
         </div>
-        <h1 style={{ fontSize: "1.7rem", fontWeight: 700 }}>Radix Loom App</h1>
+        <h1 style={{ fontSize: "1.7rem", fontWeight: 700 }}>Quilloryn App</h1>
         <p className="pwa-muted">
-          This address is the dedicated home of the Radix Loom progressive web app. Install it to get an
+          This address is the dedicated home of the Quilloryn progressive web app. Install it to get an
           offline-first, native-style experience — no address bar, no browser chrome.
         </p>
         {prompt && (

@@ -51,9 +51,9 @@ interface NativeContextValue {
 const NativeContext = createContext<NativeContextValue | null>(null);
 
 const STORAGE = {
-  engine: "radix-loom-native-engine",
-  mode: "radix-loom-native-mode",
-  haptics: "radix-loom-native-haptics",
+  engine: "quilloryn-native-engine",
+  mode: "quilloryn-native-mode",
+  haptics: "quilloryn-native-haptics",
 };
 
 function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {

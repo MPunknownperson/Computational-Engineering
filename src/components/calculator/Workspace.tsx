@@ -15,7 +15,7 @@ type Point = { x: number; y: number };
 type Stroke = { id: string; color: string; width: number; points: Point[] };
 type Note = { id: string; x: number; y: number; text: string; color: string; size: number };
 
-const STORAGE_KEY = "radixloom.calculator-board.v1";
+const STORAGE_KEY = "quilloryn.calculator-board.v1";
 const MAX_STROKES = 180;
 const MAX_NOTES = 36;
 const CHALK = [

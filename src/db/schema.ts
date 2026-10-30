@@ -69,7 +69,7 @@ export type ToolRow = typeof tools.$inferSelect;
 export type Artifact = typeof artifacts.$inferSelect;
 
 /* ------------------------------------------------------------------ *
- * Radix Loom site tables (imported from the Computational-Engineering
+ * Quilloryn site tables (imported from the Computational-Engineering
  * project) — saved formulas and contact-form messages.
  * ------------------------------------------------------------------ */
 
@@ -114,7 +114,7 @@ export const privacyChoices = pgTable("privacy_choices", {
 });
 
 /** Retained for non-destructive replacement of the previous application.
- * No Radix Loom route reads or writes this legacy activity table. */
+ * No Quilloryn route reads or writes this legacy activity table. */
 export const legacyWorkspaceOperations = pgTable("workspace_operations", {
   id: serial("id").primaryKey(),
   workspaceId: varchar("workspace_id", { length: 64 }).notNull(),

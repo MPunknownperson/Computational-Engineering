@@ -218,7 +218,7 @@ function HomeScreen() {
               presentActionSheet({
                 header: "Quick actions",
                 buttons: [
-                  { text: "Share this app", icon: shareSocialOutline, handler: () => void share({ title: "Radix Loom", url: "/app/home" }) },
+                  { text: "Share this app", icon: shareSocialOutline, handler: () => void share({ title: "Quilloryn", url: "/app/home" }) },
                   { text: "Refresh feed", handler: () => void feed.refresh() },
                   { text: "Cancel", role: "cancel" },
                 ],
@@ -404,7 +404,7 @@ function SharedScreen() {
 
       <div className="native-pad">
         <p className="native-hint">
-          Anything sent to Radix Loom from the system <strong>Share&nbsp;to…</strong> sheet lands here. The app registers
+          Anything sent to Quilloryn from the system <strong>Share&nbsp;to…</strong> sheet lands here. The app registers
           itself as a share target through the Web Share Target API.
         </p>
       </div>
@@ -511,7 +511,7 @@ function SettingsScreen() {
 /* ── Tab root ────────────────────────────────────────────────────────────── */
 
 const TITLES: Record<TabKey | "settings", string> = {
-  home: "Radix Loom",
+  home: "Quilloryn",
   calculator: "Calculator",
   convert: "Converter",
   shared: "Shared with app",
@@ -613,12 +613,12 @@ export default function IonicEngine({ initialTab }: { initialTab: TabKey | "sett
 
   return (
     <IonApp key={native.mode} className="native-ionic-app">
-      <TitleBarOverlay title="Radix Loom" subtitle="Ionic engine" />
+      <TitleBarOverlay title="Quilloryn" subtitle="Ionic engine" />
       <IonSplitPane contentId="native-main" when="(min-width: 1024px)">
         <IonMenu contentId="native-main" menuId="native-menu" type={native.mode === "ios" ? "overlay" : "overlay"}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>Radix Loom</IonTitle>
+              <IonTitle>Quilloryn</IonTitle>
             </IonToolbar>
           </IonHeader>
           <IonContent>

@@ -105,7 +105,7 @@ function HomePage({ f7router }: F7PageProps) {
       infinitePreloader={feed.hasMore && feed.loading}
       onInfinite={onInfinite}
     >
-      <Navbar title="Radix Loom" large transparent>
+      <Navbar title="Quilloryn" large transparent>
         <NavRight>
           <Link panelOpen="left" iconOnly>
             ☰
@@ -148,7 +148,7 @@ function HomePage({ f7router }: F7PageProps) {
       <Fab position="right-bottom" slot="fixed" text="">
         <FabButtons position="top">
           <FabButton onClick={() => void feed.refresh()}>↻</FabButton>
-          <FabButton onClick={() => void share({ title: "Radix Loom", url: "/app/home" })}>⇪</FabButton>
+          <FabButton onClick={() => void share({ title: "Quilloryn", url: "/app/home" })}>⇪</FabButton>
         </FabButtons>
         <span aria-hidden>＋</span>
       </Fab>
@@ -444,7 +444,7 @@ export default function F7Engine({ initialTab }: { initialTab: string }) {
   return (
     <App
       key={native.mode}
-      name="Radix Loom"
+      name="Quilloryn"
       theme={native.mode}
       routes={routes}
       darkMode="auto"
@@ -458,13 +458,13 @@ export default function F7Engine({ initialTab }: { initialTab: string }) {
       }}
       className="native-f7-app"
     >
-      <TitleBarOverlay title="Radix Loom" subtitle="Framework7 engine" />
+      <TitleBarOverlay title="Quilloryn" subtitle="Framework7 engine" />
 
       {/* Native slide-out drawer with real swipe-to-open. */}
       <Panel left cover swipe swipeOnlyClose={false} containerEl="#f7-app">
         <View>
           <Page>
-            <Navbar title="Radix Loom" />
+            <Navbar title="Quilloryn" />
             <List strongIos dividersIos>
               {TABS.map((tab) => (
                 <ListItem

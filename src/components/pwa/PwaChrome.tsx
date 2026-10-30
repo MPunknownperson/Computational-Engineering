@@ -12,7 +12,7 @@ const TABS = [
 ];
 
 const TITLES: Record<string, string> = {
-  "/app/home": "Radix Loom",
+  "/app/home": "Quilloryn",
   "/app/calculator": "Calculator",
   "/app/convert": "Unit converter",
   "/app/settings": "Settings",
@@ -27,7 +27,7 @@ export function PwaChrome({ children }: { children: ReactNode }) {
     <>
       <header className="pwa-topbar">
         <span aria-hidden className="pwa-ico">◆</span>
-        <h1 className="text-base font-semibold">{TITLES[pathname] ?? "Radix Loom"}</h1>
+        <h1 className="text-base font-semibold">{TITLES[pathname] ?? "Quilloryn"}</h1>
       </header>
       <div className="pwa-scroll">{children}</div>
       <nav className="pwa-tabs" aria-label="App sections">

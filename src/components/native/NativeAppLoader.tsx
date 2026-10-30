@@ -12,7 +12,7 @@ const NativeApp = dynamic(() => import("./NativeApp"), {
   loading: () => (
     <div className="native-boot" role="status" aria-live="polite">
       <span className="native-boot__spinner" aria-hidden />
-      <p>Loading Radix Loom…</p>
+      <p>Loading Quilloryn…</p>
     </div>
   ),
 });

@@ -63,7 +63,7 @@ export function ConnectionGate({ children }: { children: ReactNode }) {
         </div>
         <h1>You&rsquo;re offline</h1>
         <p>
-          Radix Loom is a connected application. Every calculation, rate and analysis is computed on the server, so an
+          Quilloryn is a connected application. Every calculation, rate and analysis is computed on the server, so an
           internet connection is required — there is no stale offline copy to fall back to.
         </p>
         <button type="button" className="native-offline__retry" onClick={() => void probe()} disabled={checking}>

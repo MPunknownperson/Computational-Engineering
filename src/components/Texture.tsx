@@ -1,11 +1,11 @@
 /**
  * Shared illustration material layer.
  *
- * The drawn world on Radix Loom is ink-on-paper: flat shapes, bold outlines and
- * offset shadows. This module adds the *texture* of that world without adding
- * weight — a paper grain, a soft cast shadow, and the small set of surface
- * gradients used to shade bodies, tiles and cards so cartoon elements stop
- * looking like flat clip art and start feeling like printed, layered art.
+ * The drawn world on Quilloryn is a flat, 2D cartoon: solid fills, bold ink
+ * outlines, hard offset shadows and cel-style highlights. There are no soft
+ * gradients, paper grain or glossy lighting — every "gradient" id below
+ * resolves to a flat colour (or a hard-edged cel band) so existing artwork
+ * keeps working while reading like a hand-inked animation cel.
  *
  * Every def is namespaced with an `id` prefix because several illustrations can
  * live in the same document and SVG ids resolve globally.
@@ -13,110 +13,68 @@
 
 export type TextureTone = "warm" | "cool" | "mint" | "violet";
 
-const WASH: Record<TextureTone, [string, string]> = {
-  warm: ["#fff6e2", "#f3e6c8"],
-  cool: ["#e6efff", "#c9dcff"],
-  mint: ["#e7faf0", "#c4ecd7"],
-  violet: ["#f0eaff", "#dcd2ff"],
+const WASH: Record<TextureTone, string> = {
+  warm: "#ffe9b8",
+  cool: "#bfe3ff",
+  mint: "#c3f5d8",
+  violet: "#e0d4ff",
 };
+
+function Flat({ id, color }: { id: string; color: string }) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor={color} />
+      <stop offset="100%" stopColor={color} />
+    </linearGradient>
+  );
+}
 
 export function TextureDefs({
   id,
   tone = "warm",
-  grain = 0.9,
 }: {
   id: string;
   tone?: TextureTone;
-  /** Higher = coarser paper tooth. 0.6–1.2 reads as printed paper. */
+  /** Kept for API compatibility; flat cartoon art has no paper grain. */
   grain?: number;
 }) {
-  const [washA, washB] = WASH[tone];
   return (
     <defs>
-      {/* Paper surface: a warm gradient plate that shapes can sit on. */}
-      <linearGradient id={`${id}-paper`} x1="0" y1="0" x2="0.35" y2="1">
-        <stop offset="0%" stopColor="#fffdf7" />
-        <stop offset="55%" stopColor="#fdf6e8" />
-        <stop offset="100%" stopColor="#f4ead6" />
+      <Flat id={`${id}-paper`} color="#fffdf4" />
+      <Flat id={`${id}-wash`} color={WASH[tone]} />
+
+      {/* Cel shading: a single hard-edged shadow band along the lower edge. */}
+      <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#0b1020" stopOpacity="0" />
+        <stop offset="82%" stopColor="#0b1020" stopOpacity="0" />
+        <stop offset="82%" stopColor="#0b1020" stopOpacity=".08" />
+        <stop offset="100%" stopColor="#0b1020" stopOpacity=".08" />
       </linearGradient>
 
-      {/* Colour wash used for backdrops and plates. */}
-      <linearGradient id={`${id}-wash`} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor={washA} />
-        <stop offset="100%" stopColor={washB} />
-      </linearGradient>
+      <Flat id={`${id}-sun`} color="#ffd23f" />
+      <Flat id={`${id}-coral`} color="#ff7a59" />
+      <Flat id={`${id}-sky`} color="#5b8cff" />
+      <Flat id={`${id}-mint`} color="#2fcf7a" />
 
-      {/* Light falls from the upper-left across the whole drawn world. */}
-      <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0.4" y2="1">
-        <stop offset="0%" stopColor="#ffffff" stopOpacity=".55" />
-        <stop offset="45%" stopColor="#ffffff" stopOpacity="0" />
-        <stop offset="100%" stopColor="#0b1020" stopOpacity=".16" />
-      </linearGradient>
-
-      <linearGradient id={`${id}-sun`} x1="0" y1="0" x2="0.6" y2="1">
-        <stop offset="0%" stopColor="#ffe27a" />
-        <stop offset="100%" stopColor="#f4b824" />
-      </linearGradient>
-
-      <linearGradient id={`${id}-coral`} x1="0" y1="0" x2="0.6" y2="1">
-        <stop offset="0%" stopColor="#ff8b6b" />
-        <stop offset="100%" stopColor="#e04f2c" />
-      </linearGradient>
-
-      <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0.6" y2="1">
-        <stop offset="0%" stopColor="#8fb2ff" />
-        <stop offset="100%" stopColor="#4470e8" />
-      </linearGradient>
-
-      <linearGradient id={`${id}-mint`} x1="0" y1="0" x2="0.6" y2="1">
-        <stop offset="0%" stopColor="#7ff0b1" />
-        <stop offset="100%" stopColor="#28b466" />
-      </linearGradient>
-
-      {/* Specular top highlight for glass-like surfaces (calculator screens). */}
+      {/* Cartoon shine: a hard white band instead of a glossy fade. */}
       <linearGradient id={`${id}-gloss`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffffff" stopOpacity=".85" />
-        <stop offset="60%" stopColor="#ffffff" stopOpacity=".08" />
+        <stop offset="0%" stopColor="#ffffff" stopOpacity=".55" />
+        <stop offset="45%" stopColor="#ffffff" stopOpacity=".55" />
+        <stop offset="45%" stopColor="#ffffff" stopOpacity="0" />
         <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
       </linearGradient>
 
-      {/*
-        Printed paper tooth.
-
-        Performance: this was an `feTurbulence` filter. Fractal-noise filters
-        are rasterised on the CPU over the full filter region and are re-run
-        whenever anything in the same SVG invalidates — which, in a scene with
-        ambient animation, means repeatedly. A stochastic dot pattern is a
-        GPU-friendly tile that gives the same printed tooth for a fraction of
-        the cost, and it scales with `grain` the same way.
-      */}
-      <pattern
-        id={`${id}-grain`}
-        width={Math.round(13 / grain)}
-        height={Math.round(13 / grain)}
-        patternUnits="userSpaceOnUse"
-      >
-        <circle cx="2.4" cy="3.1" r="1" fill="#0b1020" fillOpacity=".085" />
-        <circle cx="8.9" cy="9.4" r="1.1" fill="#0b1020" fillOpacity=".06" />
-        <circle cx="11.6" cy="2.2" r=".8" fill="#0b1020" fillOpacity=".065" />
-        <circle cx="5.1" cy="7.2" r=".7" fill="#0b1020" fillOpacity=".05" />
-        <circle cx="1.4" cy="10.8" r=".65" fill="#0b1020" fillOpacity=".045" />
-      </pattern>
-
+      {/* Empty tile: retained so older `url(#…-grain)` references stay valid. */}
+      <pattern id={`${id}-grain`} width="10" height="10" patternUnits="userSpaceOnUse" />
     </defs>
   );
 }
 
-/** Faint paper grain laid over a scene region (a tiled fill, not a filter). */
-export function GrainOverlay({
-  id,
-  x,
-  y,
-  width,
-  height,
-  opacity = 0.28,
-  rx = 0,
-}: {
+/**
+ * Previously a paper-grain overlay. Flat 2D cartoon art has no grain, so this
+ * now renders nothing; the signature is kept so callers need no changes.
+ */
+export function GrainOverlay(props: {
   id: string;
   x: number;
   y: number;
@@ -125,16 +83,6 @@ export function GrainOverlay({
   opacity?: number;
   rx?: number;
 }) {
-  return (
-    <rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      rx={rx}
-      fill={`url(#${id}-grain)`}
-      opacity={opacity}
-      pointerEvents="none"
-    />
-  );
+  void props;
+  return null;
 }

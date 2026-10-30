@@ -109,7 +109,7 @@ const OFFLINE_DOCUMENT = `<!doctype html>
 </style></head>
 <body><div><div style="font-size:2.5rem">⚡</div>
 <h1>You&rsquo;re offline</h1>
-<p>Radix Loom computes everything on the server, so it needs a live connection.
+<p>Quilloryn computes everything on the server, so it needs a live connection.
 Reconnect and try again — no stale offline copy is kept by design.</p>
 <button onclick="location.reload()">Retry</button></div></body></html>`;
 

@@ -3,8 +3,8 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
-const KEY = "radix-loom-theme";
-const EVENT = "radix-loom-theme-change";
+const KEY = "quilloryn-theme";
+const EVENT = "quilloryn-theme-change";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 type Appearance = "light" | "dark";
@@ -16,7 +16,7 @@ type Appearance = "light" | "dark";
  * first paint of every navigation) and mirrored into localStorage.
  */
 function readCookieAppearance(): Appearance | null {
-  const match = /(?:^|; )radix-loom-theme=(dark|light)/.exec(document.cookie);
+  const match = /(?:^|; )quilloryn-theme=(dark|light)/.exec(document.cookie);
   return match ? (match[1] as Appearance) : null;
 }
 

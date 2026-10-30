@@ -1,7 +1,7 @@
 import { SITE } from "@/lib/site";
 
 /**
- * Radix Loom mark — a simple cartoon owl, drawn on its own with no tile or
+ * Quilloryn mark — a simple cartoon owl, drawn on its own with no tile or
  * background plate. Soft off-white plumage, two very large ink eyes with a
  * single highlight, a coral beak, blush circles, wing creases and two stubby
  * feet. Bold closed shapes keep the character readable from a 16px favicon up
@@ -68,6 +68,6 @@ export function BrandMark({ size = 34 }: { size?: number }) {
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return <span className={`font-extrabold tracking-[-.03em] whitespace-nowrap ${className}`} aria-label={SITE.name}>
-    <span className="text-[color:var(--ink)]">Radix</span>{" "}<span className="text-[#a43420]">Loom</span>
+    <span className="text-[color:var(--ink)]">Quill</span><span className="wordmark-accent text-[#a43420]">oryn</span>
   </span>;
 }

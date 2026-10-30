@@ -6,7 +6,7 @@ import type { AngleMode, Notation, SamplePoint } from "@/lib/engine";
 
 export interface EngineSettings { angle: AngleMode; notation: Notation; precision: number }
 const DEFAULTS: EngineSettings = { angle: "rad", notation: "auto", precision: 12 };
-const KEY = "radixloom.engine-settings.v1";
+const KEY = "quilloryn.engine-settings.v1";
 
 /** Angle mode, notation and precision shared by every calculator (remembered in this browser). */
 export function useEngineSettings(): [EngineSettings, (patch: Partial<EngineSettings>) => void] {

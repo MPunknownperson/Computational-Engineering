@@ -1,4 +1,4 @@
-// Radix Loom icon layer — a small, original line-icon set drawn for this site.
+// Quilloryn icon layer — a small, original line-icon set drawn for this site.
 // Every glyph below is hand-built geometry (not a third-party icon library and
 // not emoji), using the same rounded ink strokes as the mascots and cards so
 // icons, illustrations and chrome read as one consistent, drawn world.

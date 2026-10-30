@@ -36,7 +36,7 @@ export function CcpaPolicy() {
       </p>
       <h3 className="mt-5 font-bold">Sale, sharing and your opt-out</h3>
       <p className="mt-3 text-sm leading-relaxed text-slate-700">
-        Radix Loom may share personal information with advertising, measurement and analytics partners in ways that
+        Quilloryn may share personal information with advertising, measurement and analytics partners in ways that
         the CCPA treats as a sale or as sharing for cross-context behavioral advertising. You can record a choice on
         the Do Not Sell or Share page when those browser controls are shown, and we honor Global Privacy Control (GPC)
         when received. You can also contact us about a sale or sharing request.

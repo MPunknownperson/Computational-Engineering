@@ -13,7 +13,7 @@ export function ConsentManager({ serverRegime }: { serverRegime: ServerConsentRe
 
   useEffect(() => {
     // Retire the previous location override rather than migrating or honoring it.
-    try { localStorage.removeItem("radixloom.consent-region.v1"); } catch { /* Storage is optional. */ }
+    try { localStorage.removeItem("quilloryn.consent-region.v1"); } catch { /* Storage is optional. */ }
     announceConsentRegime(regime);
     setMounted(true);
   }, [regime]);

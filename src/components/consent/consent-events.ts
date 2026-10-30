@@ -1,8 +1,8 @@
 /** Shared browser-only constants for the cookie consent UI. */
-export const OPEN_COOKIE_SETTINGS_EVENT = "radixloom:cookie-settings";
+export const OPEN_COOKIE_SETTINGS_EVENT = "quilloryn:cookie-settings";
 /** Fired by the ConsentManager once the visitor's consent regime is resolved. */
-export const CONSENT_REGIME_EVENT = "radixloom:consent-regime";
-export const STANDARD_NOTICE_KEY = "radixloom.cookie-notice";
+export const CONSENT_REGIME_EVENT = "quilloryn:consent-regime";
+export const STANDARD_NOTICE_KEY = "quilloryn.cookie-notice";
 export const SILKTIDE_SCRIPT = "/vendor/silktide/silktide-consent-manager.js";
 export const SILKTIDE_STYLES = "/vendor/silktide/silktide-consent-manager.css";
 

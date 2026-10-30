@@ -64,7 +64,7 @@ const ITEMS: Item[] = [
   {
     q: "Are the figures advice or guaranteed current?",
     a: <>
-      No. Calculations depend on your inputs; external figures can be delayed, changed or unavailable. {"Radix Loom"} does not provide professional advice. See the <Link href="/disclaimer" className="font-bold underline underline-offset-4">Disclaimer</Link> before relying on a result.
+      No. Calculations depend on your inputs; external figures can be delayed, changed or unavailable. {"Quilloryn"} does not provide professional advice. See the <Link href="/disclaimer" className="font-bold underline underline-offset-4">Disclaimer</Link> before relying on a result.
     </>,
   },
 ];
