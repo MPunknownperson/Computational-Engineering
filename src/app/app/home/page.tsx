@@ -13,7 +13,7 @@ export default function PwaHome() {
         <p className="pwa-muted" style={{ fontSize: ".8rem", textTransform: "uppercase", letterSpacing: ".08em" }}>
           Welcome back
         </p>
-        <h2 style={{ fontSize: "1.45rem", fontWeight: 700, marginTop: ".2rem" }}>Computational Engineering</h2>
+        <h2 style={{ fontSize: "1.45rem", fontWeight: 700, marginTop: ".2rem" }}>Calculators and converters</h2>
         <p className="pwa-muted" style={{ marginTop: ".35rem" }}>
           Everything below works offline once cached by the Workbox-powered service worker.
         </p>

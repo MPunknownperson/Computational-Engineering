@@ -16,9 +16,9 @@ export const dynamic = "force-static";
 export function GET() {
   const manifest = {
     id: "/app",
-    name: "Radix Loom — Computational Engineering",
-    short_name: "Radix Loom",
-    description: "Engineering calculators, converters and analytics in a native-feel app shell.",
+    name: "Quilloryn — Calculators and Converters",
+    short_name: "Quilloryn",
+    description: "Friendly calculators, unit converters and reference tools in a native-feel app shell.",
     start_url: "/app/home",
     scope: "/app",
     display: "standalone",

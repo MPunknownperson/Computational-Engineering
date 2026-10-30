@@ -10,7 +10,7 @@ import { protectiveConsentRegime, regimeForArea } from "@/lib/privacy/consent-re
 
 export const generateMetadata = defaultMetadata;
 export const viewport: Viewport = {
-  themeColor: "#f7f5ef",
+  themeColor: "#fff6dc",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -23,14 +23,14 @@ export const viewport: Viewport = {
 // The appearance choice is a strictly necessary interface preference: it is
 // stored for everyone (cookie + localStorage) and never depends on optional
 // consent, which previously made the toggle reset on every navigation.
-const appearanceScript = `(function(){try{var saved=null;var m=document.cookie.match(/(?:^|; )radix-loom-theme=(dark|light)/);if(m)saved=m[1];if(!saved){var ls=localStorage.getItem('radix-loom-theme');if(ls==='dark'||ls==='light')saved=ls;}var mode=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',mode==='dark'?'#141d30':'#f7f5ef');}catch(e){document.documentElement.dataset.theme='light';}})();`;
+const appearanceScript = `(function(){try{var saved=null;var m=document.cookie.match(/(?:^|; )quilloryn-theme=(dark|light)/);if(m)saved=m[1];if(!saved){var ls=localStorage.getItem('quilloryn-theme');if(ls==='dark'||ls==='light')saved=ls;}var mode=saved||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=mode;document.documentElement.style.colorScheme=mode;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',mode==='dark'?'#141d30':'#fff6dc');}catch(e){document.documentElement.dataset.theme='light';}})();`;
 
 const TONES = new Set(["home", "ink", "indigo", "teal", "terra", "violet", "rose", "green", "blue", "warm", "slate"]);
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const requestHeaders = await headers();
   const cookieStore = await cookies();
-  const storedTheme = cookieStore.get("radix-loom-theme")?.value;
+  const storedTheme = cookieStore.get("quilloryn-theme")?.value;
   const theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : undefined;
   const rawTone = requestHeaders.get("x-page-tone") ?? "home";
   const tone = TONES.has(rawTone) ? rawTone : "home";

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const TABS = ["home", "calculator", "convert", "shared", "settings"] as const;
 
 export const metadata: Metadata = {
-  title: "Radix Loom",
+  title: "Quilloryn",
   robots: { index: false, follow: false },
 };
 

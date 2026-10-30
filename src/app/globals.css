@@ -17,43 +17,50 @@
   --nav-active: var(--accent-3);
   --nav-hover: #fff3bd;
   --underline: var(--accent-3);
-  --shadow-ink: 3px 3px 0 var(--line);
-  --shadow-ink-sm: 2px 2px 0 var(--line);
-  --shadow-ink-lg: 4px 4px 0 var(--line);
+  --shadow-ink: 4px 4px 0 var(--line);
+  --shadow-ink-sm: 3px 3px 0 var(--line);
+  --shadow-ink-lg: 6px 6px 0 var(--line);
   --ease: cubic-bezier(.2, .7, .3, 1);
-  --spring: cubic-bezier(.2, .7, .3, 1);
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
   --snap: cubic-bezier(.2, .7, .3, 1);
 }
 
 /* Per-route palettes: every section of the site carries its own background
    tone, navigation surface and accent underline. Tinted pastels keep ink text
    above WCAG AA contrast on every surface. */
-body.tone-home    { --page-bg: #f7f5ef; --nav-bg: #f7f5ef; --nav-active: #ffd23f; --nav-hover: #fff3bd; --underline: #d4492a; }
-body.tone-ink     { --page-bg: #eef0f4; --nav-bg: #e8ebf1; --nav-active: #c3cddd; --nav-hover: #dde3ec; --underline: #5b8cff; }
-body.tone-indigo  { --page-bg: #eef1fb; --nav-bg: #e6eafb; --nav-active: #c7d2ff; --nav-hover: #dbe2fc; --underline: #315dc1; }
-body.tone-teal    { --page-bg: #edf7f5; --nav-bg: #e3f2ef; --nav-active: #b9e5dc; --nav-hover: #d6f0ea; --underline: #0e8a72; }
-body.tone-terra   { --page-bg: #faf1ec; --nav-bg: #f6e8e1; --nav-active: #f2c9b6; --nav-hover: #f8ddcf; --underline: #c25e3a; }
-body.tone-violet  { --page-bg: #f4f1fb; --nav-bg: #ece7f8; --nav-active: #d5c9f2; --nav-hover: #e6ddf9; --underline: #6f4bd8; }
-body.tone-rose    { --page-bg: #fbf1f5; --nav-bg: #f8e8ee; --nav-active: #f0c5d6; --nav-hover: #fadcea; --underline: #c2417c; }
-body.tone-green   { --page-bg: #eff6ef; --nav-bg: #e7f1e7; --nav-active: #c6e3c8; --nav-hover: #ddefdd; --underline: #2f7d45; }
-body.tone-blue    { --page-bg: #eff4fb; --nav-bg: #e6eefb; --nav-active: #c4d9f6; --nav-hover: #dae7fb; --underline: #2f66c0; }
-body.tone-warm    { --page-bg: #f7f5ef; --nav-bg: #f4f1e9; --nav-active: #e7ddc2; --nav-hover: #efe9da; --underline: #ad381f; }
-body.tone-slate   { --page-bg: #f2f3f6; --nav-bg: #ebedf2; --nav-active: #ccd3dd; --nav-hover: #dfe4ec; --underline: #475569; }
+body.tone-home    { --page-bg: #fff6dc; --nav-bg: #fff6dc; --nav-active: #ffd23f; --nav-hover: #ffeaa0; --underline: #ffb3a1; --dot: rgba(255,122,89,.16); }
+body.tone-ink     { --page-bg: #e9f1ff; --nav-bg: #e2ecff; --nav-active: #b9d0ff; --nav-hover: #d3e2ff; --underline: #9cc0ff; --dot: rgba(91,140,255,.16); }
+body.tone-indigo  { --page-bg: #ecefff; --nav-bg: #e3e8ff; --nav-active: #c2ccff; --nav-hover: #d6ddff; --underline: #aab8ff; --dot: rgba(85,105,230,.15); }
+body.tone-teal    { --page-bg: #e3fbf3; --nav-bg: #d6f7ec; --nav-active: #a6ecd5; --nav-hover: #c6f3e4; --underline: #7fe0c2; --dot: rgba(20,170,130,.15); }
+body.tone-terra   { --page-bg: #fff0e6; --nav-bg: #ffe6d6; --nav-active: #ffc6a6; --nav-hover: #ffd9c2; --underline: #ffb08a; --dot: rgba(240,110,60,.15); }
+body.tone-violet  { --page-bg: #f3edff; --nav-bg: #ebe2ff; --nav-active: #d4c2ff; --nav-hover: #e3d7ff; --underline: #c6aefc; --dot: rgba(130,90,230,.15); }
+body.tone-rose    { --page-bg: #ffeef6; --nav-bg: #ffe3ef; --nav-active: #ffbfd9; --nav-hover: #ffd5e7; --underline: #ffa6ca; --dot: rgba(230,80,150,.15); }
+body.tone-green   { --page-bg: #eafbe5; --nav-bg: #dff7d8; --nav-active: #b6eba6; --nav-hover: #cff3c4; --underline: #9ee28a; --dot: rgba(70,180,60,.16); }
+body.tone-blue    { --page-bg: #e6f4ff; --nav-bg: #daeeff; --nav-active: #aed8ff; --nav-hover: #c9e6ff; --underline: #94cbff; --dot: rgba(40,140,230,.15); }
+body.tone-warm    { --page-bg: #fff6dc; --nav-bg: #fff0c9; --nav-active: #ffd98a; --nav-hover: #ffe8b0; --underline: #ffc56b; --dot: rgba(230,150,30,.16); }
+body.tone-slate   { --page-bg: #eef2f8; --nav-bg: #e5ebf4; --nav-active: #c8d4e6; --nav-hover: #dbe3ef; --underline: #b4c4dc; --dot: rgba(70,90,130,.14); }
 
 html { scroll-padding-top: 5.5rem; -webkit-text-size-adjust: 100%; }
 body { background: var(--page-bg); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 .paper-bg {
   background-color: var(--page-bg);
-  background-image: linear-gradient(rgba(26,32,64,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(26,32,64,.03) 1px, transparent 1px);
-  background-size: 28px 28px;
+  /* Cartoon backdrop: offset polka dots instead of engineering graph paper. */
+  background-image:
+    radial-gradient(var(--dot, rgba(255,122,89,.16)) 2.6px, transparent 3px),
+    radial-gradient(var(--dot, rgba(255,122,89,.16)) 2.6px, transparent 3px);
+  background-size: 34px 34px;
+  background-position: 0 0, 17px 17px;
 }
 /* The homepage is deliberately multi-toned: five accent bands under the
    navigation, one per section of the catalogue, over a warm paper base. */
 body.tone-home .site-header { border-bottom-width: 0; }
 body.tone-home .site-header::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
+  content: ""; position: absolute; left: 0; right: 0; bottom: -9px; height: 10px; pointer-events: none;
   background: linear-gradient(90deg,
-    #d4492a 0 20%, #315dc1 20% 40%, #0e8a72 40% 60%, #6f4bd8 60% 80%, #1a2040 80% 100%);
+    #ff7a59 0 20%, #5b8cff 20% 40%, #2fcf7a 40% 60%, #a77bff 60% 80%, #ffd23f 80% 100%);
+  /* Scalloped, cartoon-awning edge. */
+  -webkit-mask: radial-gradient(circle at 10px 0, #000 9px, transparent 9.5px) 0 0 / 20px 10px repeat-x;
+          mask: radial-gradient(circle at 10px 0, #000 9px, transparent 9.5px) 0 0 / 20px 10px repeat-x;
 }
 .skip-link { position: absolute; left: 1rem; top: -4rem; z-index: 100; padding: .55rem .9rem; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 700; border: 2px solid var(--line); }
 .skip-link:focus { top: 1rem; }
@@ -290,14 +297,16 @@ select.select { text-overflow: ellipsis; }
   .board { min-height: 24rem; }
 }
 @media (max-width: 480px) {
-  .paper-bg { background-size: 22px 22px; }
+  .paper-bg { background-size: 26px 26px; background-position: 0 0, 13px 13px; }
   .h-title { letter-spacing: -.02em; }
   .chip { min-height: 30px; }
   .segmented-item { font-size: .78rem; padding-inline: .58rem; }
 }
 @media (hover: hover) {
-  .card-hover:hover { transform: translateY(-2px); }
-  .btn:hover { transform: translateY(-1px); }
+  .card-hover:hover { transform: translate(-2px, -4px) rotate(-.6deg); box-shadow: var(--shadow-ink-lg); }
+  .btn:hover { transform: translate(-1px, -2px); box-shadow: var(--shadow-ink); }
+  .btn:hover { animation: cartoonBoing 420ms var(--spring); }
+  .card-hover:hover .icon-tile, a:hover > .icon-tile { animation: cartoonWiggle 520ms ease-in-out; }
 }
 @media (forced-colors: active) {
   .btn, .input, .textarea, .select, .sketch, .sketch-sm, .chip, .segmented, .board, .board-key { forced-color-adjust: auto; }
@@ -370,7 +379,12 @@ html[data-theme="dark"] body.tone-terra,
 html[data-theme="dark"] body.tone-rose { --page-bg: #27202d; --nav-bg: #34263a; --nav-hover: #493049; }
 html[data-theme="dark"] body.tone-violet,
 html[data-theme="dark"] body.tone-indigo { --page-bg: #1d2038; --nav-bg: #262941; --nav-hover: #353953; }
-html[data-theme="dark"] .paper-bg { background-image: linear-gradient(rgba(184,202,241,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(184,202,241,.045) 1px, transparent 1px); }
+html[data-theme="dark"] .paper-bg {
+  /* Night-time cartoon sky: little scattered stars. */
+  background-image:
+    radial-gradient(rgba(255,226,140,.22) 1.8px, transparent 2.2px),
+    radial-gradient(rgba(184,202,241,.14) 2.4px, transparent 2.8px);
+}
 html[data-theme="dark"] .site-header { color: var(--ink); }
 html[data-theme="dark"] .sketch,
 html[data-theme="dark"] .sketch-sm,
@@ -611,3 +625,116 @@ html[data-theme="dark"] .engine-plot__line { stroke: #a5c2ff; }
 .cta-ink__body { color: #cbd5e1 !important; }
 html[data-theme="dark"] .cta-ink { background-color: #0f1830 !important; color: #f3f6ff !important; border-color: #687b9a; }
 html[data-theme="dark"] .cta-ink__body { color: #c5d2ea !important; }
+
+/* --------------------------------------------------------------------------
+   Quilloryn cartoon layer — flat 2D, cel-animated look.
+   Solid fills, bold ink outlines, hard offset shadows and springy,
+   squash-and-stretch motion. Typography and layout are untouched.
+   -------------------------------------------------------------------------- */
+
+/* Brighter flat surfaces: cards read like cut-out paper cels. */
+.card, .sketch, .sketch-sm { background: #fffef9; }
+.sketch, .card { border-radius: 22px; }
+.sketch-sm { border-radius: 16px; }
+.btn { border-radius: 16px; transition: transform 180ms var(--spring), box-shadow 180ms var(--spring), background-color 140ms; }
+.btn:active { transform: translate(2px, 2px) scale(.97, .94); box-shadow: 1px 1px 0 var(--line); }
+.btn-primary { background: #e0522f; }
+.btn-primary:hover { background: #cc4523; }
+.card-hover { transition: transform 260ms var(--spring), box-shadow 260ms var(--spring); }
+.chip { background: #fffef9; }
+.chip-live { background: #d9fbe6; }
+.input:focus, .textarea:focus, .select:focus { box-shadow: var(--shadow-ink); }
+
+/* Hand-drawn highlighter stroke behind headings. */
+.h-underline::after {
+  height: .42em; bottom: -.02em; left: -6px; right: -6px;
+  border-radius: 10px 4px 12px 6px / 8px 12px 6px 10px;
+  transform: rotate(-1.2deg);
+  transform-origin: left center;
+  animation: markerSwipe 700ms var(--spring) both;
+}
+@keyframes markerSwipe { from { transform: rotate(-1.2deg) scaleX(0); } to { transform: rotate(-1.2deg) scaleX(1); } }
+
+/* Navigation: active pill with a cartoon squiggle instead of a straight rule. */
+.nav-link { border: 2px solid transparent; }
+.nav-link.is-active { border-color: var(--line); box-shadow: var(--shadow-ink-sm); }
+.nav-link.is-active::after {
+  height: 5px; bottom: -1px; background: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='5' viewBox='0 0 12 5'%3E%3Cpath d='M0 2.5q3-3 6 0t6 0' fill='none' stroke='%230b1020' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x; background-size: 12px 5px;
+}
+.nav-link:hover { transform: translateY(-1px) rotate(-1deg); }
+
+/* Icon tiles behave like little stickers. */
+.icon-tile { border-radius: 18px; transform: rotate(-2deg); }
+.sticker-badge { box-shadow: var(--shadow-ink-sm); transform: rotate(2deg); }
+
+/* Artwork plates: flat sky cel behind the hero scene. */
+.art-plate { background: #fff6dc; border-radius: 30px; }
+.art-plate--sky { background: #a9dcff; }
+html[data-theme="dark"] .art-plate--sky { background: #3a4f86; }
+.hero-cartoon text { font-family: inherit; }
+
+/* Chalkboard keeps its job, drawn as a cartoon board with a wooden frame. */
+.board { background-color: #2f5d50; box-shadow: var(--shadow-ink), inset 0 0 0 10px #c98a4b, inset 0 0 0 12px var(--line); }
+
+/* Result panels: sunny cel. */
+.result-panel { background: #fffbe8; box-shadow: var(--shadow-ink-sm); }
+.result-panel.is-revealed { background: #fff3c2; animation: cartoonPopIn 420ms var(--spring); }
+
+/* Reveal-in for swapped panels uses a little overshoot. */
+@keyframes panelIn { 0% { transform: translateY(8px) scale(.98); } 70% { transform: translateY(-2px) scale(1.005); } 100% { transform: none; } }
+
+/* Cookie notice gets the same sticker treatment. */
+.cookie-notice-card { border-radius: 22px; box-shadow: var(--shadow-ink-lg); }
+
+/* ---- Cartoon motion vocabulary ---- */
+@keyframes cartoonBoing {
+  0% { transform: translate(-1px, -2px) scale(1, 1); }
+  30% { transform: translate(-1px, -3px) scale(1.06, .94); }
+  55% { transform: translate(-1px, -2px) scale(.97, 1.04); }
+  80% { transform: translate(-1px, -2px) scale(1.01, .99); }
+  100% { transform: translate(-1px, -2px) scale(1, 1); }
+}
+@keyframes cartoonWiggle { 0%, 100% { transform: rotate(-2deg); } 25% { transform: rotate(8deg) scale(1.08); } 50% { transform: rotate(-7deg); } 75% { transform: rotate(4deg); } }
+@keyframes cartoonPopIn { 0% { transform: scale(.94); } 60% { transform: scale(1.025); } 100% { transform: scale(1); } }
+@keyframes cartoonDrift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(22px); } }
+@keyframes cartoonSpinSlow { to { transform: rotate(360deg); } }
+@keyframes cartoonWaddle { 0%, 100% { transform: rotate(-2.5deg) translateY(0); } 25% { transform: rotate(0deg) translateY(-4px); } 50% { transform: rotate(2.5deg) translateY(0); } 75% { transform: rotate(0deg) translateY(-4px); } }
+@keyframes cartoonWave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-22deg); } }
+@keyframes cartoonFloat { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-12px) scale(1.06); } 100% { transform: translateY(0) scale(1); } }
+@keyframes cartoonHopSquash {
+  0%, 100% { transform: translateY(0) scale(1.05, .95); }
+  15% { transform: translateY(0) scale(1, 1); }
+  45% { transform: translateY(-18px) scale(.97, 1.04); }
+  70% { transform: translateY(0) scale(1, 1); }
+  80% { transform: translateY(0) scale(1.06, .93); }
+}
+@keyframes cartoonShadow { 0%, 15%, 70%, 100% { transform: scaleX(1); opacity: .12; } 45% { transform: scaleX(.75); opacity: .06; } }
+
+.hero-cartoon .cartoon-hop { animation: cartoonHopSquash 2.4s ease-in-out infinite; transform-origin: 50% 100%; transform-box: fill-box; }
+.cartoon-shadow { animation: cartoonShadow 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.cartoon-drift { animation: cartoonDrift 9s ease-in-out infinite; }
+.cartoon-drift.is-slow { animation-duration: 13s; animation-direction: reverse; }
+.cartoon-spin-slow { animation: cartoonSpinSlow 18s linear infinite; transform-origin: 0 0; }
+.cartoon-waddle { animation: cartoonWaddle 2.8s ease-in-out infinite; transform-origin: 50% 100%; transform-box: fill-box; }
+.cartoon-wave { animation: cartoonWave 1.4s ease-in-out infinite; transform-origin: 0 0; }
+.cartoon-float { animation: cartoonFloat 3s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.is-delay-1 { animation-delay: -1s; }
+.is-delay-2 { animation-delay: -2s; }
+
+/* Dark mode keeps the cartoon cels readable. */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .sketch,
+html[data-theme="dark"] .sketch-sm { background-color: #202d46; }
+html[data-theme="dark"] .result-panel { background: #202d46; }
+html[data-theme="dark"] .result-panel.is-revealed { background: #263c49; }
+html[data-theme="dark"] .nav-link.is-active::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='5' viewBox='0 0 12 5'%3E%3Cpath d='M0 2.5q3-3 6 0t6 0' fill='none' stroke='%23eef3ff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .chip-live { background: #203e39; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover:hover .icon-tile, a:hover > .icon-tile, .btn:hover { animation: none !important; }
+  .h-underline::after { animation: none; }
+}

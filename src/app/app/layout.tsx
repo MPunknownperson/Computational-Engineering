@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import "./native.css";
 
 export const metadata: Metadata = {
-  title: { default: "Radix Loom", template: "%s · Radix Loom" },
-  description: "Engineering calculators, converters and analytics in a native-feel connected app.",
-  applicationName: "Radix Loom",
+  title: { default: "Quilloryn", template: "%s · Quilloryn" },
+  description: "Friendly calculators, unit converters and reference tools in a native-feel connected app.",
+  applicationName: "Quilloryn",
   manifest: "/app/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Radix Loom", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Quilloryn", statusBarStyle: "black-translucent" },
   robots: { index: false, follow: false },
   icons: {
     icon: [
