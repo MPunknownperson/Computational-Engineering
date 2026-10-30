@@ -270,7 +270,7 @@ export function renderPageImage(page: SearchPage) {
           </div>
         </div>
         <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 22, padding: "0 54px", background: "#fffdf5", borderTop: "4px solid #0b1020" }}>
-          <div style={{ display: "flex", width: 54, height: 54, borderRadius: 16, background: "#ffd23f", border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800 }}>R</div>
+          <div style={{ display: "flex", width: 54, height: 54, borderRadius: 16, background: "#ffd23f", border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800 }}>Q</div>
           <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div style={{ display: "flex", fontSize: page.title.length > 52 ? 30 : 36, fontWeight: 800, lineHeight: 1.1 }}>{page.title}</div>
             <div style={{ display: "flex", marginTop: 6, fontSize: 19, color: "#475569" }}>{page.formula ?? SITE.name} · {SITE.name}</div>
@@ -285,7 +285,7 @@ export function renderPageImage(page: SearchPage) {
       <div style={{ display: "flex", position: "relative", width: "100%", height: "100%", background: "#f7f5ef", color: "#0b1020", padding: "42px 54px", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: 12, background: p.accent }} />
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ display: "flex", width: 46, height: 46, borderRadius: 13, background: p.accent2, border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 21, fontWeight: 800 }}>R</div>
+        <div style={{ display: "flex", width: 46, height: 46, borderRadius: 13, background: p.accent2, border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 21, fontWeight: 800 }}>Q</div>
         <span style={{ fontSize: 28, fontWeight: 700 }}>{SITE.name}</span>
         <span style={{ fontSize: 16, marginLeft: "auto", color: "#475569" }}>CALCULATE · CONVERT · EXPLORE</span>
       </div>

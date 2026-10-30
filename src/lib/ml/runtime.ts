@@ -18,8 +18,8 @@ import { functionalStorage, optionalPurposeAllowed, subscribeConsentChange } fro
 export type Tf = typeof TF;
 export type LayersModel = TF.LayersModel;
 
-const PREFIX = "radixloom.ml.";
-const MODEL_PREFIX = "radixloom-";
+const PREFIX = "quilloryn.ml.";
+const MODEL_PREFIX = "quilloryn-";
 
 let loading: Promise<Tf | null> | null = null;
 
