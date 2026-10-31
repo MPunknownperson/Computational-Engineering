@@ -16,7 +16,7 @@ https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/
 
 ## Run
 
-Install dependencies, set `DATABASE_URL`, apply the Drizzle schema with `npx drizzle-kit push`, then use `npm run dev` or build for production. Existing legacy database records are preserved, but their previous public application routes are removed. The health endpoint is `/api/health`.
+Install dependencies with `npm install`, then run `npm run dev` or `npm run build`. The site is **database-free**: there is no PostgreSQL, no Drizzle, no connection string. Working data (jobs, artifacts, incidents, market snapshots, saved formulas, consent receipts) lives in a bounded in-process store (`src/lib/store`), which is what makes the project deployable to Cloudflare Workers and Pages. Deploy with `npm run cf:build` and `npm run cf:deploy` (OpenNext adapter, config in `wrangler.jsonc` / `open-next.config.ts`); `npm run cf:preview` runs the Worker build locally. The health endpoint is `/api/health`.
 
 ## Current behavior
 
