@@ -12,8 +12,6 @@ import { parseAcceptLanguage, selectPack, t, type UiKey } from "@/lib/i18n";
 import { consentAreaFromHeaders } from "@/lib/privacy/consent-location";
 import { regimeForArea } from "@/lib/privacy/consent-regime";
 import { ConsentManager } from "@/components/consent/ConsentManager";
-import { FastGptWidget } from "@/components/tech/FastGptWidget";
-import { fastGptWidgetConfig } from "@/lib/agent/fastgpt";
 import { ErrorReporter } from "@/components/system/ErrorReporter";
 
 const NAV: Array<{ href: string; key: UiKey }> = [
@@ -29,7 +27,6 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
   const pack = selectPack(parseAcceptLanguage(requestHeaders.get("accept-language")));
   const NAV_ITEMS: NavItem[] = NAV.map((item) => ({ href: item.href, label: t(pack, item.key) }));
   const serverRegime = regimeForArea(consentAreaFromHeaders(requestHeaders));
-  const fastGpt = fastGptWidgetConfig();
   return (
     <>
       <a href="#main" className="skip-link">Skip to content</a>
@@ -49,7 +46,6 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <SiteFooter />
       <ConsentManager serverRegime={serverRegime} />
       <ErrorReporter />
-      {fastGpt && <FastGptWidget scriptSrc={fastGpt.scriptSrc} botSrc={fastGpt.botSrc} />}
     </>
   );
 }

@@ -10,14 +10,13 @@ import { Icon, type IconName } from "@/components/Icons";
 import { MotionCard, Reveal } from "@/components/Motion";
 import { Faq } from "@/components/home/Faq";
 import { FormulaLibrary } from "@/components/home/Sections";
-import { SITE } from "@/lib/site";
 import { CURRENCIES, COUNTRIES, UNIT_COUNT, UNIT_CATEGORY_COUNT, CRYPTO_IDS, INDICATORS } from "@/lib/catalog";
 
 const VOICE_POINTS: { icon: IconName; title: string; body: string }[] = [
-  { icon: "mic", title: "Say it in your own words", body: "“Convert 120 US dollars to euros,” “70 kilos in pounds,” “loan payment” — the matching tool opens with the amount and direction already filled in." },
-  { icon: "language", title: "Five languages, one grammar", body: "English, Spanish, French, German and Chinese are understood by the same engine, each with its own numbers, currencies and topic words." },
-  { icon: "shield", title: "Processed where it makes sense", body: "Phones use on-device recognition where it's offered; desktop browsers use their own speech service. Nothing is uploaded to this site." },
-  { icon: "refresh", title: "Gets better as you use it", body: "A quick “again” repeats your last command, and a follow-up amount reuses the direction you already set — no need to restate everything." },
+  { icon: "mic", title: "Say it in your own words", body: "Try “120 dollars to euros” or “70 kilos in pounds”. The right tool opens with your numbers filled in." },
+  { icon: "language", title: "English plus four others", body: "Spanish, French, German and Chinese work too. Accuracy is best in English; we're still tuning the rest." },
+  { icon: "shield", title: "Audio stays with you", body: "Recognition is done by your phone or browser. We never receive the recording." },
+  { icon: "refresh", title: "Short follow-ups work", body: "Say “again”, or just a new amount, and it reuses the last conversion." },
 ];
 
 export const generateMetadata = () => metadataFor("/");
@@ -25,20 +24,20 @@ export const generateMetadata = () => metadataFor("/");
 const TOOLS: {
   href: string; title: string; blurb: string; cartoon: ToolCartoonId; tone: ToolTone; badge?: string; meta: string;
 }[] = [
-  { href: "/tools/calculator", tone: "ink", cartoon: "calculator", title: "Calculator", blurb: "Nova keeps a chalkboard, not a plastic keypad. Sketch the diagram, jot the principle in chalk, then press Calculate — the answer waits until you ask, and the board stays in this browser.", meta: "press Calculate" },
-  { href: "/tools/scientific", tone: "coral", cartoon: "scientific", title: "Scientific calculator", blurb: "Type the expression the way you would write it: roots, trigonometry, matrices, named values and units. The sigma on the card is the job — press Calculate and the prepared result is revealed.", meta: "press Calculate" },
-  { href: "/tools/units", tone: "sky", cartoon: "units", title: "Unit converter", blurb: `A stretching ruler, a weight and a thermometer, standing in for ${UNIT_COUNT} units across ${UNIT_CATEGORY_COUNT} categories. Pick both sides, press Convert, and every other unit in that category appears at once.`, meta: "press Convert" },
-  { href: "/tools/currency", tone: "terra", cartoon: "currency", title: "Currency reference", blurb: `Pip watches the coins flip across ${CURRENCIES.length} currencies. Press Convert for an indicative amount, its publication date and a recent trend — a planning figure, not a bank quote.`, badge: "updates", meta: "press Convert" },
-  { href: "/tools/crypto", tone: "violet", cartoon: "crypto", title: "Digital-asset prices", blurb: `A pulsing coin and a row of bars for ${CRYPTO_IDS.length} digital assets: price, daily movement and a market summary. Filter the list yourself. Venues disagree, and nothing here is a trade ticket.`, badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
-  { href: "/tools/formula", tone: "pink", cartoon: "formula", title: "Custom formulas", blurb: "Bring the method with you. The pencil writes P(1+r)ⁿ, you name P, r and n, then press Evaluate. Save, export or delete the expression when you are done with it.", meta: "press Evaluate" },
-  { href: "/tools/economy", tone: "mint", cartoon: "economy", title: "Economic indicators", blurb: `Bars that grow only when you ask: ${INDICATORS.length} public measures — inflation, growth, lending rates, debt and more — for ${COUNTRIES.length} economies. Press Show. Many series are periodic and may be revised.`, badge: "updates", meta: "press Show" },
+  { href: "/tools/calculator", tone: "ink", cartoon: "calculator", title: "Calculator", blurb: "A basic calculator with a scratch area for notes. Your board is saved in this browser only.", meta: "press Calculate" },
+  { href: "/tools/scientific", tone: "coral", cartoon: "scientific", title: "Scientific calculator", blurb: "Roots, trig, matrices, constants and units. Type it how you'd write it on paper.", meta: "press Calculate" },
+  { href: "/tools/units", tone: "sky", cartoon: "units", title: "Unit converter", blurb: `${UNIT_COUNT} units in ${UNIT_CATEGORY_COUNT} categories. Convert once and see the value in every related unit.`, meta: "press Convert" },
+  { href: "/tools/currency", tone: "terra", cartoon: "currency", title: "Currency reference", blurb: `${CURRENCIES.length} currencies with the rate date and a short history. Good for budgeting — your bank's rate will differ.`, badge: "updates", meta: "press Convert" },
+  { href: "/tools/crypto", tone: "violet", cartoon: "crypto", title: "Digital-asset prices", blurb: `Prices and 24h change for ${CRYPTO_IDS.length} coins. Exchanges disagree, so treat these as ballpark numbers.`, badge: "updates", meta: `${CRYPTO_IDS.length} assets` },
+  { href: "/tools/formula", tone: "pink", cartoon: "formula", title: "Custom formulas", blurb: "Write your own expression, fill in the variables, save it for later.", meta: "press Evaluate" },
+  { href: "/tools/economy", tone: "mint", cartoon: "economy", title: "Economic indicators", blurb: `Inflation, GDP growth, rates and debt — ${INDICATORS.length} series for ${COUNTRIES.length} countries. Some only update yearly.`, badge: "updates", meta: "press Show" },
 ];
 
 const FACTS: { icon: IconName; title: string; body: string }[] = [
-  { icon: "function", title: "Use your own formulas", body: "Enter an expression such as P*(1+r/n)^(n*t), provide values for its variables and press Evaluate. Simplification and derivative estimates are aids, not proof of correctness." },
-  { icon: "bolt", title: "Reference information", body: "Currency values, digital-asset prices and public economic indicators appear in their respective tools. Their sources, coverage and update frequency differ." },
-  { icon: "shield", title: "No account required", body: "Use the calculators without a profile. If you choose to save a formula, a random workspace reference helps make it available again in the same browser." },
-  { icon: "target", title: "Nothing appears unasked", body: "Calculated results wait for your confirmation. Worked examples are labelled as illustrations, and the market table provides reference information." },
+  { icon: "function", title: "Use your own formulas", body: "Type something like P*(1+r/n)^(n*t), fill in the letters, done. Double-check anything important." },
+  { icon: "bolt", title: "Reference information", body: "Rates and prices come from public sources and refresh at different speeds." },
+  { icon: "shield", title: "No account required", body: "There are no accounts. Saved formulas are tied to this browser." },
+  { icon: "target", title: "You press the button", body: "Results show up when you hit Calculate, not while you're still typing." },
 ];
 
 const INFORMATION_TYPES = [
@@ -56,23 +55,19 @@ export default function Home() {
           <div>
             <Reveal>
               <h1 className="h-title text-[2.6rem] leading-[1.04] sm:text-[3.7rem]">
-                <span className="h-underline">Free online calculator</span><br />
-                &amp; unit converter<br />
-                for everyday numbers.
+                Calculators and converters,<br />without the clutter.
               </h1>
             </Reveal>
             <Reveal delay={70}>
               <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-slate-600">
-                {SITE.name} brings together a scientific calculator, unit conversion, currency and
-                digital-asset reference tools, selected economic indicators and a place to enter
-                your own formulas. Calculators prepare your answer while you type and show it only
-                when you press their confirmation button. No account is required.
+                A scientific calculator, a unit converter, exchange rates and a few other tools we
+                kept reaching for ourselves. No sign-up, no pop-ups asking for your email.
               </p>
             </Reveal>
             <Reveal delay={140}>
               <div className="mt-8">
                 <Link href="/calculators" className="btn btn-primary">
-                  Browse the tools <Icon name="arrow-right" size={17} />
+                  See all tools <Icon name="arrow-right" size={17} />
                 </Link>
               </div>
             </Reveal>
@@ -88,12 +83,11 @@ export default function Home() {
               <Reveal>
                 <span className="chip"><Icon name="mic" size={13} /> Speak a calculation</span>
                 <h2 id="voice-heading" className="h-title mt-4 text-3xl sm:text-4xl">
-                  Say what you want to <span className="h-underline">calculate</span>
+                  Or just say it out loud
                 </h2>
                 <p className="mt-4 max-w-xl text-[1.05rem] leading-relaxed text-slate-600">
-                  Press the microphone on the calculators page and speak a conversion, a formula or
-                  a reference figure. The site understands the request and opens the right tool with
-                  your values already in place — no typing, no menus to search through.
+                  Tap the mic on the tools page and say what you need. It works well for
+                  conversions; longer formulas are hit and miss.
                 </p>
               </Reveal>
               <Reveal delay={60}>
@@ -114,10 +108,10 @@ export default function Home() {
               <Reveal delay={110}>
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link href="/calculators" className="btn btn-primary">
-                    Try speaking a calculation <Icon name="arrow-right" size={17} />
+                    Try the mic <Icon name="arrow-right" size={17} />
                   </Link>
                   <Link href="/guides/voice-coach" className="btn">
-                    <Icon name="book" size={16} /> See the learning paths
+                    <Icon name="book" size={16} /> Voice tips
                   </Link>
                 </div>
               </Reveal>
@@ -162,7 +156,7 @@ export default function Home() {
 
       <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="facts-heading">
         <Reveal>
-          <h2 id="facts-heading" className="h-title text-3xl sm:text-4xl">What to <span className="h-underline">expect</span></h2>
+          <h2 id="facts-heading" className="h-title text-3xl sm:text-4xl">A few notes</h2>
         </Reveal>
         <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FACTS.map((f) => (
@@ -182,12 +176,10 @@ export default function Home() {
           <div className="rounded-[24px] border-2 border-[color:var(--line)] bg-[#0b1020] p-8 shadow-[var(--shadow-ink-lg)] sm:p-12" data-tone="dark">
             <div className="grid items-center gap-10 lg:grid-cols-2">
               <div>
-                <h2 id="formula-heading" className="text-3xl font-extrabold leading-tight text-white sm:text-4xl">Bring your own method.</h2>
+                <h2 id="formula-heading" className="text-3xl font-extrabold leading-tight text-white sm:text-4xl">Your own formulas</h2>
                 <p className="mt-4 leading-relaxed text-slate-300">
-                  Enter a repayment expression, conversion factor or physics formula. Provide values
-                  for its variables, then press Evaluate to reveal the result. Simplification and
-                  derivative estimates can help with exploration; important calculations should be
-                  checked independently.
+                  Loan repayments, a conversion factor you use at work, a physics formula from class.
+                  Write it once, plug in numbers whenever you need them.
                 </p>
                 <ul className="mt-6 space-y-2.5">
                   {[
@@ -214,15 +206,15 @@ export default function Home() {
 
       <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="library-heading">
         <Reveal>
-          <h2 id="library-heading" className="h-title text-3xl sm:text-4xl">Example <span className="h-underline">formulas</span></h2>
-          <p className="mt-2 max-w-xl text-slate-600">Open an example in the formula tool and adapt it to your own inputs.</p>
+          <h2 id="library-heading" className="h-title text-3xl sm:text-4xl">Some examples</h2>
+          <p className="mt-2 max-w-xl text-slate-600">Click one to open it in the formula tool.</p>
         </Reveal>
         <div className="mt-8"><Reveal><FormulaLibrary /></Reveal></div>
       </section>
 
       <section className="defer-paint mx-auto max-w-7xl px-5 py-12" aria-labelledby="reference-heading">
         <Reveal>
-          <h2 id="reference-heading" className="h-title text-3xl sm:text-4xl">Reference <span className="h-underline">information</span></h2>
+          <h2 id="reference-heading" className="h-title text-3xl sm:text-4xl">Where the numbers come from</h2>
           <p className="mt-2 max-w-2xl text-slate-600">Figures are supplied from external sources. Availability, coverage and update frequency vary by tool.</p>
         </Reveal>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -240,8 +232,8 @@ export default function Home() {
 
       <section className="defer-paint mx-auto max-w-7xl px-5 py-12 pb-20" aria-labelledby="faq-heading">
         <Reveal>
-          <h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Frequently <span className="h-underline">asked</span></h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-600">Detailed answers for voice setup, processing messages, follow-up commands, saved formulas and reference figures.</p>
+          <h2 id="faq-heading" className="h-title text-center text-3xl sm:text-4xl">Questions</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-relaxed text-slate-600">Things people have asked us.</p>
         </Reveal>
         <div className="mt-9"><Reveal><Faq /></Reveal></div>
       </section>

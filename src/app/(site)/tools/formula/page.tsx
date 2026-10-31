@@ -332,7 +332,7 @@ function SensitivityPanel({ spec, angle, format }: PanelProps) {
           {out.items.map((item) => (
             <li key={item.name} className="rounded-xl border-2 border-[color:var(--line)] px-3 py-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm"><span className="mono font-extrabold">{item.name}</span><span className="text-slate-600">elasticity <span className="mono font-bold text-[color:var(--ink)]">{item.elasticity === null ? "—" : formatValue(item.elasticity, { precision: 5 })}</span> · ∂f/∂{item.name} = <span className="mono">{formatValue(item.partial, { precision: 6 })}</span></span></div>
-              <div className="rive-meter mt-1.5"><span style={{ width: `${Math.round(item.share * 100)}%` }} /></div>
+              <div className="bar-meter mt-1.5"><span style={{ width: `${Math.round(item.share * 100)}%` }} /></div>
             </li>
           ))}
           {out.items.length === 0 && <li className="text-sm text-slate-500">No numeric variables influence this expression.</li>}
@@ -358,7 +358,7 @@ function UncertaintyPanel({ spec, angle, format }: PanelProps) {
           ]} />
           <p className="mt-2 text-xs text-slate-500">{out.result.method}</p>
           <ul className="mt-3 space-y-1 text-sm">
-            {out.result.contributions.map((c) => <li key={c.name} className="flex items-center gap-3"><span className="mono w-16 font-bold">{c.name}</span><span className="rive-meter flex-1"><span style={{ width: `${Math.round(c.share * 100)}%` }} /></span><span className="w-14 text-right text-xs text-slate-600">{(c.share * 100).toFixed(0)} %</span></li>)}
+            {out.result.contributions.map((c) => <li key={c.name} className="flex items-center gap-3"><span className="mono w-16 font-bold">{c.name}</span><span className="bar-meter flex-1"><span style={{ width: `${Math.round(c.share * 100)}%` }} /></span><span className="w-14 text-right text-xs text-slate-600">{(c.share * 100).toFixed(0)} %</span></li>)}
           </ul>
         </div>
       ) : <p className="mt-3 text-sm font-semibold text-rose-600">{out.error}</p>)}
