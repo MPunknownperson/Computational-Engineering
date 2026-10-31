@@ -1,0 +1,835 @@
+{
+  "home": {
+    "png": "/media/home.287e19ca995c.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/home.287e19ca995c.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/home.287e19ca995c.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/home.287e19ca995c.1200.webp"
+      }
+    ]
+  },
+  "calculators": {
+    "png": "/media/calculators.32af5059b249.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/calculators.32af5059b249.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/calculators.32af5059b249.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/calculators.32af5059b249.1200.webp"
+      }
+    ]
+  },
+  "tools--calculator": {
+    "png": "/media/tools--calculator.cb1b168f25f7.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--calculator.cb1b168f25f7.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--calculator.cb1b168f25f7.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--calculator.cb1b168f25f7.1200.webp"
+      }
+    ]
+  },
+  "tools--scientific": {
+    "png": "/media/tools--scientific.7bb81084248c.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--scientific.7bb81084248c.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--scientific.7bb81084248c.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--scientific.7bb81084248c.1200.webp"
+      }
+    ]
+  },
+  "tools--units": {
+    "png": "/media/tools--units.93d6e8d1ab88.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--units.93d6e8d1ab88.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--units.93d6e8d1ab88.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--units.93d6e8d1ab88.1200.webp"
+      }
+    ]
+  },
+  "convert": {
+    "png": "/media/convert.d56006e1e90b.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert.d56006e1e90b.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert.d56006e1e90b.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert.d56006e1e90b.1200.webp"
+      }
+    ]
+  },
+  "calculate": {
+    "png": "/media/calculate.2d4331826595.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/calculate.2d4331826595.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/calculate.2d4331826595.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/calculate.2d4331826595.1200.webp"
+      }
+    ]
+  },
+  "reference": {
+    "png": "/media/reference.61213517aabb.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/reference.61213517aabb.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/reference.61213517aabb.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/reference.61213517aabb.1200.webp"
+      }
+    ]
+  },
+  "tools--formula": {
+    "png": "/media/tools--formula.d2deaef76e35.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--formula.d2deaef76e35.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--formula.d2deaef76e35.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--formula.d2deaef76e35.1200.webp"
+      }
+    ]
+  },
+  "tools--currency": {
+    "png": "/media/tools--currency.13daa5a59921.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--currency.13daa5a59921.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--currency.13daa5a59921.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--currency.13daa5a59921.1200.webp"
+      }
+    ]
+  },
+  "tools--crypto": {
+    "png": "/media/tools--crypto.84848b5d6f43.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--crypto.84848b5d6f43.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--crypto.84848b5d6f43.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--crypto.84848b5d6f43.1200.webp"
+      }
+    ]
+  },
+  "tools--economy": {
+    "png": "/media/tools--economy.063f397a2975.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/tools--economy.063f397a2975.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/tools--economy.063f397a2975.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/tools--economy.063f397a2975.1200.webp"
+      }
+    ]
+  },
+  "guides": {
+    "png": "/media/guides.2be3d8db19bb.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides.2be3d8db19bb.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides.2be3d8db19bb.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides.2be3d8db19bb.1200.webp"
+      }
+    ]
+  },
+  "guides--voice-coach": {
+    "png": "/media/guides--voice-coach.e99d110fbc05.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--voice-coach.e99d110fbc05.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--voice-coach.e99d110fbc05.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--voice-coach.e99d110fbc05.1200.webp"
+      }
+    ]
+  },
+  "about": {
+    "png": "/media/about.2281e24e3d4c.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/about.2281e24e3d4c.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/about.2281e24e3d4c.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/about.2281e24e3d4c.1200.webp"
+      }
+    ]
+  },
+  "contact": {
+    "png": "/media/contact.f4f2c4c0000e.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/contact.f4f2c4c0000e.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/contact.f4f2c4c0000e.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/contact.f4f2c4c0000e.1200.webp"
+      }
+    ]
+  },
+  "terms": {
+    "png": "/media/terms.4ac707554111.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/terms.4ac707554111.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/terms.4ac707554111.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/terms.4ac707554111.1200.webp"
+      }
+    ]
+  },
+  "privacy": {
+    "png": "/media/privacy.4fecb94b3c72.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/privacy.4fecb94b3c72.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/privacy.4fecb94b3c72.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/privacy.4fecb94b3c72.1200.webp"
+      }
+    ]
+  },
+  "disclaimer": {
+    "png": "/media/disclaimer.89b09c5b7289.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/disclaimer.89b09c5b7289.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/disclaimer.89b09c5b7289.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/disclaimer.89b09c5b7289.1200.webp"
+      }
+    ]
+  },
+  "accessibility": {
+    "png": "/media/accessibility.e11bddf19aa3.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/accessibility.e11bddf19aa3.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/accessibility.e11bddf19aa3.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/accessibility.e11bddf19aa3.1200.webp"
+      }
+    ]
+  },
+  "guides--meters-to-feet": {
+    "png": "/media/guides--meters-to-feet.0ac68c5a9d99.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--meters-to-feet.0ac68c5a9d99.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--meters-to-feet.0ac68c5a9d99.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--meters-to-feet.0ac68c5a9d99.1200.webp"
+      }
+    ]
+  },
+  "guides--celsius-to-fahrenheit": {
+    "png": "/media/guides--celsius-to-fahrenheit.bff5a583ebc3.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--celsius-to-fahrenheit.bff5a583ebc3.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--celsius-to-fahrenheit.bff5a583ebc3.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--celsius-to-fahrenheit.bff5a583ebc3.1200.webp"
+      }
+    ]
+  },
+  "guides--pounds-to-kilograms": {
+    "png": "/media/guides--pounds-to-kilograms.7f73d51db973.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--pounds-to-kilograms.7f73d51db973.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--pounds-to-kilograms.7f73d51db973.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--pounds-to-kilograms.7f73d51db973.1200.webp"
+      }
+    ]
+  },
+  "guides--megabytes-vs-mebibytes": {
+    "png": "/media/guides--megabytes-vs-mebibytes.aca0e39cbf97.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--megabytes-vs-mebibytes.aca0e39cbf97.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--megabytes-vs-mebibytes.aca0e39cbf97.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--megabytes-vs-mebibytes.aca0e39cbf97.1200.webp"
+      }
+    ]
+  },
+  "guides--compound-interest": {
+    "png": "/media/guides--compound-interest.a694a7c919a9.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--compound-interest.a694a7c919a9.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--compound-interest.a694a7c919a9.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--compound-interest.a694a7c919a9.1200.webp"
+      }
+    ]
+  },
+  "guides--solve-linear-systems": {
+    "png": "/media/guides--solve-linear-systems.27f570531934.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--solve-linear-systems.27f570531934.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--solve-linear-systems.27f570531934.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--solve-linear-systems.27f570531934.1200.webp"
+      }
+    ]
+  },
+  "guides--exchange-rate-reference-values": {
+    "png": "/media/guides--exchange-rate-reference-values.63b9b0057420.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--exchange-rate-reference-values.63b9b0057420.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--exchange-rate-reference-values.63b9b0057420.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--exchange-rate-reference-values.63b9b0057420.1200.webp"
+      }
+    ]
+  },
+  "guides--miles-to-kilometers": {
+    "png": "/media/guides--miles-to-kilometers.15ff8d92d755.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--miles-to-kilometers.15ff8d92d755.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--miles-to-kilometers.15ff8d92d755.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--miles-to-kilometers.15ff8d92d755.1200.webp"
+      }
+    ]
+  },
+  "guides--kilometers-per-hour-to-mph": {
+    "png": "/media/guides--kilometers-per-hour-to-mph.820301b04110.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--kilometers-per-hour-to-mph.820301b04110.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--kilometers-per-hour-to-mph.820301b04110.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--kilometers-per-hour-to-mph.820301b04110.1200.webp"
+      }
+    ]
+  },
+  "guides--liters-to-us-gallons": {
+    "png": "/media/guides--liters-to-us-gallons.c58006a52497.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--liters-to-us-gallons.c58006a52497.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--liters-to-us-gallons.c58006a52497.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--liters-to-us-gallons.c58006a52497.1200.webp"
+      }
+    ]
+  },
+  "guides--quadratic-equation-positive-root": {
+    "png": "/media/guides--quadratic-equation-positive-root.53f5d618c065.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--quadratic-equation-positive-root.53f5d618c065.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--quadratic-equation-positive-root.53f5d618c065.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--quadratic-equation-positive-root.53f5d618c065.1200.webp"
+      }
+    ]
+  },
+  "guides--square-feet-to-square-meters": {
+    "png": "/media/guides--square-feet-to-square-meters.0344b0da6956.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--square-feet-to-square-meters.0344b0da6956.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--square-feet-to-square-meters.0344b0da6956.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--square-feet-to-square-meters.0344b0da6956.1200.webp"
+      }
+    ]
+  },
+  "guides--understanding-inflation-rate": {
+    "png": "/media/guides--understanding-inflation-rate.6ee7c7e75340.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--understanding-inflation-rate.6ee7c7e75340.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--understanding-inflation-rate.6ee7c7e75340.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--understanding-inflation-rate.6ee7c7e75340.1200.webp"
+      }
+    ]
+  },
+  "guides--split-a-bill-with-tip": {
+    "png": "/media/guides--split-a-bill-with-tip.92963467689c.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/guides--split-a-bill-with-tip.92963467689c.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/guides--split-a-bill-with-tip.92963467689c.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/guides--split-a-bill-with-tip.92963467689c.1200.webp"
+      }
+    ]
+  },
+  "convert--kilograms-to-pounds": {
+    "png": "/media/convert--kilograms-to-pounds.f39d6604c039.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--kilograms-to-pounds.f39d6604c039.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--kilograms-to-pounds.f39d6604c039.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--kilograms-to-pounds.f39d6604c039.1200.webp"
+      }
+    ]
+  },
+  "convert--pounds-to-kilograms": {
+    "png": "/media/convert--pounds-to-kilograms.24b9af876871.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--pounds-to-kilograms.24b9af876871.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--pounds-to-kilograms.24b9af876871.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--pounds-to-kilograms.24b9af876871.1200.webp"
+      }
+    ]
+  },
+  "convert--centimeters-to-inches": {
+    "png": "/media/convert--centimeters-to-inches.a2e57ae76069.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--centimeters-to-inches.a2e57ae76069.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--centimeters-to-inches.a2e57ae76069.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--centimeters-to-inches.a2e57ae76069.1200.webp"
+      }
+    ]
+  },
+  "convert--miles-to-kilometers": {
+    "png": "/media/convert--miles-to-kilometers.23b3c3a698d1.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--miles-to-kilometers.23b3c3a698d1.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--miles-to-kilometers.23b3c3a698d1.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--miles-to-kilometers.23b3c3a698d1.1200.webp"
+      }
+    ]
+  },
+  "convert--kilometers-per-hour-to-mph": {
+    "png": "/media/convert--kilometers-per-hour-to-mph.f3241584d216.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--kilometers-per-hour-to-mph.f3241584d216.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--kilometers-per-hour-to-mph.f3241584d216.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--kilometers-per-hour-to-mph.f3241584d216.1200.webp"
+      }
+    ]
+  },
+  "convert--liters-to-gallons": {
+    "png": "/media/convert--liters-to-gallons.8bbc6e02c94e.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--liters-to-gallons.8bbc6e02c94e.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--liters-to-gallons.8bbc6e02c94e.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--liters-to-gallons.8bbc6e02c94e.1200.webp"
+      }
+    ]
+  },
+  "convert--celsius-to-fahrenheit": {
+    "png": "/media/convert--celsius-to-fahrenheit.0e0ffc407195.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--celsius-to-fahrenheit.0e0ffc407195.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--celsius-to-fahrenheit.0e0ffc407195.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--celsius-to-fahrenheit.0e0ffc407195.1200.webp"
+      }
+    ]
+  },
+  "convert--square-feet-to-square-meters": {
+    "png": "/media/convert--square-feet-to-square-meters.6e74a7c9334f.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/convert--square-feet-to-square-meters.6e74a7c9334f.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/convert--square-feet-to-square-meters.6e74a7c9334f.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/convert--square-feet-to-square-meters.6e74a7c9334f.1200.webp"
+      }
+    ]
+  },
+  "calculate--loan-payment": {
+    "png": "/media/calculate--loan-payment.019fc3242305.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/calculate--loan-payment.019fc3242305.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/calculate--loan-payment.019fc3242305.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/calculate--loan-payment.019fc3242305.1200.webp"
+      }
+    ]
+  },
+  "calculate--tip-split": {
+    "png": "/media/calculate--tip-split.61ca3bc24a2d.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/calculate--tip-split.61ca3bc24a2d.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/calculate--tip-split.61ca3bc24a2d.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/calculate--tip-split.61ca3bc24a2d.1200.webp"
+      }
+    ]
+  },
+  "calculate--quadratic-formula": {
+    "png": "/media/calculate--quadratic-formula.063a51b64f42.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/calculate--quadratic-formula.063a51b64f42.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/calculate--quadratic-formula.063a51b64f42.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/calculate--quadratic-formula.063a51b64f42.1200.webp"
+      }
+    ]
+  },
+  "reference--us-inflation-rate": {
+    "png": "/media/reference--us-inflation-rate.f08a89d49644.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/reference--us-inflation-rate.f08a89d49644.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/reference--us-inflation-rate.f08a89d49644.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/reference--us-inflation-rate.f08a89d49644.1200.webp"
+      }
+    ]
+  },
+  "reference--usd-to-eur": {
+    "png": "/media/reference--usd-to-eur.c11425338a31.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/reference--usd-to-eur.c11425338a31.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/reference--usd-to-eur.c11425338a31.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/reference--usd-to-eur.c11425338a31.1200.webp"
+      }
+    ]
+  },
+  "reference--bitcoin-price": {
+    "png": "/media/reference--bitcoin-price.e70bda63df51.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/reference--bitcoin-price.e70bda63df51.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/reference--bitcoin-price.e70bda63df51.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/reference--bitcoin-price.e70bda63df51.1200.webp"
+      }
+    ]
+  },
+  "do-not-sell-or-share": {
+    "png": "/media/do-not-sell-or-share.5752f0938b17.png",
+    "variants": [
+      {
+        "width": 400,
+        "src": "/media/do-not-sell-or-share.5752f0938b17.400.webp"
+      },
+      {
+        "width": 800,
+        "src": "/media/do-not-sell-or-share.5752f0938b17.800.webp"
+      },
+      {
+        "width": 1200,
+        "src": "/media/do-not-sell-or-share.5752f0938b17.1200.webp"
+      }
+    ]
+  }
+}
