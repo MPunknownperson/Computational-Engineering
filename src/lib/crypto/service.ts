@@ -13,14 +13,12 @@ import "server-only";
  * by a per-provider circuit breaker. Failures feed the remediation engine,
  * which may swap the primary provider or slow the scheduler at runtime.
  */
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { cryptoAlerts, cryptoHistoryCache, cryptoSnapshots } from "@/db/schema";
+import { store } from "@/lib/store";
 import { CRYPTO_IDS } from "@/lib/catalog";
 import { AppError, classifyError } from "@/lib/core/errors";
 import { FastCache } from "@/lib/core/fast-cache";
 import { allBreakers, breaker, fallbackChain, retry, type ProviderAttempt } from "@/lib/core/resilience";
-import { captureAndRemediate, ensureReliabilitySchema, registerRemediationHooks } from "@/lib/remediation/engine";
+import { captureAndRemediate, registerRemediationHooks } from "@/lib/remediation/engine";
 import { getRuntime, loadRuntimePatches } from "@/lib/remediation/runtime-config";
 import { annualisedVolatility, bollinger, compositeSignal, ema, historicalVaR, linearRegression, logReturns, macd, maxDrawdown, mean, monteCarloGBM, parametricVaR, rsi, sharpe, simpleReturns, sma, sortino, stddev, supportResistance, zScore, correlationMatrix, beta, kahanSum } from "./engine";
 import { ASSET_META, coinbaseMarkets, coingeckoHistory, coingeckoMarkets, downsample, seedHistory, seedMarkets, type HistorySeries, type MarketAsset } from "./providers";
@@ -41,16 +39,17 @@ globalForScheduler.__radixCryptoScheduler = scheduler;
 
 async function lastSnapshotMap(vs: string): Promise<Map<string, MarketAsset> | null> {
   try {
-    const rows = await db.execute(sql`select distinct on (asset_id) asset_id, symbol, name, price, change_24h, change_7d, market_cap, volume_24h, high_24h, low_24h, rank, source, captured_at
-      from crypto_snapshots where vs = ${vs} and source <> 'seed' order by asset_id, captured_at desc`);
-    if (!rows.rows.length) return null;
+    const rows = store.cryptoSnapshots
+      .list((row) => row.vs === vs && row.source !== "seed")
+      .sort((a, b) => a.capturedAt.getTime() - b.capturedAt.getTime());
+    if (!rows.length) return null;
     const map = new Map<string, MarketAsset>();
-    for (const r of rows.rows as Array<Record<string, unknown>>) {
-      map.set(String(r.asset_id), { id: String(r.asset_id), symbol: String(r.symbol), name: String(r.name), rank: r.rank === null ? null : Number(r.rank), price: Number(r.price), change24h: r.change_24h === null ? null : Number(r.change_24h), change7d: r.change_7d === null ? null : Number(r.change_7d), marketCap: r.market_cap === null ? null : Number(r.market_cap), volume24h: r.volume_24h === null ? null : Number(r.volume_24h), high24h: r.high_24h === null ? null : Number(r.high_24h), low24h: r.low_24h === null ? null : Number(r.low_24h), ath: null, athChangePct: null, circulatingSupply: null, sparkline7d: null, lastUpdated: new Date(r.captured_at as string).toISOString() });
+    for (const r of rows) {
+      // Later rows overwrite earlier ones, leaving the newest per asset.
+      map.set(r.assetId, { id: r.assetId, symbol: r.symbol, name: r.name, rank: r.rank, price: Number(r.price), change24h: r.change24h, change7d: r.change7d, marketCap: r.marketCap === null ? null : Number(r.marketCap), volume24h: r.volume24h === null ? null : Number(r.volume24h), high24h: r.high24h === null ? null : Number(r.high24h), low24h: r.low24h === null ? null : Number(r.low24h), ath: null, athChangePct: null, circulatingSupply: null, sparkline7d: null, lastUpdated: r.capturedAt.toISOString() });
     }
     return map;
-  } catch (error) {
-    if (classifyError(error).category === "schema_missing") void ensureReliabilitySchema(true);
+  } catch {
     return null;
   }
 }
@@ -60,9 +59,13 @@ async function persistSnapshots(vs: string, items: MarketAsset[], source: string
   if (Date.now() - scheduler.lastPersistAt < 50_000) return; // at most ~once a minute
   scheduler.lastPersistAt = Date.now();
   try {
-    await db.insert(cryptoSnapshots).values(items.map((a) => ({ assetId: a.id, symbol: a.symbol, name: a.name, vs, price: a.price.toString(), change24h: a.change24h, change7d: a.change7d, marketCap: a.marketCap?.toString() ?? null, volume24h: a.volume24h?.toString() ?? null, high24h: a.high24h?.toString() ?? null, low24h: a.low24h?.toString() ?? null, rank: a.rank, source })));
+    const capturedAt = new Date();
+    store.cryptoSnapshots.insertMany(items.map((a) => ({ id: store.cryptoSnapshots.nextSequence(), assetId: a.id, symbol: a.symbol, name: a.name, vs, price: a.price.toString(), change24h: a.change24h, change7d: a.change7d, marketCap: a.marketCap?.toString() ?? null, volume24h: a.volume24h?.toString() ?? null, high24h: a.high24h?.toString() ?? null, low24h: a.low24h?.toString() ?? null, rank: a.rank, source, capturedAt })));
     // Keep ~14 days of snapshots.
-    if (scheduler.ticks % 40 === 0) await db.execute(sql`delete from crypto_snapshots where captured_at < now() - interval '14 days'`);
+    if (scheduler.ticks % 40 === 0) {
+      const cutoff = Date.now() - 14 * 86_400_000;
+      store.cryptoSnapshots.remove((row) => row.capturedAt.getTime() < cutoff);
+    }
   } catch (error) {
     void captureAndRemediate({ origin: "server", error, route: "crypto.persistSnapshots" });
   }
@@ -104,10 +107,12 @@ export async function getMarkets(vs: string, options: { force?: boolean } = {}):
 async function historyFromSnapshots(id: string, vs: string, days: number): Promise<HistorySeries | null> {
   try {
     const since = new Date(Date.now() - days * 86_400_000);
-    const rows = await db.select({ price: cryptoSnapshots.price, volume: cryptoSnapshots.volume24h, at: cryptoSnapshots.capturedAt }).from(cryptoSnapshots)
-      .where(and(eq(cryptoSnapshots.assetId, id), eq(cryptoSnapshots.vs, vs), gte(cryptoSnapshots.capturedAt, since))).orderBy(cryptoSnapshots.capturedAt).limit(5_000);
+    const rows = store.cryptoSnapshots
+      .list((row) => row.assetId === id && row.vs === vs && row.capturedAt.getTime() >= since.getTime())
+      .sort((a, b) => a.capturedAt.getTime() - b.capturedAt.getTime())
+      .slice(0, 5_000);
     if (rows.length < 12) return null;
-    return { points: rows.map((r) => [r.at.getTime(), Number(r.price)] as [number, number]), volumes: rows.map((r) => [r.at.getTime(), Number(r.volume ?? 0)] as [number, number]), source: "snapshot", fetchedAt: Date.now() };
+    return { points: rows.map((r) => [r.capturedAt.getTime(), Number(r.price)] as [number, number]), volumes: rows.map((r) => [r.capturedAt.getTime(), Number(r.volume24h ?? 0)] as [number, number]), source: "snapshot", fetchedAt: Date.now() };
   } catch { return null; }
 }
 
@@ -118,19 +123,22 @@ export async function getHistory(id: string, vs: string, days: number): Promise<
     const timeoutMs = getRuntime("crypto.timeoutMs");
     const chain = [
       { name: "coingecko", run: () => breaker("coingecko", 3, 60_000).run(() => retry(() => coingeckoHistory(id, vs, days, timeoutMs), { attempts: 2, baseMs: 300 })) },
-      { name: "db-cache", run: async () => {
-        const row = (await db.select().from(cryptoHistoryCache).where(and(eq(cryptoHistoryCache.assetId, id), eq(cryptoHistoryCache.vs, vs), eq(cryptoHistoryCache.days, days))).limit(1))[0];
+      { name: "memory-cache", run: async () => {
+        const row = store.cryptoHistory.find((entry) => entry.assetId === id && entry.vs === vs && entry.days === days);
         if (!row || row.source === "seed" || row.points.length < 5) throw new AppError("upstream_unavailable", "no cached history");
-        return { points: row.points, volumes: row.volumes, source: `db-cache(${row.source})`, fetchedAt: row.fetchedAt.getTime() } satisfies HistorySeries;
+        return { points: row.points, volumes: row.volumes, source: `memory-cache(${row.source})`, fetchedAt: row.fetchedAt.getTime() } satisfies HistorySeries;
       } },
       { name: "snapshots", run: async () => { const s = await historyFromSnapshots(id, vs, days); if (!s) throw new AppError("upstream_unavailable", "insufficient snapshots"); return s; } },
       { name: "seed", run: async () => seedHistory(id, vs, days) },
     ];
     const result = await fallbackChain(chain);
     if (result.provider === "coingecko") {
-      db.insert(cryptoHistoryCache).values({ assetId: id, vs, days, points: result.value.points, volumes: result.value.volumes, source: "coingecko" })
-        .onConflictDoUpdate({ target: [cryptoHistoryCache.assetId, cryptoHistoryCache.vs, cryptoHistoryCache.days], set: { points: result.value.points, volumes: result.value.volumes, source: "coingecko", fetchedAt: new Date() } })
-        .catch((error) => void captureAndRemediate({ origin: "server", error, route: "crypto.historyCache" }));
+      const entry = { points: result.value.points, volumes: result.value.volumes, source: "coingecko", fetchedAt: new Date() };
+      store.cryptoHistory.upsert(
+        (row) => row.assetId === id && row.vs === vs && row.days === days,
+        () => ({ id: store.cryptoHistory.nextSequence(), assetId: id, vs, days, ...entry }),
+        entry,
+      );
     }
     const failed = result.attempts.filter((a) => !a.ok && a.provider === "coingecko");
     if (failed.length) void captureAndRemediate({ origin: "server", category: /rate limited/i.test(failed[0].error ?? "") ? "rate_limited" : /timed out/i.test(failed[0].error ?? "") ? "upstream_timeout" : "upstream_unavailable", message: `coingecko history: ${failed[0].error}`, route: "crypto.history", context: { id, days } });
@@ -220,7 +228,8 @@ export async function getCorrelation(ids: string[], vs: string, days: number): P
 
 export async function evaluateAlerts(items: MarketAsset[], vs: string): Promise<number> {
   try {
-    const armed = await db.select().from(cryptoAlerts).where(and(eq(cryptoAlerts.status, "armed"), eq(cryptoAlerts.vs, vs), inArray(cryptoAlerts.assetId, items.map((a) => a.id)))).limit(2_000);
+    const ids = new Set(items.map((a) => a.id));
+    const armed = store.cryptoAlerts.list((row) => row.status === "armed" && row.vs === vs && ids.has(row.assetId)).slice(0, 2_000);
     let triggered = 0;
     for (const alert of armed) {
       const asset = items.find((a) => a.id === alert.assetId);
@@ -228,7 +237,7 @@ export async function evaluateAlerts(items: MarketAsset[], vs: string): Promise<
       const threshold = Number(alert.threshold);
       const hit = alert.condition === "above" ? asset.price >= threshold : alert.condition === "below" ? asset.price <= threshold : alert.condition === "change_up" ? (asset.change24h ?? 0) >= threshold : alert.condition === "change_down" ? (asset.change24h ?? 0) <= -Math.abs(threshold) : false;
       if (!hit) continue;
-      await db.update(cryptoAlerts).set({ status: "triggered", triggeredAt: new Date(), triggeredPrice: asset.price.toString() }).where(eq(cryptoAlerts.id, alert.id));
+      store.cryptoAlerts.update((row) => row.id === alert.id, { status: "triggered", triggeredAt: new Date(), triggeredPrice: asset.price.toString() });
       triggered++;
     }
     scheduler.alertsTriggered += triggered;
@@ -284,11 +293,11 @@ export async function engineStatus() {
   const cached = marketsCache.peek("usd");
   let snapshotCount = 0, oldestSnapshot: string | null = null, historyRows = 0;
   try {
-    const counts = await db.execute(sql`select count(*)::int as n, min(captured_at) as oldest from crypto_snapshots`);
-    snapshotCount = Number((counts.rows[0] as { n: number }).n ?? 0);
-    oldestSnapshot = (counts.rows[0] as { oldest: Date | null }).oldest ? new Date((counts.rows[0] as { oldest: Date }).oldest).toISOString() : null;
-    const hist = await db.execute(sql`select count(*)::int as n from crypto_history_cache`);
-    historyRows = Number((hist.rows[0] as { n: number }).n ?? 0);
+    const snapshots = store.cryptoSnapshots.all();
+    snapshotCount = snapshots.length;
+    const oldest = snapshots.reduce<number | null>((min, row) => (min === null || row.capturedAt.getTime() < min ? row.capturedAt.getTime() : min), null);
+    oldestSnapshot = oldest === null ? null : new Date(oldest).toISOString();
+    historyRows = store.cryptoHistory.size;
   } catch { /* status must never fail */ }
   return {
     now: Date.now(),
@@ -308,7 +317,11 @@ export async function latestQuotes(vs: string): Promise<Map<string, MarketAsset>
 }
 
 export async function recentSnapshotsFor(id: string, hours: number) {
-  return db.select().from(cryptoSnapshots).where(and(eq(cryptoSnapshots.assetId, id), gte(cryptoSnapshots.capturedAt, new Date(Date.now() - hours * 3_600_000)))).orderBy(desc(cryptoSnapshots.capturedAt)).limit(500);
+  const since = Date.now() - hours * 3_600_000;
+  return store.cryptoSnapshots
+    .list((row) => row.assetId === id && row.capturedAt.getTime() >= since)
+    .sort((a, b) => b.capturedAt.getTime() - a.capturedAt.getTime())
+    .slice(0, 500);
 }
 
 /* Register with the remediation engine so playbooks can warm and verify this subsystem. */

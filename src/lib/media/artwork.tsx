@@ -20,25 +20,34 @@ type Scene =
 
 type Palette = { paper: string; wash: string; accent: string; accent2: string };
 
+/**
+ * Restrained drafting-room palette.
+ *
+ * The first version of these plates leaned on bright, saturated pastels and
+ * glossy candy accents — the look people now read instantly as "machine
+ * generated". They are replaced here by the inks of a printed engineering
+ * handbook: warm off-white stock, one muted process colour and one earthy
+ * secondary per subject, so each plate reads as a drawn figure, not a render.
+ */
 const PALETTES: Record<Scene, Palette> = {
-  "meter-foot": { paper: "#edf5ff", wash: "#c8e0ff", accent: "#5b8cff", accent2: "#ffd23f" },
-  thermometer: { paper: "#fff0ec", wash: "#ffd1c6", accent: "#ff6b4a", accent2: "#ffd23f" },
-  mass: { paper: "#effaf2", wash: "#c8f0d2", accent: "#4ade80", accent2: "#5b8cff" },
-  data: { paper: "#f1efff", wash: "#d8d1ff", accent: "#7a61d9", accent2: "#ffd23f" },
-  compound: { paper: "#fff7dd", wash: "#ffe6a0", accent: "#d09117", accent2: "#4ade80" },
-  matrix: { paper: "#eef7f4", wash: "#c6eee4", accent: "#27a98f", accent2: "#5b8cff" },
-  exchange: { paper: "#fff8dc", wash: "#ffdfa1", accent: "#df8c20", accent2: "#5b8cff" },
-  road: { paper: "#eef5ff", wash: "#c9defd", accent: "#5b8cff", accent2: "#ff6b4a" },
-  speed: { paper: "#eef9f3", wash: "#c6eed6", accent: "#2ebf69", accent2: "#ffd23f" },
-  liquid: { paper: "#eaf8fb", wash: "#beeef2", accent: "#36b7c4", accent2: "#ff9d3d" },
-  quadratic: { paper: "#f7f0ff", wash: "#e3d3ff", accent: "#9a6add", accent2: "#ff6b4a" },
-  area: { paper: "#f4f8ea", wash: "#dcebb7", accent: "#7ba73c", accent2: "#5b8cff" },
-  inflation: { paper: "#fff0f5", wash: "#ffd0df", accent: "#e35c8a", accent2: "#5b8cff" },
-  receipt: { paper: "#fff6e6", wash: "#ffe0ae", accent: "#ef9343", accent2: "#ff6b4a" },
-  bitcoin: { paper: "#fff8dc", wash: "#ffe9a8", accent: "#d09219", accent2: "#5b8cff" },
-  voice: { paper: "#eef3ff", wash: "#cfe0ff", accent: "#5b8cff", accent2: "#ffd23f" },
-  formula: { paper: "#f1f4ff", wash: "#d4ddff", accent: "#5b8cff", accent2: "#ff6b4a" },
-  board: { paper: "#eef3ff", wash: "#d5deee", accent: "#243044", accent2: "#ffd23f" },
+  "meter-foot": { paper: "#f4f1e8", wash: "#e4e0d2", accent: "#2f5d7c", accent2: "#b4873f" },
+  thermometer: { paper: "#f5f0e9", wash: "#e6ded1", accent: "#a8452f", accent2: "#577083" },
+  mass: { paper: "#f2f2ea", wash: "#dfe2d6", accent: "#4a6b4f", accent2: "#9a7b3f" },
+  data: { paper: "#f1f1ee", wash: "#dedfe2", accent: "#4c4f6b", accent2: "#8c6a4a" },
+  compound: { paper: "#f6f1e5", wash: "#e8dfc9", accent: "#8a6a2b", accent2: "#4a6b4f" },
+  matrix: { paper: "#eff2f0", wash: "#dbe3df", accent: "#2f6557", accent2: "#4d5f78" },
+  exchange: { paper: "#f6f2e7", wash: "#e8dfcb", accent: "#7d6128", accent2: "#3f5d74" },
+  road: { paper: "#f1f2f1", wash: "#dde1e3", accent: "#3b5f7d", accent2: "#9b5a3c" },
+  speed: { paper: "#f0f2ed", wash: "#dde3d9", accent: "#3f6b4c", accent2: "#8c7434" },
+  liquid: { paper: "#eef2f2", wash: "#dae3e3", accent: "#2f6470", accent2: "#95643c" },
+  quadratic: { paper: "#f2f0f3", wash: "#e0dde4", accent: "#56476b", accent2: "#9b5a3c" },
+  area: { paper: "#f2f3ec", wash: "#e0e4d4", accent: "#5c6e34", accent2: "#44617c" },
+  inflation: { paper: "#f5f0ee", wash: "#e6dcd9", accent: "#8b4a56", accent2: "#45617a" },
+  receipt: { paper: "#f6f2ea", wash: "#e8ded0", accent: "#8a5a32", accent2: "#5b6a46" },
+  bitcoin: { paper: "#f5f2e8", wash: "#e7e0cd", accent: "#7f6420", accent2: "#3f5970" },
+  voice: { paper: "#f1f2f4", wash: "#dde1e7", accent: "#3b5675", accent2: "#8a6a3a" },
+  formula: { paper: "#f2f2ef", wash: "#dfe0dc", accent: "#3c5570", accent2: "#8a5f3a" },
+  board: { paper: "#eff1f3", wash: "#dcdfe4", accent: "#27313f", accent2: "#8a6a3a" },
 };
 
 const SCENES: Array<[RegExp, Scene]> = [
@@ -67,9 +76,9 @@ function sceneFor(path: string): Scene {
 }
 
 /** Small HTML labels placed over the art (the rasteriser cannot draw SVG text). */
-function Tag({ x, y, children, bg = "#fff", fg = "#0b1020" }: { x: number; y: number; children: ReactNode; bg?: string; fg?: string }) {
+function Tag({ x, y, children, bg = "#fbf9f3", fg = "#23272e" }: { x: number; y: number; children: ReactNode; bg?: string; fg?: string }) {
   return (
-    <div style={{ position: "absolute", left: x, top: y, display: "flex", padding: "6px 12px", borderRadius: 12, background: bg, color: fg, border: "2.5px solid #0b1020", fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
+    <div style={{ position: "absolute", left: x, top: y, display: "flex", padding: "4px 9px", borderRadius: 3, background: bg, color: fg, border: "1.4px solid #23272e", fontSize: 16, fontWeight: 600, letterSpacing: 0.3, lineHeight: 1 }}>
       {children}
     </div>
   );
@@ -77,15 +86,30 @@ function Tag({ x, y, children, bg = "#fff", fg = "#0b1020" }: { x: number; y: nu
 
 /** Content-specific vector scenes on a 560×360 canvas. Path-only SVG. */
 function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: number }): ReactNode {
-  const L = "#0b1020";
+  const L = "#23272e"; // printing ink, not UI black
   const a = p.accent;
   const b = p.accent2;
   const W = 560, H = 360;
   // Crisp, flat vector shapes compress efficiently without grain or glows.
+  // A plate from a printed manual: ruled stock, a trimmed border, registration
+  // ticks in the corners and a single flat ground line. Deliberately plain —
+  // no glows, no gradients, no symmetrical "sticker" blobs.
   const svg = (children: ReactNode) => (
     <svg width={W * scale} height={H * scale} viewBox={`0 0 ${W} ${H}`} fill="none">
-      <rect width={W} height={H} rx="26" fill={p.wash} />
-      <path d="M0 280c80-26 170-22 260-2s170 24 300-10v92H0Z" fill="#fffdf5" />
+      <rect width={W} height={H} fill={p.paper} />
+      {/* faint 20px drafting grid */}
+      {Array.from({ length: Math.floor(W / 20) }).map((_, i) => (
+        <path key={`v${i}`} d={`M${i * 20} 0v${H}`} stroke={p.wash} strokeWidth="1" />
+      ))}
+      {Array.from({ length: Math.floor(H / 20) }).map((_, i) => (
+        <path key={`h${i}`} d={`M0 ${i * 20}h${W}`} stroke={p.wash} strokeWidth="1" />
+      ))}
+      <rect x="14" y="14" width={W - 28} height={H - 28} fill="none" stroke={L} strokeWidth="1.6" />
+      <path d="M14 34V14h20M546 14h-20v20M14 326v20h20M546 346h-20v-20" stroke={L} strokeWidth="2.4" fill="none" />
+      <path d={`M28 300h${W - 56}`} stroke={L} strokeWidth="2" />
+      {Array.from({ length: 22 }).map((_, i) => (
+        <path key={`t${i}`} d={`M${34 + i * 23} 300v${i % 5 === 0 ? 9 : 5}`} stroke={L} strokeWidth="1.4" />
+      ))}
       {children}
     </svg>
   );
@@ -118,7 +142,7 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
     </g>);
     case "data": return svg(<g>
       <rect x="110" y="40" width="170" height="270" rx="16" fill="#fff" stroke={L} strokeWidth="4.5" />
-      {[0, 1, 2, 3, 4].map((row) => <g key={row}><rect x="132" y={66 + row * 48} width="126" height="30" rx="6" fill={row % 2 ? a : "#edf1ff"} stroke={L} strokeWidth="2.4" /><circle cx="150" cy={81 + row * 48} r="4" fill={row % 2 ? "#fff" : L} /></g>)}
+      {[0, 1, 2, 3, 4].map((row) => <g key={row}><rect x="132" y={66 + row * 48} width="126" height="30" rx="6" fill={row % 2 ? a : "#e6e8ec"} stroke={L} strokeWidth="2.4" /><circle cx="150" cy={81 + row * 48} r="4" fill={row % 2 ? "#fff" : L} /></g>)}
       <path d="M310 176h90" stroke={L} strokeWidth="4.5" strokeDasharray="5 10" strokeLinecap="round" />
       <path d="M384 156l34 20-34 20" fill={b} stroke={L} strokeWidth="3.2" strokeLinejoin="round" />
       <circle cx="470" cy="176" r="46" fill={a} stroke={L} strokeWidth="4.5" />
@@ -127,7 +151,7 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
     case "compound": return svg(<g>
       <path d="M70 300h430" stroke={L} strokeWidth="4" strokeLinecap="round" />
       <path d="M92 284c60-22 94-30 140-72 50-44 96-36 136-82 40-46 84-30 126-96" fill="none" stroke={a} strokeWidth="7" strokeLinecap="round" />
-      {[0, 1, 2, 3].map((i) => <g key={i} transform={`translate(${120 + i * 100} ${264 - i * 44})`}><ellipse cx="0" cy="18" rx="36" ry="11" fill={i % 2 ? a : b} stroke={L} strokeWidth="3.5" /><ellipse cx="0" cy="4" rx="36" ry="11" fill="#ffd23f" stroke={L} strokeWidth="3.5" /><ellipse cx="0" cy="-10" rx="36" ry="11" fill={i % 2 ? b : a} stroke={L} strokeWidth="3.5" /></g>)}
+      {[0, 1, 2, 3].map((i) => <g key={i} transform={`translate(${120 + i * 100} ${264 - i * 44})`}><ellipse cx="0" cy="18" rx="36" ry="11" fill={i % 2 ? a : b} stroke={L} strokeWidth="3.5" /><ellipse cx="0" cy="4" rx="36" ry="11" fill="#e3d7b4" stroke={L} strokeWidth="3.5" /><ellipse cx="0" cy="-10" rx="36" ry="11" fill={i % 2 ? b : a} stroke={L} strokeWidth="3.5" /></g>)}
     </g>);
     case "matrix": return svg(<g>
       <path d="M118 60v230M136 60v230M424 60v230M406 60v230" stroke={L} strokeWidth="5" strokeLinecap="round" />
@@ -145,7 +169,7 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
     </g>);
     case "road": return svg(<g>
       <path d="M70 300c60-150 230-190 440-120" fill="none" stroke={L} strokeWidth="56" strokeLinecap="round" />
-      <path d="M70 300c60-150 230-190 440-120" fill="none" stroke="#fffdf5" strokeWidth="46" strokeLinecap="round" />
+      <path d="M70 300c60-150 230-190 440-120" fill="none" stroke="#fbf9f3" strokeWidth="46" strokeLinecap="round" />
       <path d="M92 282c60-128 220-164 400-104" fill="none" stroke={a} strokeWidth="5" strokeDasharray="14 18" strokeLinecap="round" />
       <path d="M112 236l44 28-50 12Z" fill={b} stroke={L} strokeWidth="3.5" strokeLinejoin="round" />
       <circle cx="486" cy="146" r="22" fill={b} stroke={L} strokeWidth="4" />
@@ -185,14 +209,14 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
       {[0, 1, 2, 3].map((i) => <path key={i} d={`M90 ${110 + i * 52}h400`} stroke={L} strokeWidth="1.5" opacity=".2" />)}
     </g>);
     case "receipt": return svg(<g>
-      <path d="M130 42h190v232l-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11V42Z" fill="#fffdf5" stroke={L} strokeWidth="4.5" strokeLinejoin="round" />
+      <path d="M130 42h190v232l-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11-17-11-17 11V42Z" fill="#fbf9f3" stroke={L} strokeWidth="4.5" strokeLinejoin="round" />
       <path d="M160 94h130M160 128h130M160 162h84M160 206h130" stroke={L} strokeWidth="3.5" strokeLinecap="round" />
       <path d="M160 236h130" stroke={L} strokeWidth="3" strokeDasharray="3 7" />
       <circle cx="430" cy="196" r="64" fill={a} stroke={L} strokeWidth="5" />
       <path d="M404 172l52 48M456 172l-52 48" stroke="#fff" strokeWidth="7" strokeLinecap="round" opacity=".9" />
     </g>);
     case "bitcoin": return svg(<g>
-      <circle cx="226" cy="180" r="104" fill="#ffd23f" stroke={L} strokeWidth="6" />
+      <circle cx="226" cy="180" r="104" fill="#e3d7b4" stroke={L} strokeWidth="6" />
       <circle cx="226" cy="180" r="80" fill="none" stroke={L} strokeWidth="3" strokeDasharray="5 11" />
       <path d="M200 120v120M226 120v120M190 134h52c14 0 24 10 24 22s-10 22-24 22h-52M190 178h58c14 0 24 10 24 22s-10 22-24 22h-58" stroke={L} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <path d="M360 236c50-20 76-62 104-128" fill="none" stroke={a} strokeWidth="7" strokeLinecap="round" />
@@ -201,7 +225,7 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
     case "board": return svg(<g>
       <rect x="70" y="48" width="420" height="250" rx="22" fill="#243044" stroke={L} strokeWidth="5" />
       <path d="M110 118c40-18 90 12 140-6 46-16 88 20 140 4" fill="none" stroke="#f6f1e4" strokeWidth="7" strokeLinecap="round" />
-      <path d="M118 188h92M118 216h168" stroke="#ffe08a" strokeWidth="6" strokeLinecap="round" />
+      <path d="M118 188h92M118 216h168" stroke="#ece0bf" strokeWidth="6" strokeLinecap="round" />
       <circle cx="430" cy="86" r="18" fill={b} stroke={L} strokeWidth="4" />
     </g>);
     case "voice": return svg(<g>
@@ -222,27 +246,28 @@ function SceneArt({ scene, p, scale = 1 }: { scene: Scene; p: Palette; scale?: n
 
 /** Example labels that make each article image specific to its worked example. */
 const SCENE_TAGS: Partial<Record<Scene, Array<{ x: number; y: number; text: string; bg?: string; fg?: string }>>> = {
-  // Visible band after the full-bleed crop is scene y ≈ 62–280 and x ≈ 0–520.
-  "meter-foot": [{ x: 30, y: 70, text: "1 m" }, { x: 420, y: 70, text: "3.28 ft", bg: "#5b8cff", fg: "#0b1020" }],
-  thermometer: [{ x: 230, y: 160, text: "20 °C" }, { x: 395, y: 160, text: "68 °F", bg: "#ff6b4a", fg: "#0b1020" }],
-  mass: [{ x: 100, y: 200, text: "10 lb" }, { x: 340, y: 200, text: "4.54 kg", bg: "#4ade80" }],
-  data: [{ x: 300, y: 72, text: "1 MB = 1,000,000 B" }, { x: 300, y: 236, text: "1 MiB = 2²⁰ B", bg: "#7a61d9", fg: "#0b1020" }],
-  compound: [{ x: 30, y: 70, text: "A = P(1 + r/n)^(nt)" }, { x: 360, y: 236, text: "n = 12, t = 10", bg: "#ffd23f" }],
-  matrix: [{ x: 150, y: 72, text: "2x + y = 5" }, { x: 320, y: 72, text: "x − y = 1" }, { x: 190, y: 250, text: "x = 2, y = 1", bg: "#27a98f", fg: "#0b1020" }],
-  exchange: [{ x: 134, y: 164, text: "USD", bg: "#df8c20", fg: "#0b1020" }, { x: 364, y: 164, text: "EUR", bg: "#5b8cff", fg: "#0b1020" }, { x: 206, y: 72, text: "amount × rate" }],
-  road: [{ x: 30, y: 72, text: "5 mi" }, { x: 400, y: 236, text: "8.05 km", bg: "#5b8cff", fg: "#0b1020" }],
-  speed: [{ x: 60, y: 236, text: "100 km/h" }, { x: 370, y: 236, text: "62.1 mph", bg: "#2ebf69", fg: "#0b1020" }],
-  liquid: [{ x: 60, y: 72, text: "10 L", bg: "#36b7c4", fg: "#0b1020" }, { x: 360, y: 72, text: "2.64 US gal" }],
+  // Annotations sit on the plate like a draughtsman's callouts: paper-tinted
+  // label boxes with hairline rules, never coloured stickers.
+  "meter-foot": [{ x: 30, y: 70, text: "1 m" }, { x: 420, y: 70, text: "3.28 ft", bg: "#dfe4ea", fg: "#23272e" }],
+  thermometer: [{ x: 230, y: 160, text: "20 °C" }, { x: 395, y: 160, text: "68 °F", bg: "#e8dcd4", fg: "#23272e" }],
+  mass: [{ x: 100, y: 200, text: "10 lb" }, { x: 340, y: 200, text: "4.54 kg", bg: "#dfe6da" }],
+  data: [{ x: 300, y: 72, text: "1 MB = 1,000,000 B" }, { x: 300, y: 236, text: "1 MiB = 2²⁰ B", bg: "#e1dfe8", fg: "#23272e" }],
+  compound: [{ x: 30, y: 70, text: "A = P(1 + r/n)^(nt)" }, { x: 360, y: 236, text: "n = 12, t = 10", bg: "#ece4cf" }],
+  matrix: [{ x: 150, y: 72, text: "2x + y = 5" }, { x: 320, y: 72, text: "x − y = 1" }, { x: 190, y: 250, text: "x = 2, y = 1", bg: "#dae5e1", fg: "#23272e" }],
+  exchange: [{ x: 134, y: 164, text: "USD", bg: "#ece0cb", fg: "#23272e" }, { x: 364, y: 164, text: "EUR", bg: "#dfe4ea", fg: "#23272e" }, { x: 206, y: 72, text: "amount × rate" }],
+  road: [{ x: 30, y: 72, text: "5 mi" }, { x: 400, y: 236, text: "8.05 km", bg: "#dfe4ea", fg: "#23272e" }],
+  speed: [{ x: 60, y: 236, text: "100 km/h" }, { x: 370, y: 236, text: "62.1 mph", bg: "#dde7df", fg: "#23272e" }],
+  liquid: [{ x: 60, y: 72, text: "10 L", bg: "#dae6e8", fg: "#23272e" }, { x: 360, y: 72, text: "2.64 US gal" }],
   quadratic: [{ x: 150, y: 72, text: "x² − 5x + 6 = 0" }, { x: 140, y: 250, text: "x = 2" }, { x: 330, y: 250, text: "x = 3" }],
-  area: [{ x: 30, y: 236, text: "500 ft²" }, { x: 380, y: 236, text: "46.45 m²", bg: "#7ba73c", fg: "#0b1020" }],
+  area: [{ x: 30, y: 236, text: "500 ft²" }, { x: 380, y: 236, text: "46.45 m²", bg: "#e2e7d6", fg: "#23272e" }],
   inflation: [{ x: 210, y: 72, text: "(206 − 200) ÷ 200 = 3%" }],
-  receipt: [{ x: 30, y: 72, text: "184.50 × 1.12 ÷ 5" }, { x: 370, y: 236, text: "41.33 each", bg: "#ef9343", fg: "#0b1020" }],
+  receipt: [{ x: 30, y: 72, text: "184.50 × 1.12 ÷ 5" }, { x: 370, y: 236, text: "41.33 each", bg: "#ece0d2", fg: "#23272e" }],
   bitcoin: [{ x: 30, y: 72, text: "BTC · 24h change" }],
-  voice: [{ x: 290, y: 236, text: "“120 USD to EUR”", bg: "#0b1020", fg: "#ffd23f" }],
-  board: [{ x: 90, y: 236, text: "sketch · calculate", bg: "#ffd23f", fg: "#0b1020" }],
+  voice: [{ x: 290, y: 236, text: "“120 USD to EUR”", bg: "#23272e", fg: "#f4f2ec" }],
+  board: [{ x: 90, y: 236, text: "sketch · calculate", bg: "#ece4cf", fg: "#23272e" }],
 };
 
-/** Rendered by scripts/generate-guide-images.tsx, never on a visitor request. */
+/** Draws the plate for a page: a reproduced figure, not a generated render. */
 export function renderPageImage(page: SearchPage) {
   const scene = sceneFor(page.path);
   const p = PALETTES[scene];
@@ -258,22 +283,25 @@ export function renderPageImage(page: SearchPage) {
     // article title sits in a caption band, so the picture reads as content in
     // image search rather than as a text card.
     return new ImageResponse(
-      <div style={{ display: "flex", width: "100%", height: "100%", background: p.paper, color: "#0b1020", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+      <div style={{ display: "flex", width: "100%", height: "100%", background: p.paper, color: "#23272e", flexDirection: "column", position: "relative", overflow: "hidden" }}>
         {/* 560×360 scene scaled ×2.143 = 1200×771; the top 490px fills the stage
             edge to edge so the picture reads as a full-bleed illustration. */}
-        <div style={{ display: "flex", position: "relative", width: 1200, height: 490, alignItems: "flex-start", justifyContent: "center", overflow: "hidden" }}>
-          <div style={{ display: "flex", position: "relative", width: 1200, height: 771, marginTop: -120 }}>
-            <SceneArt scene={scene} p={p} scale={2.143} />
+        <div style={{ display: "flex", position: "relative", width: 1200, height: 490, alignItems: "center", justifyContent: "center", overflow: "hidden", background: p.paper }}>
+          {/* The complete 560×360 plate, scaled to the stage height, so the
+              drawn border, grid and scale bar stay visible — a reproduced
+              figure rather than a zoomed-in crop. */}
+          <div style={{ display: "flex", position: "relative", width: 762, height: 490 }}>
+            <SceneArt scene={scene} p={p} scale={1.361} />
             {(SCENE_TAGS[scene] ?? []).map((tag, i) => (
-              <Tag key={i} x={tag.x * 2.143} y={tag.y * 2.143} bg={tag.bg} fg={tag.fg}>{tag.text}</Tag>
+              <Tag key={i} x={tag.x * 1.361} y={tag.y * 1.361} bg={tag.bg} fg={tag.fg}>{tag.text}</Tag>
             ))}
           </div>
         </div>
-        <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 22, padding: "0 54px", background: "#fffdf5", borderTop: "4px solid #0b1020" }}>
-          <div style={{ display: "flex", width: 54, height: 54, borderRadius: 16, background: "#ffd23f", border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800 }}>Q</div>
+        <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 22, padding: "0 54px", background: "#fbf9f3", borderTop: "1.6px solid #23272e" }}>
+          <div style={{ display: "flex", width: 50, height: 50, borderRadius: 4, background: p.accent, border: "1.6px solid #23272e", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 600, color: "#fbf9f3" }}>Q</div>
           <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <div style={{ display: "flex", fontSize: page.title.length > 52 ? 30 : 36, fontWeight: 800, lineHeight: 1.1 }}>{page.title}</div>
-            <div style={{ display: "flex", marginTop: 6, fontSize: 19, color: "#475569" }}>{page.formula ?? SITE.name} · {SITE.name}</div>
+            <div style={{ display: "flex", fontSize: page.title.length > 52 ? 29 : 34, fontWeight: 600, lineHeight: 1.12, letterSpacing: -0.2 }}>{page.title}</div>
+            <div style={{ display: "flex", marginTop: 6, fontSize: 18, color: "#5a5f67" }}>{page.formula ?? SITE.name} · drawn plate · {SITE.name}</div>
           </div>
         </div>
       </div>,
@@ -282,29 +310,29 @@ export function renderPageImage(page: SearchPage) {
   }
 
   return new ImageResponse(
-      <div style={{ display: "flex", position: "relative", width: "100%", height: "100%", background: "#f7f5ef", color: "#0b1020", padding: "42px 54px", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: 12, background: p.accent }} />
+      <div style={{ display: "flex", position: "relative", width: "100%", height: "100%", background: "#f4f2ec", color: "#23272e", padding: "42px 54px", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: 6, background: p.accent }} />
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ display: "flex", width: 46, height: 46, borderRadius: 13, background: p.accent2, border: "3px solid #0b1020", alignItems: "center", justifyContent: "center", fontSize: 21, fontWeight: 800 }}>Q</div>
+        <div style={{ display: "flex", width: 44, height: 44, borderRadius: 4, background: p.accent2, border: "1.6px solid #23272e", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 600, color: "#fbf9f3" }}>Q</div>
         <span style={{ fontSize: 28, fontWeight: 700 }}>{SITE.name}</span>
-        <span style={{ fontSize: 16, marginLeft: "auto", color: "#475569" }}>CALCULATE · CONVERT · EXPLORE</span>
+        <span style={{ fontSize: 16, marginLeft: "auto", color: "#5a5f67" }}>CALCULATE · CONVERT · EXPLORE</span>
       </div>
       <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 38 }}>
         <div style={{ display: "flex", width: "52%", flexDirection: "column" }}>
           <div style={{ display: "flex", fontSize: page.title.length > 65 ? 43 : 51, fontWeight: 700, lineHeight: 1.08 }}>{page.title}</div>
-          <div style={{ display: "flex", marginTop: 22, padding: "15px 18px", fontSize: 23, lineHeight: 1.25, background: "#fffdf5", border: "2px solid #0b1020", borderRadius: 14 }}>
+          <div style={{ display: "flex", marginTop: 22, padding: "15px 18px", fontSize: 23, lineHeight: 1.25, background: "#fbf9f3", border: "1.4px solid #23272e", borderRadius: 4 }}>
             {page.formula ?? "Prepare inputs, then confirm the result."}
           </div>
         </div>
-        <div style={{ display: "flex", width: "48%", height: 360, alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", borderRadius: 26 }}>
+        <div style={{ display: "flex", width: "48%", height: 360, alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", borderRadius: 4 }}>
           <SceneArt scene={scene} p={p} />
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ background: p.accent, width: 14, height: 14, borderRadius: 4, border: "2px solid #0b1020" }} />
-        <span style={{ background: p.accent2, width: 14, height: 14, borderRadius: 4, border: "2px solid #0b1020" }} />
-        <span style={{ fontSize: 18, color: "#475569", marginLeft: 8 }}>{page.path}</span>
-        <span style={{ fontSize: 17, color: "#475569", marginLeft: "auto" }}>No account required</span>
+        <span style={{ background: p.accent, width: 13, height: 13, borderRadius: 2, border: "1.4px solid #23272e" }} />
+        <span style={{ background: p.accent2, width: 13, height: 13, borderRadius: 2, border: "1.4px solid #23272e" }} />
+        <span style={{ fontSize: 18, color: "#5a5f67", marginLeft: 8 }}>{page.path}</span>
+        <span style={{ fontSize: 17, color: "#5a5f67", marginLeft: "auto" }}>No account required</span>
       </div>
     </div>,
     { width: 1200, height: 630, headers },

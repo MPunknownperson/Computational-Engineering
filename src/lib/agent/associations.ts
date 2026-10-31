@@ -1,7 +1,5 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { voiceAssociations } from "@/db/nlu-schema";
+import { store } from "@/lib/store";
 import { decode, encode, verify, type Program } from "@/lib/voice/ir";
 import { normalizeSpeech } from "@/lib/voice/parser";
 
@@ -48,20 +46,11 @@ export async function recallAssociation(text: string, locale?: string): Promise<
   const key = keyOf(text);
   if (!key) return null;
   try {
-    const rows = await db
-      .select()
-      .from(voiceAssociations)
-      .where(and(eq(voiceAssociations.phrase, key), eq(voiceAssociations.locale, localeOf(locale))))
-      .limit(1);
-    const row = rows[0];
+    const row = store.voiceAssociations.find((item) => item.phrase === key && item.locale === localeOf(locale));
     if (!row) return null;
     const decoded = decode(row.program);
     if ("error" in decoded) return null;
-    void db
-      .update(voiceAssociations)
-      .set({ uses: sql`${voiceAssociations.uses} + 1`, lastUsedAt: new Date() })
-      .where(eq(voiceAssociations.id, row.id))
-      .catch(() => undefined);
+    store.voiceAssociations.update((item) => item.id === row.id, { uses: row.uses + 1, lastUsedAt: new Date() });
     return { program: decoded.program, locale: row.locale, capability: row.capability, uses: row.uses + 1 };
   } catch {
     return null;
@@ -83,18 +72,31 @@ export async function rememberAssociation(text: string, locale: string | undefin
           : instruction?.op ?? null;
   const source = instruction?.op === "RUN" ? "codegen" : instruction?.op === "OPEN_PAGE" ? "association" : "pipeline";
   try {
-    const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(voiceAssociations);
-    if (count >= MAX_ROWS) {
+    if (store.voiceAssociations.size >= MAX_ROWS) {
       // Evict the least-used, oldest rows so the memory stays bounded.
-      await db.execute(sql`delete from voice_associations where id in (select id from voice_associations order by uses asc, last_used_at asc limit 100)`);
+      const doomed = new Set(
+        store.voiceAssociations
+          .all()
+          .sort((a, b) => a.uses - b.uses || a.lastUsedAt.getTime() - b.lastUsedAt.getTime())
+          .slice(0, 100)
+          .map((row) => row.id),
+      );
+      store.voiceAssociations.remove((row) => doomed.has(row.id));
     }
-    await db
-      .insert(voiceAssociations)
-      .values({ phrase: key, locale: localeOf(locale), program: encode(program), capability, domain, source })
-      .onConflictDoUpdate({
-        target: [voiceAssociations.phrase, voiceAssociations.locale],
-        set: { program: encode(program), capability, domain, source, uses: sql`${voiceAssociations.uses} + 1`, lastUsedAt: new Date() },
+    const localeTag = localeOf(locale);
+    const now = new Date();
+    const existing = store.voiceAssociations.find((row) => row.phrase === key && row.locale === localeTag);
+    if (existing) {
+      store.voiceAssociations.update((row) => row.id === existing.id, {
+        program: encode(program), capability, domain, source, uses: existing.uses + 1, lastUsedAt: now,
       });
+    } else {
+      store.voiceAssociations.insert({
+        id: store.voiceAssociations.nextSequence(),
+        phrase: key, locale: localeTag, program: encode(program), capability, domain, source,
+        uses: 1, createdAt: now, lastUsedAt: now,
+      });
+    }
   } catch {
     /* learning is best-effort */
   }
@@ -103,17 +105,15 @@ export async function rememberAssociation(text: string, locale: string | undefin
 /** Aggregate view for diagnostics: no phrases, only counts per capability. */
 export async function associationStats(): Promise<Array<{ capability: string | null; domain: string | null; count: number; uses: number }>> {
   try {
-    return await db
-      .select({
-        capability: voiceAssociations.capability,
-        domain: voiceAssociations.domain,
-        count: sql<number>`count(*)::int`,
-        uses: sql<number>`coalesce(sum(${voiceAssociations.uses}), 0)::int`,
-      })
-      .from(voiceAssociations)
-      .groupBy(voiceAssociations.capability, voiceAssociations.domain)
-      .orderBy(sql`count(*) desc`)
-      .limit(50);
+    const groups = new Map<string, { capability: string | null; domain: string | null; count: number; uses: number }>();
+    for (const row of store.voiceAssociations.all()) {
+      const key = `${row.capability ?? ""}|${row.domain ?? ""}`;
+      const bucket = groups.get(key) ?? { capability: row.capability, domain: row.domain, count: 0, uses: 0 };
+      bucket.count += 1;
+      bucket.uses += row.uses;
+      groups.set(key, bucket);
+    }
+    return Array.from(groups.values()).sort((a, b) => b.count - a.count).slice(0, 50);
   } catch {
     return [];
   }
