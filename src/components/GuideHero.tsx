@@ -1,6 +1,9 @@
 import { findSearchPage, imageId, imagePath } from "@/lib/search-pages";
 import { mediaAssets } from "@/lib/media/assets";
 
+/** Set once the static media pipeline has written the WebP variants. */
+const hasPrerenderedVariants = process.env.NEXT_PUBLIC_MEDIA_VARIANTS === "1";
+
 export interface GuideHeroProps {
   path: string;
   alt: string;
@@ -24,12 +27,17 @@ export function GuideHero({
 }: GuideHeroProps) {
   const page = findSearchPage(path);
   if (!page) return null;
+  // Pre-rendered WebP variants are only advertised when the build actually
+  // emitted them; otherwise the single canonical PNG is served, so the
+  // declared type always matches the bytes the /media route returns.
   const assets = mediaAssets(imageId(page));
-  const srcSet = assets?.variants.map(({ width, src }) => `${src} ${width}w`).join(", ");
+  const srcSet = assets?.variants.length
+    ? assets.variants.map(({ width, src }) => `${src} ${width}w`).join(", ")
+    : undefined;
 
   return (
     <picture className="block">
-      {srcSet && <source type="image/webp" srcSet={srcSet} sizes={sizes} />}
+      {srcSet && hasPrerenderedVariants && <source type="image/webp" srcSet={srcSet} sizes={sizes} />}
       <img
         src={imagePath(page)}
         alt={alt}

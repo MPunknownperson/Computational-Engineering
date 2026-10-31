@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@/components/Icons";
 import { CRYPTO_IDS } from "@/lib/catalog";
-import type { CryptoAlert, CryptoPosition } from "@/db/schema";
+import type { CryptoAlert, CryptoPosition } from "@/lib/store/types";
 import { apiFetch, fmtPct, fmtPrice, vsSymbol, type ApiError, type MarketAsset } from "./use-crypto";
 
 type Props = { vs: string; items: MarketAsset[]; names: Record<string, string>; selected: string };
