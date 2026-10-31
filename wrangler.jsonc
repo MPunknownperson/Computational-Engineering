@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "quilloryn",
+  // wrangler.jsonc
+"name": "computational-engineering",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-23",
   // nodejs_compat gives the Worker the Node built-ins (node:path, node:fs
