@@ -190,7 +190,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
   }, [router, setPhaseBoth]);
 
   // Server-side context: the LangChain chain records the turn in LlamaIndex
-  // memory, dispatches backend tools and (when configured) asks FastGPT to
+  // memory, dispatches backend tools and
   // comprehend it. Text only — never audio.
   const consultAgent = useCallback(async (text: string): Promise<AgentReply | null> => {
     try {
@@ -225,7 +225,7 @@ export function SpeakCalc({ packId = "en" }: { packId?: PackId }) {
     setPhaseBoth("processing");
     void (async () => {
       // The backend orchestrator may resolve what the local router could not
-      // (typed tool dispatch, retrieved site pages, FastGPT comprehension).
+      // (typed tool dispatch, retrieved site pages).
       const agent = await within(consultAgent(route.heard), 8_000, null);
       if (generation.current !== attempt) return;
       if (agent?.href && agent.label) {
