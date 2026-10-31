@@ -592,18 +592,10 @@ body { font-family: "DM Sans Variable", Arial, sans-serif; }
 #stcm-modal { max-height: 90dvh; }
 
 /* --------------------------------------------------------------------------
-   Rive reactive stage
+   Meter bar
    -------------------------------------------------------------------------- */
-.rive-reactor { display: grid; gap: 1rem; }
-.rive-stage { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border: 2px solid var(--line); border-radius: 18px; background: radial-gradient(circle at 50% 35%, #e3ecff 0, #c9daff 55%, #b4c8f7 100%); box-shadow: var(--shadow-ink-sm); touch-action: none; cursor: crosshair; }
-.rive-reactor.is-compact .rive-stage { aspect-ratio: 16 / 9; }
-.rive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.rive-loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: .8rem; font-weight: 700; color: #38445e; }
-.rive-pointer { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid var(--line); border-radius: 999px; background: rgba(255,210,63,.85); pointer-events: none; transition: left 80ms linear, top 80ms linear; }
-.rive-meter { height: 8px; overflow: hidden; border: 2px solid var(--line); border-radius: 999px; background: var(--paper-2); }
-.rive-meter > span { display: block; height: 100%; background: linear-gradient(90deg, #4ade80, #ffd23f 60%, #ff6b4a); transition: width 120ms linear; }
-html[data-theme="dark"] .rive-stage { background: radial-gradient(circle at 50% 35%, #2b3c63 0, #1f2d4d 55%, #182440 100%); }
-html[data-theme="dark"] .rive-loading { color: #d7e1f4; }
+.bar-meter { height: 8px; overflow: hidden; border: 2px solid var(--line); border-radius: 999px; background: var(--paper-2); }
+.bar-meter > span { display: block; height: 100%; background: linear-gradient(90deg, #4ade80, #ffd23f 60%, #ff6b4a); transition: width 120ms linear; }
 
 /* Engine plots (SVG) */
 .engine-plot__grid { stroke: rgba(26,32,64,.12); stroke-width: 1; }
@@ -738,3 +730,36 @@ html[data-theme="dark"] .chip-live { background: #203e39; }
   .card-hover:hover .icon-tile, a:hover > .icon-tile, .btn:hover { animation: none !important; }
   .h-underline::after { animation: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Calmer finish: plain paper, hairline borders, soft shadows, one accent.
+   Overrides the earlier cartoon styling without touching component markup.
+   -------------------------------------------------------------------------- */
+:root {
+  --line: #d9d4c7;
+  --accent: #9a3412;
+  --shadow-ink: 0 1px 2px rgba(20, 20, 20, .06);
+  --shadow-ink-sm: 0 1px 2px rgba(20, 20, 20, .05);
+  --shadow-ink-lg: 0 2px 6px rgba(20, 20, 20, .08);
+}
+body[class*="tone-"] { --page-bg: #faf9f6; --nav-bg: #faf9f6; --nav-active: #f1ede4; --nav-hover: #f4f1ea; --underline: transparent; --dot: transparent; }
+.paper-bg { background-image: none !important; }
+body.tone-home .site-header { border-bottom-width: 1px; }
+body.tone-home .site-header::after { display: none; }
+.site-header { border-bottom-width: 1px !important; backdrop-filter: none; }
+.card, .sketch, .sketch-sm { border-width: 1px; border-radius: 10px; }
+.sketch-sm { border-radius: 8px; }
+.btn { border-width: 1px; border-radius: 8px; font-weight: 600; }
+.btn-primary { background: #1f2937; border-color: #1f2937; color: #fff; }
+.btn-primary:hover { background: #111827; }
+.btn-ghost:hover { background: #f1ede4; }
+.h-title { font-weight: 700 !important; letter-spacing: -0.015em; }
+.h-underline { background: none !important; text-decoration: none !important; }
+.h-underline::before, .h-underline::after { display: none !important; }
+.chip { border-width: 1px; font-weight: 600; box-shadow: none; }
+.icon-tile { border-width: 1px; box-shadow: none; border-radius: 8px; background: #f4f1ea; }
+.font-extrabold { font-weight: 650; }
+[class*="shadow-[2px_2px_0"] { box-shadow: none !important; }
+.border-2 { border-width: 1px; }
+html[data-theme="dark"] body[class*="tone-"] { --page-bg: #15171c; --nav-bg: #15171c; --line: #2c3038; }
+html[data-theme="dark"] .btn-primary { background: #e5e7eb; color: #111827; border-color: #e5e7eb; }

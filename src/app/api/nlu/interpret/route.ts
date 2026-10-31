@@ -2,7 +2,6 @@ import { type Decision } from "@/lib/voice/pipeline";
 import { logInteraction, describeDecision } from "@/lib/voice/telemetry";
 import { orchestrateUtterance, type AgentResult } from "@/lib/agent/orchestrator";
 import { describeTools } from "@/lib/agent/tools";
-import { fastGptConfigured } from "@/lib/agent/fastgpt";
 import { siteIndexSize } from "@/lib/agent/context";
 
 export const runtime = "nodejs";
@@ -14,7 +13,7 @@ export const dynamic = "force-dynamic";
  * Accepts the text produced by speech recognition (browser Web Speech API or
  * the sherpa-onnx WebAssembly fallback) or typed input and runs it through the
  * LangChain orchestration chain: LlamaIndex session context → typed NLU
- * pipeline → backend tool dispatch → optional FastGPT comprehension → memory.
+ * pipeline → backend tool dispatch → memory.
  * Every turn is logged with its decision trace.
  */
 export async function POST(request: Request) {
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
 export async function GET() {
   return Response.json({
     ok: true,
-    frameworks: { langchain: true, llamaindex: { nodes: siteIndexSize() }, fastgpt: fastGptConfigured() },
+    frameworks: { langchain: true, llamaindex: { nodes: siteIndexSize() } },
     tools: describeTools(),
   });
 }
