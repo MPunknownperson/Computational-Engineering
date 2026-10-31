@@ -1,7 +1,5 @@
 import os from "node:os";
-import { db } from "@/db";
-import { artifacts as artifactsTable, tools as toolsTable } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { store } from "@/lib/store";
 import { scanArchives } from "@/lib/workbench/archives";
 import { computeStats, listJobs, summariseJob } from "@/lib/workbench/jobs";
 import {
@@ -80,8 +78,8 @@ export async function getSnapshot() {
   const [stats, recent, toolRows, artifacts, archives, system] = await Promise.all([
     computeStats(),
     listJobs({ limit: 8 }),
-    db.select().from(toolsTable),
-    db.select().from(artifactsTable).orderBy(desc(artifactsTable.createdAt)).limit(10),
+    Promise.resolve(store.tools.all()),
+    Promise.resolve(store.artifacts.all().sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10)),
     scanArchives(WORKSPACE_ROOT).catch(() => []),
     systemInfo(),
   ]);

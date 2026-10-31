@@ -1,7 +1,5 @@
-import { db } from "@/db";
-import { tools as toolsTable } from "@/db/schema";
+import { newId, store, type ToolRow } from "@/lib/store";
 import { execTool, whichBinary } from "@/lib/workbench/sandbox";
-import { eq } from "drizzle-orm";
 
 export type PackageManager = "apt" | "apk" | "dnf" | "npm" | null;
 
@@ -414,18 +412,16 @@ export async function detectTool(spec: ToolSpec): Promise<DetectionResult> {
   return { status: "installed", version: version?.slice(0, 64) ?? null, path: resolved };
 }
 
-/** Probes every catalogued tool and caches the result in Postgres. */
+/** Probes every catalogued tool and caches the result in the process store. */
 export async function scanTools() {
   const pm = await detectPackageManager();
   const detections = await Promise.all(
     TOOL_CATALOG.map(async (spec) => ({ spec, result: await detectTool(spec) })),
   );
 
-  const rows = [];
+  const rows: ToolRow[] = [];
   for (const { spec, result } of detections) {
-    const existing = await db.query.tools.findFirst({
-      where: eq(toolsTable.name, spec.name),
-    });
+    const existing = store.tools.find((row) => row.name === spec.name);
     const values = {
       name: spec.name,
       binary: spec.binary,
@@ -442,11 +438,10 @@ export async function scanTools() {
           : null,
     };
     if (existing) {
-      await db.update(toolsTable).set(values).where(eq(toolsTable.id, existing.id));
-      rows.push({ ...existing, ...values, id: existing.id });
+      const [updated] = store.tools.update((row) => row.id === existing.id, values);
+      rows.push(updated ?? { ...existing, ...values });
     } else {
-      const inserted = await db.insert(toolsTable).values(values).returning();
-      rows.push(inserted[0]!);
+      rows.push(store.tools.insert({ id: newId(), ...values }));
     }
   }
 

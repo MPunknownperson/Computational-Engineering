@@ -1,5 +1,4 @@
-import { db } from "@/db";
-import { nluInteractions } from "@/db/nlu-schema";
+import { store } from "@/lib/store";
 import type { Decision } from "@/lib/voice/pipeline";
 import { detectMathIntent } from "@/lib/voice/math-intent";
 
@@ -89,7 +88,11 @@ export async function logInteraction(
   sessionId = "anonymous",
 ): Promise<void> {
   try {
-    await db.insert(nluInteractions).values(describeDecision(rawText, decision, latencyMs, sessionId));
+    store.nluInteractions.insert({
+      id: store.nluInteractions.nextSequence(),
+      ...describeDecision(rawText, decision, latencyMs, sessionId),
+      createdAt: new Date(),
+    });
   } catch {
     // Telemetry is best-effort.
   }

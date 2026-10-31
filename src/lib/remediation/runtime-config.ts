@@ -7,8 +7,7 @@
  * immediately in memory and are persisted so a restarted server keeps them
  * until they expire.
  */
-import { sql } from "drizzle-orm";
-import { db } from "@/db";
+import { store } from "@/lib/store";
 
 export const RUNTIME_DEFAULTS = {
   "crypto.primaryProvider": "coingecko" as "coingecko" | "coinbase",
@@ -51,33 +50,27 @@ export function listPatches(): Array<{ key: string; value: unknown; reason: stri
 export async function setRuntimePatch<K extends RuntimeKey>(key: K, value: RuntimeValue<K>, reason: string, ttlMs: number | null = 30 * 60_000): Promise<void> {
   const expiresAt = ttlMs === null ? null : Date.now() + ttlMs;
   patches.set(key, { value, reason, expiresAt, updatedAt: Date.now() });
-  try {
-    await db.execute(sql`insert into runtime_patches (key, value, reason, expires_at, updated_at)
-      values (${key}, ${JSON.stringify(value)}::jsonb, ${reason}, ${expiresAt ? new Date(expiresAt) : null}, now())
-      on conflict (key) do update set value = excluded.value, reason = excluded.reason, expires_at = excluded.expires_at, updated_at = now()`);
-  } catch {
-    // Persisting is best effort; the in-memory patch is already live.
-  }
+  const row = { key: key as string, value, reason, expiresAt: expiresAt ? new Date(expiresAt) : null, updatedAt: new Date() };
+  store.runtimePatches.upsert((item) => item.key === key, () => row, row);
+  await Promise.resolve();
 }
 
 export async function clearRuntimePatch(key: RuntimeKey): Promise<void> {
   patches.delete(key);
-  try { await db.execute(sql`delete from runtime_patches where key = ${key}`); } catch { /* best effort */ }
+  store.runtimePatches.remove((row) => row.key === key);
+  await Promise.resolve();
 }
 
 /** Load persisted patches once per process (lazy, never throws). */
 export function loadRuntimePatches(): Promise<void> {
   if (globalForRuntime.__radixRuntimeLoaded) return globalForRuntime.__radixRuntimeLoaded;
   globalForRuntime.__radixRuntimeLoaded = (async () => {
-    try {
-      const result = await db.execute(sql`select key, value, reason, expires_at, updated_at from runtime_patches where expires_at is null or expires_at > now()`);
-      for (const row of result.rows as Array<{ key: string; value: unknown; reason: string | null; expires_at: Date | string | null; updated_at: Date | string }>) {
-        if (!(row.key in RUNTIME_DEFAULTS)) continue;
-        patches.set(row.key, { value: row.value, reason: row.reason, expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : null, updatedAt: new Date(row.updated_at).getTime() });
-      }
-    } catch {
-      globalForRuntime.__radixRuntimeLoaded = null; // retry on next call
+    const live = store.runtimePatches.list((row) => row.expiresAt === null || row.expiresAt.getTime() > Date.now());
+    for (const row of live) {
+      if (!(row.key in RUNTIME_DEFAULTS)) continue;
+      patches.set(row.key, { value: row.value, reason: row.reason, expiresAt: row.expiresAt ? row.expiresAt.getTime() : null, updatedAt: row.updatedAt.getTime() });
     }
+    await Promise.resolve();
   })();
   return globalForRuntime.__radixRuntimeLoaded;
 }

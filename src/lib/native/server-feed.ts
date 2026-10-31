@@ -1,7 +1,5 @@
 import "server-only";
-import { asc, desc, gt, sql } from "drizzle-orm";
-import { db } from "@/db";
-import { appFeedItems } from "@/db/schema";
+import { store } from "@/lib/store";
 
 /**
  * Seed content for the native shell feed. Kept server-side so the infinite
@@ -34,15 +32,13 @@ let seeded = false;
 /** Idempotently populates the feed table on first read. */
 export async function ensureFeedSeed(): Promise<void> {
   if (seeded) return;
-  try {
-    const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(appFeedItems);
-    if (!row || row.count === 0) {
-      await db.insert(appFeedItems).values(SEED).onConflictDoNothing();
+  if (store.appFeed.size === 0) {
+    const now = new Date();
+    for (const item of SEED) {
+      store.appFeed.insert({ id: store.appFeed.nextSequence(), ...item, createdAt: now });
     }
-    seeded = true;
-  } catch {
-    // A cold database must not break the shell; the API will return an empty page.
   }
+  seeded = true;
 }
 
 export interface FeedPage {
@@ -60,17 +56,15 @@ export async function readFeedPage(cursor: number | null, limit: number, categor
   await ensureFeedSeed();
   const take = Math.min(Math.max(limit, 1), 30);
   try {
-    const rows = await db
-      .select()
-      .from(appFeedItems)
-      .where(cursor ? gt(appFeedItems.id, cursor) : undefined)
-      .orderBy(asc(appFeedItems.id), desc(appFeedItems.weight))
-      .limit(take + 1);
+    const rows = store.appFeed
+      .list((row) => (cursor ? row.id > cursor : true))
+      .sort((a, b) => a.id - b.id || b.weight - a.weight)
+      .slice(0, take + 1);
 
     const filtered = category && category !== "all" ? rows.filter((r) => r.category === category) : rows;
     const hasMore = rows.length > take;
     const page = filtered.slice(0, take);
-    const [countRow] = await db.select({ count: sql<number>`count(*)::int` }).from(appFeedItems);
+    const total = store.appFeed.size;
 
     return {
       items: page.map((r) => ({
@@ -83,7 +77,7 @@ export async function readFeedPage(cursor: number | null, limit: number, categor
         icon: r.icon,
       })),
       nextCursor: hasMore && page.length > 0 ? rows[Math.min(take, rows.length) - 1].id : null,
-      total: countRow?.count ?? page.length,
+      total: total || page.length,
     };
   } catch {
     return { items: [], nextCursor: null, total: 0 };

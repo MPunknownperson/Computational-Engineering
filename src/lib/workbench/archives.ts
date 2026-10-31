@@ -12,8 +12,7 @@ import {
   WORKSPACE_ROOT,
 } from "@/lib/workbench/sandbox";
 import { recordJob, runJob, type JobSummary, summariseJob } from "@/lib/workbench/jobs";
-import { db } from "@/db";
-import { artifacts as artifactsTable } from "@/db/schema";
+import { newId, store } from "@/lib/store";
 
 export type ArchiveKind =
   | "zip"
@@ -685,17 +684,16 @@ export async function extractArchive(request: ExtractRequest): Promise<ExtractRe
   const totalSize = entries.reduce((sum, entry) => sum + entry.size, 0);
 
   if (job.status === "succeeded") {
-    await db
-      .insert(artifactsTable)
-      .values({
-        name: path.basename(target) || archive.name,
-        path: target,
-        kind: "directory",
-        size: totalSize,
-        source: "extract",
-        detail: `${archive.kindLabel} · ${entries.length} top-level entries via ${plan.tool}`,
-      })
-      .catch(() => undefined);
+    store.artifacts.insert({
+      id: newId(),
+      name: path.basename(target) || archive.name,
+      path: target,
+      kind: "directory",
+      size: totalSize,
+      source: "extract",
+      detail: `${archive.kindLabel} · ${entries.length} top-level entries via ${plan.tool}`,
+      createdAt: new Date(),
+    });
   }
 
   return {
@@ -753,17 +751,16 @@ export async function createArchive(options: {
     .catch(() => 0);
 
   if (job.status === "succeeded") {
-    await db
-      .insert(artifactsTable)
-      .values({
-        name: path.basename(output),
-        path: output,
-        kind: "archive",
-        size,
-        source: "compress",
-        detail: `${options.format} built from ${sources.length} source(s)`,
-      })
-      .catch(() => undefined);
+    store.artifacts.insert({
+      id: newId(),
+      name: path.basename(output),
+      path: output,
+      kind: "archive",
+      size,
+      source: "compress",
+      detail: `${options.format} built from ${sources.length} source(s)`,
+      createdAt: new Date(),
+    });
   }
 
   return { job, output, size };

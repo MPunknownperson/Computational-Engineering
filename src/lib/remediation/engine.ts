@@ -6,14 +6,13 @@
  *            verify → persist audit trail → hand client actions back.
  *
  * Server actions change live behaviour (runtime patches, cache resets,
- * breaker state, schema self-healing, DB pool reconnection, warm-up).
+ * breaker state, store compaction, warm-up). There is no database: the
+ * incident ledger lives in the worker's memory.
  * Client actions are instructions for the browser that reported the error
  * (clear a corrupt storage key, cache-busting reload, retry, switch
  * transport, reset the error boundary).
  */
-import { desc, eq, sql } from "drizzle-orm";
-import { db, pool } from "@/db";
-import { incidentReports, remediationActions } from "@/db/schema";
+import { newId, store, type IncidentReport, type RemediationAction } from "@/lib/store";
 import { AppError, classifyError, fingerprintError, severityFor, type ErrorCategory, type Severity } from "@/lib/core/errors";
 import { FastCache } from "@/lib/core/fast-cache";
 import { allBreakers, breaker } from "@/lib/core/resilience";
@@ -25,8 +24,8 @@ export type ServerAction =
   | { type: "reset-cache"; cache?: string }
   | { type: "trip-breaker"; name: string; cooldownMs?: number }
   | { type: "reset-breaker"; name: string }
-  | { type: "ensure-schema" }
-  | { type: "reconnect-db" }
+  | { type: "ensure-store" }
+  | { type: "compact-store" }
   | { type: "warm"; target: "crypto" };
 
 export type ClientAction =
@@ -82,39 +81,18 @@ export function registerRemediationHooks(next: Hooks): void { Object.assign(hook
 /* Schema self-healing                                                 */
 /* ------------------------------------------------------------------ */
 
-const SCHEMA_SQL = [
-  `create table if not exists crypto_snapshots (id serial primary key, asset_id text not null, symbol text not null, name text not null, vs text not null default 'usd', price text not null, change_24h real, change_7d real, market_cap text, volume_24h text, high_24h text, low_24h text, rank integer, source text not null, captured_at timestamptz not null default now())`,
-  `create index if not exists crypto_snapshots_asset_time_idx on crypto_snapshots (asset_id, captured_at)`,
-  `create index if not exists crypto_snapshots_time_idx on crypto_snapshots (captured_at)`,
-  `create table if not exists crypto_history_cache (id serial primary key, asset_id text not null, vs text not null default 'usd', days integer not null, points jsonb not null default '[]'::jsonb, volumes jsonb not null default '[]'::jsonb, source text not null, fetched_at timestamptz not null default now())`,
-  `create unique index if not exists crypto_history_cache_key_idx on crypto_history_cache (asset_id, vs, days)`,
-  `create table if not exists crypto_alerts (id uuid primary key default gen_random_uuid(), workspace text not null, asset_id text not null, symbol text not null, vs text not null default 'usd', condition text not null, threshold text not null, note text, status text not null default 'armed', triggered_at timestamptz, triggered_price text, created_at timestamptz not null default now())`,
-  `create index if not exists crypto_alerts_workspace_idx on crypto_alerts (workspace)`,
-  `create index if not exists crypto_alerts_status_idx on crypto_alerts (status)`,
-  `create table if not exists crypto_positions (id uuid primary key default gen_random_uuid(), workspace text not null, asset_id text not null, symbol text not null, quantity text not null, cost_basis text not null, vs text not null default 'usd', note text, created_at timestamptz not null default now())`,
-  `create index if not exists crypto_positions_workspace_idx on crypto_positions (workspace)`,
-  `create table if not exists incident_reports (id uuid primary key default gen_random_uuid(), fingerprint text not null, origin text not null, category text not null, severity text not null default 'warning', message text not null, stack text, route text, user_action text, context jsonb not null default '{}'::jsonb, occurrences integer not null default 1, status text not null default 'open', first_seen_at timestamptz not null default now(), last_seen_at timestamptz not null default now())`,
-  `create unique index if not exists incident_reports_fingerprint_idx on incident_reports (fingerprint)`,
-  `create index if not exists incident_reports_status_idx on incident_reports (status)`,
-  `create table if not exists remediation_actions (id uuid primary key default gen_random_uuid(), incident_id uuid, fingerprint text not null, playbook text not null, plan jsonb not null default '{}'::jsonb, outcome text not null default 'applied', detail text, duration_ms integer not null default 0, created_at timestamptz not null default now())`,
-  `create index if not exists remediation_actions_fingerprint_idx on remediation_actions (fingerprint)`,
-  `create table if not exists runtime_patches (key text primary key, value jsonb not null, reason text, expires_at timestamptz, updated_at timestamptz not null default now())`,
-];
-
-/** Idempotent: creates any missing reliability/crypto table. Never throws. */
-export async function ensureReliabilitySchema(force = false): Promise<boolean> {
-  if (!force && globalForEngine.__radixSchemaEnsured) return globalForEngine.__radixSchemaEnsured;
-  const task = (async () => {
-    try {
-      for (const statement of SCHEMA_SQL) await db.execute(sql.raw(statement));
-      return true;
-    } catch {
-      globalForEngine.__radixSchemaEnsured = null;
-      return false;
-    }
-  })();
-  globalForEngine.__radixSchemaEnsured = task;
-  return task;
+/** Idempotent store check. Kept for API compatibility with the reliability
+ * dashboard: with no database there is nothing to migrate, so this only
+ * confirms the in-process collections are addressable. */
+export async function ensureReliabilityStore(force = false): Promise<boolean> {
+  void force;
+  try {
+    void store.incidents.size;
+    void store.remediations.size;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -166,7 +144,7 @@ const PLAYBOOKS: Playbook[] = [
     plan: () => ({
       playbook: "schema-self-heal",
       summary: "A table was missing: create every missing table and index idempotently, then re-run the health probe.",
-      serverActions: [{ type: "ensure-schema" }, { type: "reset-cache" }],
+      serverActions: [{ type: "ensure-store" }, { type: "reset-cache" }],
       clientActions: [{ type: "retry", delayMs: 1_500 }],
       verify: "health",
     }),
@@ -176,8 +154,8 @@ const PLAYBOOKS: Playbook[] = [
     matches: (i) => i.category === "database_unavailable",
     plan: () => ({
       playbook: "database-reconnect",
-      summary: "Database connection failed: drop broken pooled connections, reconnect, and keep serving market data from the in-memory cache and provider chain meanwhile.",
-      serverActions: [{ type: "reconnect-db" }, { type: "patch", key: "crypto.persistSnapshots", value: false, ttlMs: 2 * 60_000, reason: "database reconnecting" }],
+      summary: "Storage pressure detected: compact the in-process ledger and keep serving market data from the cache and provider chain meanwhile.",
+      serverActions: [{ type: "compact-store" }, { type: "patch", key: "crypto.persistSnapshots", value: false, ttlMs: 2 * 60_000, reason: "store under pressure" }],
       clientActions: [{ type: "retry", delayMs: 3_000 }],
       verify: "health",
     }),
@@ -276,16 +254,17 @@ async function deployAction(action: ServerAction): Promise<{ action: string; ok:
         break;
       }
       case "reset-breaker": breaker(action.name).reset(); break;
-      case "ensure-schema": {
-        const ok = await ensureReliabilitySchema(true);
-        if (!ok) throw new Error("schema creation failed");
+      case "ensure-store": {
+        const ok = await ensureReliabilityStore(true);
+        if (!ok) throw new Error("incident store unavailable");
         break;
       }
-      case "reconnect-db": {
-        // Evict idle connections so the next query dials fresh; the pool stays usable.
-        const idle = (pool as unknown as { _idle?: unknown[] })._idle?.length ?? 0;
-        await Promise.race([pool.query("select 1"), new Promise((_, reject) => setTimeout(() => reject(new Error("reconnect probe timed out")), 2_500))]);
-        return { action: label, ok: true, detail: `pool probe ok (idle=${idle})` };
+      case "compact-store": {
+        // Drop resolved incidents and stale snapshots so the isolate stays small.
+        const removed = store.incidents.remove((row) => row.status === "resolved").length;
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        const snapshots = store.cryptoSnapshots.remove((row) => row.capturedAt.getTime() < cutoff).length;
+        return { action: label, ok: true, detail: `compacted ${removed} incidents, ${snapshots} snapshots` };
       }
       case "warm": {
         if (hooks.warmCrypto) await hooks.warmCrypto();
@@ -300,7 +279,7 @@ async function deployAction(action: ServerAction): Promise<{ action: string; ok:
 
 async function verify(kind: RemediationPlan["verify"]): Promise<boolean | null> {
   try {
-    if (kind === "health") { await db.execute(sql`select 1`); return true; }
+    if (kind === "health") return (await ensureReliabilityStore()) ? true : false;
     if (kind === "crypto") return hooks.verifyCrypto ? await hooks.verifyCrypto() : null;
     return null;
   } catch {
@@ -314,23 +293,38 @@ async function verify(kind: RemediationPlan["verify"]): Promise<boolean | null> 
 
 async function upsertIncident(input: { fingerprint: string; origin: "server" | "client"; category: ErrorCategory; severity: Severity; message: string; stack?: string; route: string | null; userAction: string | null; context: Record<string, unknown> }): Promise<{ id: string | null; occurrences: number }> {
   try {
-    const rows = await db.insert(incidentReports).values({
-      fingerprint: input.fingerprint, origin: input.origin, category: input.category, severity: input.severity,
-      message: input.message.slice(0, 1_000), stack: input.stack?.slice(0, 6_000), route: input.route, userAction: input.userAction,
-      context: input.context, occurrences: 1, status: "open",
-    }).onConflictDoUpdate({
-      target: incidentReports.fingerprint,
-      set: { occurrences: sql`${incidentReports.occurrences} + 1`, lastSeenAt: new Date(), message: input.message.slice(0, 1_000), route: input.route, userAction: input.userAction, context: input.context, status: sql`case when ${incidentReports.status} = 'resolved' then 'open' else ${incidentReports.status} end` },
-    }).returning({ id: incidentReports.id, occurrences: incidentReports.occurrences });
-    return rows[0] ?? { id: null, occurrences: 1 };
-  } catch (error) {
-    // If the incident table itself is missing, heal the schema and retry once.
-    if (classifyError(error).category === "schema_missing" && await ensureReliabilitySchema(true)) {
-      try {
-        const rows = await db.insert(incidentReports).values({ fingerprint: input.fingerprint, origin: input.origin, category: input.category, severity: input.severity, message: input.message.slice(0, 1_000), route: input.route, context: input.context }).returning({ id: incidentReports.id, occurrences: incidentReports.occurrences });
-        return rows[0] ?? { id: null, occurrences: 1 };
-      } catch { /* fall through */ }
+    const now = new Date();
+    const existing = store.incidents.find((row) => row.fingerprint === input.fingerprint);
+    if (existing) {
+      const [updated] = store.incidents.update((row) => row.id === existing.id, {
+        occurrences: existing.occurrences + 1,
+        lastSeenAt: now,
+        message: input.message.slice(0, 1_000),
+        route: input.route,
+        userAction: input.userAction,
+        context: input.context,
+        status: existing.status === "resolved" ? "open" : existing.status,
+      });
+      return { id: updated?.id ?? existing.id, occurrences: updated?.occurrences ?? existing.occurrences + 1 };
     }
+    const created = store.incidents.insert({
+      id: newId(),
+      fingerprint: input.fingerprint,
+      origin: input.origin,
+      category: input.category,
+      severity: input.severity,
+      message: input.message.slice(0, 1_000),
+      stack: input.stack?.slice(0, 6_000) ?? null,
+      route: input.route,
+      userAction: input.userAction,
+      context: input.context,
+      occurrences: 1,
+      status: "open",
+      firstSeenAt: now,
+      lastSeenAt: now,
+    });
+    return { id: created.id, occurrences: 1 };
+  } catch {
     return { id: null, occurrences: 1 };
   }
 }
@@ -371,8 +365,18 @@ export async function captureAndRemediate(input: IncidentInput): Promise<Remedia
   if (!throttled) {
     const outcome = plan.serverActions.length === 0 ? "applied" : verified === false || deployed.some((d) => !d.ok) ? "failed" : verified ? "verified" : "applied";
     try {
-      await db.insert(remediationActions).values({ incidentId: stored.id, fingerprint, playbook: plan.playbook, plan: { summary: plan.summary, serverActions: plan.serverActions, clientActions: plan.clientActions, deployed, verified }, outcome, detail: deployed.map((d) => `${d.ok ? "✓" : "✗"} ${d.action}${d.detail ? ` — ${d.detail}` : ""}`).join("\n") || plan.summary, durationMs });
-      if (stored.id) await db.update(incidentReports).set({ status: outcome === "verified" ? "remediated" : outcome === "failed" ? "open" : "monitoring" }).where(eq(incidentReports.id, stored.id));
+      store.remediations.insert({
+        id: newId(),
+        incidentId: stored.id,
+        fingerprint,
+        playbook: plan.playbook,
+        plan: { summary: plan.summary, serverActions: plan.serverActions, clientActions: plan.clientActions, deployed, verified },
+        outcome,
+        detail: deployed.map((d) => `${d.ok ? "✓" : "✗"} ${d.action}${d.detail ? ` — ${d.detail}` : ""}`).join("\n") || plan.summary,
+        durationMs,
+        createdAt: new Date(),
+      });
+      if (stored.id) store.incidents.update((row) => row.id === stored.id, { status: outcome === "verified" ? "remediated" : outcome === "failed" ? "open" : "monitoring" });
     } catch { /* audit trail is best effort */ }
   }
 
@@ -388,14 +392,15 @@ export async function runSelfTest(): Promise<{ ok: boolean; checks: Array<{ name
   const checks: Array<{ name: string; ok: boolean; detail: string; repaired?: boolean }> = [];
   try {
     const t = Date.now();
-    await db.execute(sql`select 1`);
-    checks.push({ name: "database", ok: true, detail: `responded in ${Date.now() - t}ms` });
+    const ok = await ensureReliabilityStore(true);
+    if (!ok) throw new AppError("storage_corrupt", "incident store unavailable");
+    checks.push({ name: "store", ok: true, detail: `in-memory store responded in ${Date.now() - t}ms` });
   } catch (error) {
     const result = await captureAndRemediate({ origin: "server", error, route: "self-test", userAction: "self-test" });
-    checks.push({ name: "database", ok: result.verified === true, detail: result.plan.summary, repaired: result.verified === true });
+    checks.push({ name: "store", ok: result.verified === true, detail: result.plan.summary, repaired: result.verified === true });
   }
-  const schemaOk = await ensureReliabilitySchema(true);
-  checks.push({ name: "schema", ok: schemaOk, detail: schemaOk ? "all reliability and crypto tables present" : "could not verify tables", repaired: schemaOk });
+  const storeOk = await ensureReliabilityStore(true);
+  checks.push({ name: "collections", ok: storeOk, detail: storeOk ? "all in-process collections present" : "could not verify collections", repaired: storeOk });
   // Open breakers: probe the upstream directly; if it answers, close the breaker now
   // instead of waiting for the cooldown (repair), otherwise leave it open (correct).
   const open = allBreakers().filter((b) => b.state === "open");
@@ -432,15 +437,14 @@ export async function runSelfTest(): Promise<{ ok: boolean; checks: Array<{ name
 
 export async function reliabilityOverview() {
   await loadRuntimePatches();
-  let incidents: Array<typeof incidentReports.$inferSelect> = [];
-  let actions: Array<typeof remediationActions.$inferSelect> = [];
+  let incidents: IncidentReport[] = [];
+  let actions: RemediationAction[] = [];
   let dbOk = true;
   try {
-    incidents = await db.select().from(incidentReports).orderBy(desc(incidentReports.lastSeenAt)).limit(40);
-    actions = await db.select().from(remediationActions).orderBy(desc(remediationActions.createdAt)).limit(40);
-  } catch (error) {
+    incidents = store.incidents.all().sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime()).slice(0, 40);
+    actions = store.remediations.all().sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 40);
+  } catch {
     dbOk = false;
-    if (classifyError(error).category === "schema_missing") await ensureReliabilitySchema(true);
   }
   const summary = {
     open: incidents.filter((i) => i.status === "open").length,

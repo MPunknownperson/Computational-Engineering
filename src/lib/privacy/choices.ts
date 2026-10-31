@@ -1,7 +1,5 @@
 import "server-only";
-import { and, eq, gt, lte } from "drizzle-orm";
-import { db } from "@/db";
-import { privacyChoices } from "@/db/schema";
+import { newId, store } from "@/lib/store";
 import { PRIVACY_CHOICE_COOKIE, PRIVACY_COOKIE_SECONDS, PRIVACY_OPTOUT_COOKIE, type PrivacyChoiceStatus } from "./constants";
 
 interface CookieReader { get(name: string): { value: string } | undefined }
@@ -10,8 +8,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 async function storedChoice(cookies: CookieReader) {
   const id = cookies.get(PRIVACY_CHOICE_COOKIE)?.value;
   if (!id || !UUID.test(id)) return null;
-  const [choice] = await db.select().from(privacyChoices)
-    .where(and(eq(privacyChoices.id, id), gt(privacyChoices.expiresAt, new Date()))).limit(1);
+  const choice = store.privacyChoices.find((row) => row.id === id && row.expiresAt.getTime() > Date.now());
   return choice ?? null;
 }
 
@@ -34,7 +31,7 @@ export async function privacyChoiceStatus(headers: Pick<Headers, "get">, cookies
 export async function savePrivacyOptOut(cookies: CookieReader, source: "manual" | "gpc") {
   const now = new Date();
   // No background scheduler is assumed: expired receipts are removed on saves.
-  await db.delete(privacyChoices).where(lte(privacyChoices.expiresAt, now));
+  store.privacyChoices.remove((row) => row.expiresAt.getTime() <= now.getTime());
   const previous = await storedChoice(cookies);
   const values = {
     saleSharingOptOut: true,
@@ -42,8 +39,8 @@ export async function savePrivacyOptOut(cookies: CookieReader, source: "manual" 
     updatedAt: now,
     expiresAt: new Date(now.getTime() + PRIVACY_COOKIE_SECONDS * 1000),
   };
-  const [choice] = previous
-    ? await db.update(privacyChoices).set(values).where(eq(privacyChoices.id, previous.id)).returning()
-    : await db.insert(privacyChoices).values(values).returning();
+  const choice = previous
+    ? store.privacyChoices.update((row) => row.id === previous.id, values)[0]
+    : store.privacyChoices.insert({ id: newId(), createdAt: now, ...values });
   return choice;
 }
