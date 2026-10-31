@@ -19,7 +19,6 @@ Install dependencies, set `DATABASE_URL`, apply the Drizzle schema with `npx dri
 
 See `docs/privacy-operations.md`. This preview uses `PRIVACY_GEO_PROVIDER=signed-header` and a server-only random signing secret. A real trusted upstream must supply authentic location assertions. Vercel or Cloudflare deployments can use their matching provider after securing the origin trust boundary. Never expose the signing secret to a client bundle or invent a country when location is unavailable.
 
-Private workbench APIs require a server-configured `WORKBENCH_API_KEY` of at least 32 bytes; they remain hidden when unconfigured. Public site functions do not require that key.
 
 ## Validation
 

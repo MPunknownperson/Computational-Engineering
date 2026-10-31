@@ -9,11 +9,9 @@ not part of the deployed site. Its useful server-side capabilities remain in
 ## Access control
 
 Every `/api/workbench/*` request passes through `src/proxy.ts`. Requests are
-hidden with a `404` unless `WORKBENCH_API_KEY` is set to a high-entropy value of
 at least 32 UTF-8 bytes and the caller sends it as a bearer token:
 
 ```http
-Authorization: Bearer <WORKBENCH_API_KEY>
 ```
 
 Generate a key with `openssl rand -hex 32` and configure it as a **server-side**

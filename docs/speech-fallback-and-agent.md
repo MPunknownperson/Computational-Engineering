@@ -49,7 +49,6 @@ can point at a CDN copy of the same files.
   backend — `solve_math`, `convert_units`, `convert_currency`,
   `find_site_page`. `dispatchTool(name, args)` invokes and records a call.
 - `orchestrator.ts` (LangChain): a `RunnableSequence` —
-  `load_context → interpret → dispatch_tools → fastgpt_comprehension → remember`.
   `interpret` reuses the project's typed NLU pipeline (`VoiceRuntime`), kept
   per session so its 3-minute task context persists across requests.
 
@@ -61,28 +60,15 @@ with a per-page-load `sessionId` and the engine id; when the local router
 cannot resolve an utterance, the agent's result is offered before the
 TensorFlow.js guess.
 
-## 3. FastGPT — text context comprehension
 
-- Server (`src/lib/agent/fastgpt.ts`): standard OpenAI-compatible
-  `POST {FASTGPT_BASE_URL}/api/v1/chat/completions` with
-  `Authorization: Bearer FASTGPT_API_KEY`, `chatId = rl-<sessionId>` so FastGPT
   manages its own conversation context, and `variables` carrying the structured
   system context (engine, recognised text, deterministic decision, retrieved
-  site pages, recent turns). Optional `FASTGPT_APP_ID`. Invoked only when
   configured; failures are silent enrichment misses.
-- Browser (`src/components/tech/FastGptWidget.tsx`): FastGPT's official
   website embed loader (`<script id="chatbot-iframe" src=".../js/iframe.js"
   data-bot-src=...>`), mounted from the root layout only when
-  `NEXT_PUBLIC_FASTGPT_BOT_SRC` is set and the visitor allowed functional
-  third-party features. It is a floating launcher owned by FastGPT, not a page.
 
 ## Environment
 
 ```
 NEXT_PUBLIC_SHERPA_ONNX_BASE_URL=/vendor/sherpa-onnx/      # optional
-FASTGPT_BASE_URL=https://cloud.fastgpt.io                   # server-only
-FASTGPT_API_KEY=fastgpt-...                                 # server-only
-FASTGPT_APP_ID=                                             # optional
-NEXT_PUBLIC_FASTGPT_BOT_SRC=https://cloud.fastgpt.io/chat/share?shareId=...
-NEXT_PUBLIC_FASTGPT_SCRIPT_SRC=https://cloud.fastgpt.io/js/iframe.js   # optional
 ```

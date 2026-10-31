@@ -7,7 +7,6 @@ https://github.com/MPunknownperson/Computational-Engineering/archive/refs/heads/
 
 - **Route fix** — the optional catch-all folder `src/app/app/[[...slug]]` (whose bracketed, dotted name blocked the GitHub import and collided with the static `/app` page) is gone. `/app/shell` plus an `afterFiles` rewrite in `next.config.ts` now serves deep links such as `/app/calculator/history`; `/app/shared` has a plain page.
 - **Dark mode** — the speech-recognition guide (`/guides/voice-coach`) and the guides index used hard-coded white panels and light icon tiles; they now use theme-aware classes with explicit dark rules (`.voice-path__*`, `.icon-tile` in dark).
-- **Rive** — `src/components/rive/RiveReactor.tsx` renders a Rive state machine (`public/vendor/rive/login-teddy.riv`, override with `NEXT_PUBLIC_RIVE_SRC`) whose inputs are driven live by pointer position, typed characters (focus boolean, caret-tracking number input, Enter/clear triggers) and device-motion shake intensity (with the iOS permission flow). Inputs are discovered by type/name so other `.riv` files work; a drawn fallback reacts to the same signals when the WASM runtime cannot load. Mounted on the home page.
 - **Computation engine** (`src/lib/engine/`) — a new engineering-grade core shared by the standard calculator, scientific calculator, custom-formula tool, voice executor and `/api/engine`:
   - `core.ts`: 64-digit decimal evaluator plus a fast double-precision evaluator behind one grammar policy; complex numbers, matrices, physical units and constants, degree/radian/gradian modes, percent and base literals, engineering/sci/fixed/fraction formatting; numeric extensions (`nsolve`, `roots`, `integrate`, `diff`, `summation`, `odesolve`, `polyfit`, `linreg`, `interp`, `pmt/fv/pv/npv/irr`, `par`, `db`, …).
   - `analysis.ts`: symbolic derivatives, Richardson derivatives, adaptive Gauss–Kronrod quadrature (improper limits included), multi-root scanning with Brent refinement, extrema, Taylor series, numeric limits, exact linear/quadratic/cubic solving with numeric fallback, linear-system extraction + LU solve, descriptive statistics.
@@ -32,7 +31,6 @@ Install dependencies, set `DATABASE_URL`, apply the Drizzle schema with `npx dri
 
 See `docs/privacy-operations.md`. This preview uses `PRIVACY_GEO_PROVIDER=signed-header` and a server-only random signing secret. A real trusted upstream must supply authentic location assertions. Vercel or Cloudflare deployments can use their matching provider after securing the origin trust boundary. Never expose the signing secret to a client bundle or invent a country when location is unavailable.
 
-Private workbench APIs require a server-configured `WORKBENCH_API_KEY` of at least 32 bytes; they remain hidden when unconfigured. Public site functions do not require that key.
 
 ## Crypto computational engine (`/tools/crypto`)
 
