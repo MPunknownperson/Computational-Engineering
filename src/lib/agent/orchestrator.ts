@@ -8,7 +8,7 @@ import type { Program } from "@/lib/voice/ir";
 import { rememberTurn, retrieveSiteContext, sessionHistory, type SiteContextHit } from "@/lib/agent/context";
 import { dispatchTool, type ToolCallRecord } from "@/lib/agent/tools";
 import { detectOperationIntent } from "@/lib/voice/operation-intent";
-import { comprehendWithFastGpt, fastGptConfigured, type FastGptComprehension } from "@/lib/agent/fastgpt";
+type Comprehension = { reply: string };
 import { recallAssociation, rememberAssociation } from "@/lib/agent/associations";
 import { execute } from "@/lib/voice/vm";
 
@@ -21,7 +21,7 @@ import { execute } from "@/lib/voice/vm";
  *   loadContext  → LlamaIndex session memory + site retrieval
  *   interpret    → the existing typed NLU pipeline (VoiceRuntime)
  *   dispatch     → LangChain tools chosen from the validated program
- *   comprehend   → FastGPT (optional, when configured) reads the whole context
+ *   comprehend   → no-op (external LLM providers removed)
  *   remember     → append the turn and outcome to LlamaIndex memory
  *
  * The VoiceRuntime is kept per session so its 3-minute typed task context
@@ -34,7 +34,7 @@ export interface AgentInput {
   /** Which recogniser produced the text: web-speech | sherpa-onnx-wasm | typed. */
   engine?: string;
   locale?: string;
-  /** Skip FastGPT even when configured (e.g. replay/regression traffic). */
+  /** Skip the comprehension stage (e.g. replay/regression traffic). */
   skipComprehension?: boolean;
 }
 
@@ -50,16 +50,16 @@ export interface AgentResult {
   href: string | null;
   label: string | null;
   sitePages: SiteContextHit[];
-  comprehension: FastGptComprehension | null;
+  comprehension: Comprehension | null;
   history: Array<{ role: string; content: string }>;
   latencyMs: number;
-  frameworks: { langchain: true; llamaindex: true; fastgpt: boolean };
+  frameworks: { langchain: true; llamaindex: true };
 }
 
 interface Stage1 extends AgentInput { engine: string; history: Array<{ role: string; content: string }>; sitePages: SiteContextHit[]; started: number }
 interface Stage2 extends Stage1 { decision: Decision }
 interface Stage3 extends Stage2 { tools: ToolCallRecord[]; reply: string | null; href: string | null; label: string | null }
-interface Stage4 extends Stage3 { comprehension: FastGptComprehension | null }
+interface Stage4 extends Stage3 { comprehension: Comprehension | null }
 
 const RUNTIME_TTL_MS = 30 * 60_000;
 const runtimes = new Map<string, { runtime: VoiceRuntime; touchedAt: number }>();
@@ -214,23 +214,7 @@ const dispatch = RunnableLambda.from(async (input: Stage2): Promise<Stage3> => {
   return { ...input, tools, reply, href, label };
 }).withConfig({ runName: "dispatch_tools" });
 
-const comprehend = RunnableLambda.from(async (input: Stage3): Promise<Stage4> => {
-  if (input.skipComprehension || !fastGptConfigured()) return { ...input, comprehension: null };
-  const decision = input.decision.kind === "action"
-    ? { kind: "action", domain: input.decision.domain, label: input.label, href: input.href, reply: input.reply, confidence: input.decision.confidence }
-    : input.decision.kind === "clarify"
-      ? { kind: "clarify", reason: input.decision.reason, question: input.decision.question }
-      : { kind: "rejected", reason: input.decision.reason };
-  const comprehension = await comprehendWithFastGpt(input.sessionId, input.text, {
-    engine: input.engine,
-    heard: input.text,
-    decision,
-    history: input.history,
-    sitePages: input.sitePages.map((page) => ({ path: page.path, label: page.label })),
-    locale: input.locale,
-  });
-  return { ...input, comprehension };
-}).withConfig({ runName: "fastgpt_comprehension" });
+const comprehend = RunnableLambda.from(async (input: Stage3): Promise<Stage4> => ({ ...input, comprehension: null })).withConfig({ runName: "comprehend" });
 
 const remember = RunnableLambda.from(async (input: Stage4): Promise<AgentResult> => {
   await rememberTurn(input.sessionId, "user", input.text, { engine: input.engine });
@@ -253,7 +237,7 @@ const remember = RunnableLambda.from(async (input: Stage4): Promise<AgentResult>
     comprehension: input.comprehension,
     history: [...input.history, { role: "user", content: input.text }, { role: "assistant", content: outcome }],
     latencyMs: Math.round(performance.now() - input.started),
-    frameworks: { langchain: true, llamaindex: true, fastgpt: fastGptConfigured() },
+    frameworks: { langchain: true, llamaindex: true },
   };
 }).withConfig({ runName: "remember" });
 

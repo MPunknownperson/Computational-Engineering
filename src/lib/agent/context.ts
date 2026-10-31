@@ -14,7 +14,7 @@ import { SEARCH_PAGES, type SearchPage } from "@/lib/search-pages";
  *
  *  1. Session memory — every recognised utterance and every backend action is
  *     appended to a LlamaIndex `Memory` keyed by the caller's session id. The
- *     memory is what later turns, the LangChain dispatcher and FastGPT are
+ *     memory is what later turns, the LangChain dispatcher are
  *     given as "what has happened so far".
  *
  *  2. Site knowledge — the public page catalog is ingested as LlamaIndex

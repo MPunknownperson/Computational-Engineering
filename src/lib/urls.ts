@@ -17,7 +17,7 @@ export function internalHref(
 /** Validated origin used only when discovery protocols require absolute URLs. */
 export function originFromHeaders(h: Pick<Headers, "get">): string {
   // Optional primary-domain preference for aliases; not used by internal links.
-  const configured = process.env.SITE_CANONICAL_ORIGIN;
+  const configured = process.env.SITE_CANONICAL_ORIGIN || (process.env.NODE_ENV === "production" ? "https://quilloryn.com" : undefined);
   if (configured) {
     const url = new URL(configured);
     if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {

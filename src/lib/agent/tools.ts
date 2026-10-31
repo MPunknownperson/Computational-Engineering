@@ -19,7 +19,7 @@ import { retrieveSiteContext } from "@/lib/agent/context";
  * Each tool wraps an existing, deterministic backend capability (the same
  * code paths the typed tools on the site use). The orchestrator dispatches
  * them by name after the NLU pipeline has produced a validated decision, and
- * the registry is also what a model-driven agent (FastGPT workflow, LangChain
+ * the registry is also what a model-driven agent (LangChain
  * agent) would be handed if one were attached later. Tools never navigate or
  * mutate anything; they compute and return JSON.
  */
